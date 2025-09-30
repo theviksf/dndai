@@ -1,0 +1,136 @@
+import { pgTable, text, varchar, integer, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Game state types
+export type Attribute = {
+  str: number;
+  dex: number;
+  con: number;
+  int: number;
+  wis: number;
+  cha: number;
+};
+
+export type StatusEffect = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  turnsRemaining: number;
+};
+
+export type InventoryItem = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: 'weapon' | 'consumable' | 'quest' | 'misc';
+  quantity: number;
+  equipped?: boolean;
+  magical?: boolean;
+  stats?: string;
+};
+
+export type Quest = {
+  id: string;
+  title: string;
+  description: string;
+  type: 'main' | 'side';
+  icon: string;
+  completed: boolean;
+  objectives: {
+    text: string;
+    completed: boolean;
+  }[];
+  progress?: {
+    current: number;
+    total: number;
+  };
+};
+
+export type NarrativeMessage = {
+  id: string;
+  type: 'dm' | 'player';
+  content: string;
+  timestamp: number;
+  diceRoll?: {
+    type: string;
+    result: number;
+    success: boolean;
+  };
+};
+
+export type GameCharacter = {
+  name: string;
+  race: string;
+  class: string;
+  level: number;
+  xp: number;
+  nextLevelXp: number;
+  hp: number;
+  maxHp: number;
+  gold: number;
+  attributes: Attribute;
+};
+
+export type GameStateData = {
+  character: GameCharacter;
+  location: {
+    name: string;
+    description: string;
+  };
+  inventory: InventoryItem[];
+  statusEffects: StatusEffect[];
+  quests: Quest[];
+  narrativeHistory: NarrativeMessage[];
+  turnCount: number;
+};
+
+export type GameConfig = {
+  primaryLLM: string;
+  parserLLM: string;
+  difficulty: 'easy' | 'normal' | 'hard' | 'deadly';
+  narrativeStyle: 'concise' | 'balanced' | 'detailed' | 'verbose';
+  autoSave: boolean;
+};
+
+export type OpenRouterModel = {
+  id: string;
+  name: string;
+  pricing: {
+    prompt: string;
+    completion: string;
+  };
+  context_length: number;
+};
+
+export type CostTracker = {
+  sessionCost: number;
+  turnCount: number;
+  primaryTokens: {
+    prompt: number;
+    completion: number;
+  };
+  parserTokens: {
+    prompt: number;
+    completion: number;
+  };
+};
+
+// Database tables
+export const gameStates = pgTable("game_states", {
+  id: varchar("id").primaryKey(),
+  state: jsonb("state").notNull().$type<GameStateData>(),
+  config: jsonb("config").notNull().$type<GameConfig>(),
+  costTracker: jsonb("cost_tracker").notNull().$type<CostTracker>(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const insertGameStateSchema = createInsertSchema(gameStates).omit({
+  id: true,
+});
+
+export type InsertGameState = z.infer<typeof insertGameStateSchema>;
+export type GameState = typeof gameStates.$inferSelect;
