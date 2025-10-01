@@ -5,7 +5,6 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker } from '@/lib/game-state';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
-import SettingsPage from '@/pages/settings';
 import CharacterCreationModal from '@/components/character-creation-modal';
 import CharacterStats from '@/components/character-stats';
 import NarrativePanel from '@/components/narrative-panel';
@@ -16,10 +15,14 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
   const [gameState, setGameState] = useState<GameStateData>(createDefaultGameState());
-  const [config, setConfig] = useState<GameConfig>(createDefaultConfig());
+  const [config, setConfig] = useState<GameConfig>(() => {
+    // Load config from localStorage
+    const savedConfig = localStorage.getItem('gameConfig');
+    return savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
+  });
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
   const [isGameStarted, setIsGameStarted] = useState(false);
@@ -62,20 +65,21 @@ export default function Home() {
 
   // Show settings on first load if no game started
   useEffect(() => {
-    if (!isGameStarted && location === '/') {
+    if (!isGameStarted && !config.openRouterApiKey) {
       setLocation('/settings');
     }
-  }, [isGameStarted, location, setLocation]);
+  }, []);
+
+  // Reload config when returning from settings
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('gameConfig');
+    if (savedConfig) {
+      setConfig(JSON.parse(savedConfig));
+    }
+  }, []);
 
   const handleSaveGame = () => {
     saveMutation.mutate();
-  };
-
-  const handleConfigSave = (newConfig: GameConfig) => {
-    setConfig(newConfig);
-    if (!isGameStarted) {
-      setShowCharacterCreation(true);
-    }
   };
 
   const handleCharacterCreated = (character: GameStateData['character']) => {
@@ -87,19 +91,13 @@ export default function Home() {
     setIsGameStarted(true);
   };
 
-  // Render settings page if on settings route
-  if (location === '/settings') {
-    return (
-      <SettingsPage
-        config={config}
-        onSave={handleConfigSave}
-        models={models || []}
-        onRefreshModels={() => refetchModels()}
-      />
-    );
-  }
+  // Show character creation modal if returning from settings with API key but no character
+  useEffect(() => {
+    if (config.openRouterApiKey && !isGameStarted && !gameState.character.name) {
+      setShowCharacterCreation(true);
+    }
+  }, [config.openRouterApiKey]);
 
-  // Render game UI
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
