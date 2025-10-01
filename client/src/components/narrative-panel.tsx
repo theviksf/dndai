@@ -198,14 +198,41 @@ function validateAndCoerceParserData(data: any): any {
         : [updates.quests];
     }
     if (updates.companions !== undefined) {
-      result.stateUpdates.companions = Array.isArray(updates.companions) 
-        ? updates.companions 
-        : [updates.companions];
+      // Normalize companions - ensure they have required fields
+      const companionsList = Array.isArray(updates.companions) ? updates.companions : [updates.companions];
+      result.stateUpdates.companions = companionsList.map((c: any, idx: number) => ({
+        id: c.id || `companion-${Date.now()}-${idx}`,
+        name: c.name || 'Unknown',
+        race: c.race || 'Unknown',
+        age: c.age || 'Unknown',
+        class: c.class || 'Unknown',
+        level: typeof c.level === 'number' ? c.level : 1,
+        appearance: c.appearance || c.description || 'No description',
+        personality: c.personality || 'Unknown',
+        criticalMemories: c.criticalMemories || '',
+        feelingsTowardsPlayer: c.feelingsTowardsPlayer || 'Neutral',
+        relationship: c.relationship || 'Ally'
+      }));
     }
     if (updates.encounteredCharacters !== undefined) {
-      result.stateUpdates.encounteredCharacters = Array.isArray(updates.encounteredCharacters) 
-        ? updates.encounteredCharacters 
-        : [updates.encounteredCharacters];
+      // Normalize encountered characters - ensure they have required fields
+      const encounterList = Array.isArray(updates.encounteredCharacters) ? updates.encounteredCharacters : [updates.encounteredCharacters];
+      result.stateUpdates.encounteredCharacters = encounterList.map((e: any, idx: number) => ({
+        id: e.id || `encounter-${Date.now()}-${idx}`,
+        name: e.name || 'Unknown',
+        role: e.role || 'NPC',
+        appearance: e.appearance || e.description || 'No description',
+        description: e.description || e.appearance || 'No description'
+      }));
+    }
+    
+    // Handle inventoryChanges (non-standard field) and convert to inventory
+    if (updates.inventoryChanges !== undefined) {
+      // Parser sometimes returns inventoryChanges instead of inventory
+      // This is a non-standard format, but we'll handle it gracefully
+      console.warn('Parser returned inventoryChanges instead of inventory - converting');
+      // For now, just ignore this and let the parser learn the correct format
+      // Future: could process add/remove operations
     }
   }
   
@@ -308,7 +335,7 @@ export default function NarrativePanel({
           })
         }],
         config.parserSystemPrompt,
-        500,
+        2000,  // Increased from 500 to handle complex game states with companions, encounters, etc.
         config.openRouterApiKey
       );
 

@@ -1,0 +1,26 @@
+I see you're a level 5 half-elf! Let me update your character accordingly and begin our adventure.
+
+*Character Updated: Jeff - Level 5 Half-Elf Wizard*
+
+The crisp autumn air carries the scent of woodsmoke and damp leaves as you stand at the edge of Oakhaven, a modest village nestled between ancient forests and rolling hills. As Jeff, a half-elf wizard of some renown, you've been summoned here by an urgent message from an old mentor. Your silver-blue robes flutter in the breeze, the arcane symbols embroidered along the hem catching the fading evening light.
+
+Your party gathers around you:
+- **Kaelen (M,28)** - A human fighter with weathered armor and a determined set to his jaw, his greatsword resting comfortably on his shoulder
+- **Lyra (F,24)** - A nimble halfling rogue who moves with practiced silence, her eyes constantly scanning for threats
+- **Thorn (M,35)** - A dwarf cleric of Moradin, his chainmail gleaming and holy symbol prominently displayed
+
+The village elder, **Elara (F,65)**, approaches with worry etched deeply into her face. "Thank the gods you've come," she says, her voice trembling slightly. "Our children have been disappearing from the outskirts for weeks. Strange lights have been seen in the Whispering Woods, and last night... we found this near the latest disappearance."
+
+She hands you a torn piece of dark purple fabric that seems to absorb the light around it, feeling unnaturally cold to the touch. The villagers watch from their doorways with hopeful, fearful eyes.
+
+Action Menu:
+- 😇1️⃣: Comfort Elara and promise to find the missing children immediately
+- 😈2️⃣: Demand more information and payment upfront before agreeing to help
+- 🙂3️⃣: Examine the mysterious fabric with an Arcana check
+- 🙂4️⃣: Ask your party members for their initial thoughts and observations
+
+STR: 10 DEX: 15 CON: 13 INT: 15 WIS: 13 CHA: 15 AC: 12 HP: 11/11 Gold: 50, XP: 0/6500
+- 💾**S**: Save Game
+- ⏩**A**: Advance Story
+- 🖼️**I**: Create Image
+You can also choose a custom action!
