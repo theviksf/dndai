@@ -61,19 +61,22 @@ export default function NarrativePanel({
         narrativeHistory: [...prev.narrativeHistory, playerMessage],
       }));
 
-      // Call Primary LLM
+      // Call Primary LLM - send parsed recaps + 3 most recent messages for context
+      const recentMessages = gameState.narrativeHistory.slice(-3);
       const context = {
         character: gameState.character,
         location: gameState.location,
-        recentHistory: gameState.narrativeHistory.slice(-5),
+        parsedHistory: gameState.parsedRecaps.join('\n\n'),
+        recentMessages: recentMessages,
         action,
       };
 
       const primaryResponse = await callLLM(
         config.primaryLLM,
         [{ role: 'user', content: JSON.stringify(context) }],
-        DM_SYSTEM_PROMPT,
-        800
+        config.dmSystemPrompt,
+        800,
+        config.openRouterApiKey
       );
 
       // Call Parser LLM
@@ -86,8 +89,9 @@ export default function NarrativePanel({
             currentState: gameState,
           })
         }],
-        PARSER_SYSTEM_PROMPT,
-        500
+        config.parserSystemPrompt,
+        500,
+        config.openRouterApiKey
       );
 
       const parsedData = JSON.parse(parserResponse.content);
@@ -116,6 +120,11 @@ export default function NarrativePanel({
           content: primaryResponse.content,
           timestamp: Date.now(),
         }];
+
+        // Store parsed recap for future context
+        if (parsedData.recap) {
+          updated.parsedRecaps = [...updated.parsedRecaps, parsedData.recap];
+        }
 
         updated.turnCount = prev.turnCount + 1;
 

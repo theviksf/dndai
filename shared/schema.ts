@@ -84,6 +84,7 @@ export type GameStateData = {
   statusEffects: StatusEffect[];
   quests: Quest[];
   narrativeHistory: NarrativeMessage[];
+  parsedRecaps: string[];
   turnCount: number;
 };
 
@@ -93,6 +94,9 @@ export type GameConfig = {
   difficulty: 'easy' | 'normal' | 'hard' | 'deadly';
   narrativeStyle: 'concise' | 'balanced' | 'detailed' | 'verbose';
   autoSave: boolean;
+  openRouterApiKey: string;
+  dmSystemPrompt: string;
+  parserSystemPrompt: string;
 };
 
 export type OpenRouterModel = {

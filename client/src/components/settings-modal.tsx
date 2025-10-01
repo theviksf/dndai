@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import { RECOMMENDED_CONFIGS, estimateTurnCost } from '@/lib/openrouter';
-import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical } from 'lucide-react';
+import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText } from 'lucide-react';
 
 interface SettingsModalProps {
   open: boolean;
@@ -18,6 +20,10 @@ interface SettingsModalProps {
 export default function SettingsModal({ open, onOpenChange, config, onSave, models }: SettingsModalProps) {
   const [localConfig, setLocalConfig] = useState<GameConfig>(config);
   const [estimatedCost, setEstimatedCost] = useState(0);
+  
+  useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
 
   useEffect(() => {
     if (models.length > 0) {
@@ -52,6 +58,30 @@ export default function SettingsModal({ open, onOpenChange, config, onSave, mode
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
+          {/* API Key */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Key className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-serif font-semibold text-primary">OpenRouter API Key</h3>
+            </div>
+            <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+              <label className="block text-sm font-semibold text-foreground">
+                API Key <span className="text-destructive">*</span>
+              </label>
+              <Input
+                type="password"
+                value={localConfig.openRouterApiKey}
+                onChange={(e) => setLocalConfig(prev => ({ ...prev, openRouterApiKey: e.target.value }))}
+                placeholder="sk-or-v1-..."
+                className="font-mono text-sm bg-input border-border"
+                data-testid="input-api-key"
+              />
+              <p className="text-xs text-muted-foreground">
+                Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a>
+              </p>
+            </div>
+          </section>
+
           {/* LLM Configuration */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
@@ -166,6 +196,42 @@ export default function SettingsModal({ open, onOpenChange, config, onSave, mode
                   </div>
                 </Button>
               </div>
+            </div>
+          </section>
+
+          {/* Prompts */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <FileText className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-serif font-semibold text-primary">System Prompts</h3>
+            </div>
+
+            {/* DM Prompt */}
+            <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+              <label className="block text-sm font-semibold text-foreground">
+                Dungeon Master Prompt <span className="text-primary">(Narrative Generation)</span>
+              </label>
+              <Textarea
+                value={localConfig.dmSystemPrompt}
+                onChange={(e) => setLocalConfig(prev => ({ ...prev, dmSystemPrompt: e.target.value }))}
+                rows={6}
+                className="font-mono text-xs bg-input border-border"
+                data-testid="textarea-dm-prompt"
+              />
+            </div>
+
+            {/* Parser Prompt */}
+            <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+              <label className="block text-sm font-semibold text-foreground">
+                Parser Prompt <span className="text-primary">(State Extraction)</span>
+              </label>
+              <Textarea
+                value={localConfig.parserSystemPrompt}
+                onChange={(e) => setLocalConfig(prev => ({ ...prev, parserSystemPrompt: e.target.value }))}
+                rows={6}
+                className="font-mono text-xs bg-input border-border"
+                data-testid="textarea-parser-prompt"
+              />
             </div>
           </section>
 

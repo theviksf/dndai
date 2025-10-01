@@ -24,9 +24,10 @@ export default function Home() {
   const [isGameStarted, setIsGameStarted] = useState(false);
 
   // Fetch OpenRouter models
-  const { data: models } = useQuery<OpenRouterModel[]>({
-    queryKey: ['/api/models'],
-    queryFn: fetchOpenRouterModels,
+  const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
+    queryKey: ['/api/models', config.openRouterApiKey],
+    queryFn: () => fetchOpenRouterModels(config.openRouterApiKey),
+    enabled: !!config.openRouterApiKey,
   });
 
   // Save game mutation

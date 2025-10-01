@@ -8,11 +8,18 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // OpenRouter models endpoint
-  app.get('/api/models', async (req, res) => {
+  app.post('/api/models', async (req, res) => {
     try {
+      const { apiKey } = req.body;
+      const key = apiKey || OPENROUTER_API_KEY;
+      
+      if (!key) {
+        return res.status(400).json({ error: 'API key required' });
+      }
+      
       const response = await fetch('https://openrouter.ai/api/v1/models', {
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${key}`,
         }
       });
       
@@ -29,13 +36,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // OpenRouter chat completion proxy
   app.post('/api/llm/chat', async (req, res) => {
-    const { modelId, messages, systemPrompt, maxTokens = 1000 } = req.body;
+    const { modelId, messages, systemPrompt, maxTokens = 1000, apiKey } = req.body;
     
     try {
+      const key = apiKey || OPENROUTER_API_KEY;
+      
+      if (!key) {
+        return res.status(400).json({ error: 'API key required' });
+      }
+      
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${key}`,
           'HTTP-Referer': req.headers.referer || 'http://localhost:5000',
           'X-Title': 'D&D Adventure Game',
           'Content-Type': 'application/json'

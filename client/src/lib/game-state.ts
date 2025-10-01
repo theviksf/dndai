@@ -60,6 +60,7 @@ export function createDefaultGameState(): GameStateData {
     statusEffects: [],
     quests: [],
     narrativeHistory: [],
+    parsedRecaps: [],
     turnCount: 0,
   };
 }
@@ -71,6 +72,9 @@ export function createDefaultConfig(): GameConfig {
     difficulty: 'normal',
     narrativeStyle: 'balanced',
     autoSave: true,
+    openRouterApiKey: '',
+    dmSystemPrompt: DM_SYSTEM_PROMPT,
+    parserSystemPrompt: PARSER_SYSTEM_PROMPT,
   };
 }
 

@@ -1,8 +1,8 @@
 import { apiRequest } from './queryClient';
 import type { OpenRouterModel } from '@shared/schema';
 
-export async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
-  const response = await apiRequest('GET', '/api/models');
+export async function fetchOpenRouterModels(apiKey?: string): Promise<OpenRouterModel[]> {
+  const response = await apiRequest('POST', '/api/models', { apiKey });
   const data = await response.json();
   return data.data || [];
 }
@@ -11,7 +11,8 @@ export async function callLLM(
   modelId: string,
   messages: { role: string; content: string }[],
   systemPrompt: string,
-  maxTokens: number = 1000
+  maxTokens: number = 1000,
+  apiKey?: string
 ): Promise<{
   content: string;
   usage: {
@@ -26,6 +27,7 @@ export async function callLLM(
     messages,
     systemPrompt,
     maxTokens,
+    apiKey,
   });
   
   return await response.json();
