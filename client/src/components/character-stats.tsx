@@ -1,14 +1,15 @@
 import type { GameStateData } from '@shared/schema';
 import { formatModifier } from '@/lib/game-state';
-import { BarChart3, MapPin, Sparkles } from 'lucide-react';
+import { BarChart3, MapPin, Sparkles, Wand2 } from 'lucide-react';
 
 interface CharacterStatsProps {
   character: GameStateData['character'];
   statusEffects: GameStateData['statusEffects'];
   location: GameStateData['location'];
+  spells: GameStateData['spells'];
 }
 
-export default function CharacterStats({ character, statusEffects, location }: CharacterStatsProps) {
+export default function CharacterStats({ character, statusEffects, location, spells }: CharacterStatsProps) {
   const hpPercent = (character.hp / character.maxHp) * 100;
   const xpPercent = (character.xp / character.nextLevelXp) * 100;
 
@@ -115,6 +116,39 @@ export default function CharacterStats({ character, statusEffects, location }: C
             ))
           ) : (
             <div className="text-center py-2 text-xs text-muted-foreground">No active effects</div>
+          )}
+        </div>
+      </div>
+
+      {/* Spells */}
+      <div className="bg-card border-2 border-border rounded-lg ornate-border parchment-texture p-4">
+        <h3 className="text-lg font-serif font-semibold text-primary mb-3 flex items-center gap-2">
+          <Wand2 className="w-5 h-5" />
+          Spells
+        </h3>
+        <div className="space-y-2">
+          {spells.length > 0 ? (
+            spells.map(spell => (
+              <div 
+                key={spell.id} 
+                className="bg-accent/10 border border-accent rounded-md p-2"
+                data-testid={`spell-${spell.id}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{spell.icon}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-foreground">{spell.name}</div>
+                      <div className="text-xs text-muted-foreground">Lvl {spell.level}</div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{spell.school}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{spell.description}</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-2 text-xs text-muted-foreground">No spells learned</div>
           )}
         </div>
       </div>
