@@ -21,10 +21,10 @@ Preferred communication style: Simple, everyday language.
 **Component Structure**:
 - **Home page** (`/`): Main game container orchestrating gameplay with character stats, narrative panel, and inventory/quest display
 - **Settings page** (`/settings`): LLM configuration interface with model selection, API key input, and custom prompt editing for both DM and Parser system prompts
-- **Character Creation page** (`/character-creation`): Multi-step character creation with race/class selection and attribute point-buy system
+- **Character Creation page** (`/character-creation`): Multi-step character creation with race/class/age selection and attribute point-buy system
 - **NarrativePanel**: Primary game interface displaying story progression and action input. Shows DM responses immediately, then parses in background
-- **CharacterStats**: Real-time display of character attributes, health, XP, and status effects
-- **InventoryQuestPanel**: Side panel for inventory management, quest tracking, and history display (shows all parsed recaps)
+- **CharacterStats**: Real-time display of character attributes, health, XP, status effects, and learned spells
+- **InventoryQuestPanel**: Side panel for inventory management, quest tracking, companions, encountered characters, and history display (shows all parsed recaps)
 
 **Path Aliases**: Uses TypeScript path mapping for clean imports (`@/` for client source, `@shared/` for shared types).
 
@@ -46,11 +46,15 @@ Preferred communication style: Simple, everyday language.
 **Primary LLM**: Generates rich, immersive narrative responses (200-400 words) with sensory details, NPC dialogue, and environmental descriptions. Receives a comprehensive context package including all character stats, game state, parsed history summaries, and the last 3 messages to create engaging story progression.
 
 **Parser LLM**: Runs AFTER the narrative is displayed to the player. Extracts structured game state updates from narrative responses, including:
+- Character details (name, class, age, level changes)
 - Health, gold, XP, and attribute changes
 - Status effects and their durations
 - Location updates
 - Inventory modifications
+- Spell learning/forgetting
 - Quest progress and new quests
+- Companion joining/leaving with detailed tracking (appearance, personality, memories, feelings, relationship)
+- Encountered characters with descriptions (NPCs met during adventure)
 - Brief 2-3 sentence history recap (stored in `parsedRecaps` for future context)
 
 **Execution Flow**:
@@ -81,9 +85,13 @@ This approach maintains narrative coherence while keeping context windows manage
 **Planned Implementation**: PostgreSQL database with Drizzle ORM for type-safe database operations and schema management.
 
 **Schema Design** (shared/schema.ts):
-- **GameState**: Core game data including character stats, inventory, quests, narrative history, and parsedRecaps (array of condensed turn summaries)
+- **GameState**: Core game data including character stats (with age field), inventory, spells, status effects, quests, companions, encountered characters, narrative history, and parsedRecaps (array of condensed turn summaries)
 - **GameConfig**: User preferences for LLM selection, OpenRouter API key, and customizable system prompts for both DM and Parser LLMs
 - **CostTracker**: Tracks token usage and estimated costs per session
+- **GameCharacter**: Player character with name, race, class, age, level, XP, HP, gold, and attributes
+- **Spell**: Spell data with id, name, level, school, description, and icon
+- **Companion**: Detailed companion tracking with id, name, race, age, class, level, appearance, personality, criticalMemories, feelingsTowardsPlayer, and relationship
+- **EncounteredCharacter**: NPC tracking with id, name, role, appearance, and description
 - Complex nested types for attributes, inventory items, quests, and status effects
 
 **Migration Strategy**: Drizzle Kit configured for PostgreSQL with migrations directory and schema definition path specified.

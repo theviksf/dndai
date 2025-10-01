@@ -9,7 +9,7 @@ interface CharacterStatsProps {
   spells: GameStateData['spells'];
 }
 
-export default function CharacterStats({ character, statusEffects, location, spells }: CharacterStatsProps) {
+export default function CharacterStats({ character, statusEffects, location, spells = [] }: CharacterStatsProps) {
   const hpPercent = (character.hp / character.maxHp) * 100;
   const xpPercent = (character.xp / character.nextLevelXp) * 100;
 

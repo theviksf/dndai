@@ -10,7 +10,7 @@ interface InventoryQuestPanelProps {
   history: string[];
 }
 
-export default function InventoryQuestPanel({ inventory, quests, companions, encounteredCharacters, history }: InventoryQuestPanelProps) {
+export default function InventoryQuestPanel({ inventory, quests, companions = [], encounteredCharacters = [], history }: InventoryQuestPanelProps) {
   const activeQuests = quests.filter(q => !q.completed);
   const completedQuests = quests.filter(q => q.completed);
 

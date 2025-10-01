@@ -167,7 +167,12 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 max-w-[1920px] mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 h-full">
-          <CharacterStats character={gameState.character} statusEffects={gameState.statusEffects} location={gameState.location} spells={gameState.spells} />
+          <CharacterStats 
+            character={gameState.character} 
+            statusEffects={gameState.statusEffects} 
+            location={gameState.location} 
+            spells={gameState.spells || []} 
+          />
           <NarrativePanel 
             gameState={gameState}
             setGameState={setGameState}
@@ -179,8 +184,8 @@ export default function Home() {
           <InventoryQuestPanel 
             inventory={gameState.inventory} 
             quests={gameState.quests} 
-            companions={gameState.companions} 
-            encounteredCharacters={gameState.encounteredCharacters} 
+            companions={gameState.companions || []} 
+            encounteredCharacters={gameState.encounteredCharacters || []} 
             history={gameState.parsedRecaps || []} 
           />
         </div>
