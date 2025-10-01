@@ -14,12 +14,16 @@ export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adven
 
 Your task:
 1. Generate a brief 2-3 sentence summary capturing the key events (for history tracking)
-2. Identify ALL state changes including: health, gold, XP, attributes, status effects, location, quests, and inventory
+2. Identify ALL state changes including: character details (name, class, age, level), health, gold, XP, attributes, status effects, location, quests, inventory, spells, companions, and encountered characters
 3. Be precise with nuance - capture important details without being verbose
 
 Return a JSON object with this exact structure:
 {
   "stateUpdates": {
+    "name": string | undefined (character name if it changed),
+    "class": string | undefined (character class if it changed),
+    "age": string | undefined (character age if it changed or revealed),
+    "level": number | undefined (character level if it changed),
     "hp": number | undefined (current HP if it changed),
     "gold": number | undefined (current gold if it changed),
     "xp": number | undefined (current XP if it changed),
@@ -27,7 +31,10 @@ Return a JSON object with this exact structure:
     "location": { "name": string, "description": string } | undefined (if location changed),
     "statusEffects": [{ "id": string, "name": string, "description": string, "icon": string, "turnsRemaining": number }] | undefined (current active effects),
     "inventory": [{ "id": string, "name": string, "description": string, "icon": string, "type": string, "quantity": number, "equipped": boolean, "magical": boolean }] | undefined (complete inventory if it changed),
-    "quests": [{ "id": string, "title": string, "description": string, "type": "main" | "side", "icon": string, "completed": boolean, "objectives": [{ "text": string, "completed": boolean }], "progress": { "current": number, "total": number } }] | undefined (complete quest list if it changed)
+    "spells": [{ "id": string, "name": string, "level": number, "school": string, "description": string, "icon": string }] | undefined (complete spell list if it changed - when character learns/forgets spells),
+    "quests": [{ "id": string, "title": string, "description": string, "type": "main" | "side", "icon": string, "completed": boolean, "objectives": [{ "text": string, "completed": boolean }], "progress": { "current": number, "total": number } }] | undefined (complete quest list if it changed),
+    "companions": [{ "id": string, "name": string, "race": string, "age": string, "class": string, "level": number, "appearance": string, "personality": string, "criticalMemories": string, "feelingsTowardsPlayer": string, "relationship": string }] | undefined (complete companion list if it changed - when companions join/leave/develop),
+    "encounteredCharacters": [{ "id": string, "name": string, "role": string, "appearance": string, "description": string }] | undefined (complete list of NPCs met - add new characters or update existing ones)
   },
   "recap": string (REQUIRED: 2-3 sentence summary capturing key events, enough nuance to not miss a beat but very brief)
 }

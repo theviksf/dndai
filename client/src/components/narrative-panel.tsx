@@ -143,6 +143,20 @@ export default function NarrativePanel({
         const updated = { ...prev };
         const stateUpdates = parsedData.stateUpdates || {};
         
+        // Update character basic info
+        if (stateUpdates.name !== undefined) {
+          updated.character.name = stateUpdates.name;
+        }
+        if (stateUpdates.class !== undefined) {
+          updated.character.class = stateUpdates.class;
+        }
+        if (stateUpdates.age !== undefined) {
+          updated.character.age = stateUpdates.age;
+        }
+        if (stateUpdates.level !== undefined) {
+          updated.character.level = stateUpdates.level;
+        }
+        
         // Update character stats
         if (stateUpdates.hp !== undefined) {
           updated.character.hp = Math.max(0, Math.min(stateUpdates.hp, prev.character.maxHp));
@@ -155,28 +169,43 @@ export default function NarrativePanel({
         }
         
         // Update attributes if changed
-        if (stateUpdates.attributes) {
+        if (stateUpdates.attributes !== undefined) {
           updated.character.attributes = { ...updated.character.attributes, ...stateUpdates.attributes };
         }
         
         // Update location
-        if (stateUpdates.location) {
+        if (stateUpdates.location !== undefined) {
           updated.location = stateUpdates.location;
         }
         
         // Update status effects
-        if (stateUpdates.statusEffects) {
+        if (stateUpdates.statusEffects !== undefined) {
           updated.statusEffects = stateUpdates.statusEffects;
         }
         
         // Update inventory
-        if (stateUpdates.inventory) {
+        if (stateUpdates.inventory !== undefined) {
           updated.inventory = stateUpdates.inventory;
         }
         
+        // Update spells
+        if (stateUpdates.spells !== undefined) {
+          updated.spells = stateUpdates.spells;
+        }
+        
         // Update quests
-        if (stateUpdates.quests) {
+        if (stateUpdates.quests !== undefined) {
           updated.quests = stateUpdates.quests;
+        }
+        
+        // Update companions
+        if (stateUpdates.companions !== undefined) {
+          updated.companions = stateUpdates.companions;
+        }
+        
+        // Update encountered characters
+        if (stateUpdates.encounteredCharacters !== undefined) {
+          updated.encounteredCharacters = stateUpdates.encounteredCharacters;
         }
 
         // Store parsed recap for future context
