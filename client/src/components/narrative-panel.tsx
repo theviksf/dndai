@@ -61,13 +61,23 @@ export default function NarrativePanel({
         narrativeHistory: [...prev.narrativeHistory, playerMessage],
       }));
 
-      // Call Primary LLM - send parsed recaps + 3 most recent messages for context
-      const recentMessages = gameState.narrativeHistory.slice(-3);
+      // Call Primary LLM - send parsed recaps + 3 most recent messages + all stats for context
+      // Include the just-submitted player message in recent context
+      const updatedHistory = [...gameState.narrativeHistory, playerMessage];
+      const recentMessages = updatedHistory.slice(-3);
       const context = {
+        // Character stats
         character: gameState.character,
+        // Current game state
         location: gameState.location,
+        inventory: gameState.inventory,
+        statusEffects: gameState.statusEffects,
+        quests: gameState.quests,
+        // Historical context (condensed)
         parsedHistory: gameState.parsedRecaps.join('\n\n'),
+        // Recent conversation (last 3 messages including current player message)
         recentMessages: recentMessages,
+        // Current action
         action,
       };
 
@@ -79,14 +89,33 @@ export default function NarrativePanel({
         config.openRouterApiKey
       );
 
-      // Call Parser LLM
+      // Display DM response immediately
+      const dmMessage = {
+        id: Date.now().toString(),
+        type: 'dm' as const,
+        content: primaryResponse.content,
+        timestamp: Date.now(),
+      };
+
+      setGameState(prev => ({
+        ...prev,
+        narrativeHistory: [...prev.narrativeHistory, dmMessage],
+      }));
+
+      // Build fresh current state for parser (includes DM message)
+      const freshCurrentState = {
+        ...gameState,
+        narrativeHistory: [...gameState.narrativeHistory, playerMessage, dmMessage],
+      };
+
+      // Now call Parser LLM to extract state updates
       const parserResponse = await callLLM(
         config.parserLLM,
         [{
           role: 'user',
           content: JSON.stringify({
             narrative: primaryResponse.content,
-            currentState: gameState,
+            currentState: freshCurrentState,
           })
         }],
         config.parserSystemPrompt,
@@ -109,30 +138,46 @@ export default function NarrativePanel({
 
       const parsedData = JSON.parse(jsonContent);
 
-      // Update game state
+      // Update game state with parsed data (defensive guard for stateUpdates)
       setGameState(prev => {
         const updated = { ...prev };
+        const stateUpdates = parsedData.stateUpdates || {};
         
-        if (parsedData.stateUpdates.hp !== undefined) {
-          updated.character.hp = Math.max(0, Math.min(parsedData.stateUpdates.hp, prev.character.maxHp));
+        // Update character stats
+        if (stateUpdates.hp !== undefined) {
+          updated.character.hp = Math.max(0, Math.min(stateUpdates.hp, prev.character.maxHp));
         }
-        if (parsedData.stateUpdates.gold !== undefined) {
-          updated.character.gold = parsedData.stateUpdates.gold;
+        if (stateUpdates.gold !== undefined) {
+          updated.character.gold = stateUpdates.gold;
         }
-        if (parsedData.stateUpdates.xp !== undefined) {
-          updated.character.xp = parsedData.stateUpdates.xp;
+        if (stateUpdates.xp !== undefined) {
+          updated.character.xp = stateUpdates.xp;
         }
-        if (parsedData.stateUpdates.location) {
-          updated.location = parsedData.stateUpdates.location;
+        
+        // Update attributes if changed
+        if (stateUpdates.attributes) {
+          updated.character.attributes = { ...updated.character.attributes, ...stateUpdates.attributes };
         }
-
-        // Add DM response to history
-        updated.narrativeHistory = [...updated.narrativeHistory, {
-          id: Date.now().toString(),
-          type: 'dm' as const,
-          content: primaryResponse.content,
-          timestamp: Date.now(),
-        }];
+        
+        // Update location
+        if (stateUpdates.location) {
+          updated.location = stateUpdates.location;
+        }
+        
+        // Update status effects
+        if (stateUpdates.statusEffects) {
+          updated.statusEffects = stateUpdates.statusEffects;
+        }
+        
+        // Update inventory
+        if (stateUpdates.inventory) {
+          updated.inventory = stateUpdates.inventory;
+        }
+        
+        // Update quests
+        if (stateUpdates.quests) {
+          updated.quests = stateUpdates.quests;
+        }
 
         // Store parsed recap for future context
         if (parsedData.recap) {

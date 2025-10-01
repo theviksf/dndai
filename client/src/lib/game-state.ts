@@ -10,26 +10,30 @@ export const DM_SYSTEM_PROMPT = `You are an experienced Dungeon Master running a
 
 Keep responses vivid but concise (200-400 words). Include sensory details, dialogue from NPCs, and environmental descriptions. When skill checks are needed, specify the type and DC.`;
 
-export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adventure game. Analyze the DM's narrative response and extract structured data.
+export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adventure game. Analyze the DM's narrative response and extract structured data changes.
 
-Return a JSON object with:
+Your task:
+1. Generate a brief 2-3 sentence summary capturing the key events (for history tracking)
+2. Identify ALL state changes including: health, gold, XP, attributes, status effects, location, quests, and inventory
+3. Be precise with nuance - capture important details without being verbose
+
+Return a JSON object with this exact structure:
 {
   "stateUpdates": {
-    "hp": number (if health changed),
-    "gold": number (if gold changed),
-    "xp": number (if experience gained),
-    "location": { "name": string, "description": string } (if location changed),
-    "inventoryChanges": { "add": [], "remove": [] } (if items gained/lost),
-    "statusEffects": [] (active effects),
-    "questUpdates": [] (quest progress changes)
+    "hp": number | undefined (current HP if it changed),
+    "gold": number | undefined (current gold if it changed),
+    "xp": number | undefined (current XP if it changed),
+    "attributes": { "str": number, "dex": number, "con": number, "int": number, "wis": number, "cha": number } | undefined (any attributes that changed),
+    "location": { "name": string, "description": string } | undefined (if location changed),
+    "statusEffects": [{ "id": string, "name": string, "description": string, "icon": string, "turnsRemaining": number }] | undefined (current active effects),
+    "inventory": [{ "id": string, "name": string, "description": string, "icon": string, "type": string, "quantity": number, "equipped": boolean, "magical": boolean }] | undefined (complete inventory if it changed),
+    "quests": [{ "id": string, "title": string, "description": string, "type": "main" | "side", "icon": string, "completed": boolean, "objectives": [{ "text": string, "completed": boolean }], "progress": { "current": number, "total": number } }] | undefined (complete quest list if it changed)
   },
-  "recap": string (2-3 sentence summary for history),
-  "suggestedActions": [
-    { "action": string, "description": string, "icon": string }
-  ] (3-4 contextual actions)
+  "recap": string (REQUIRED: 2-3 sentence summary capturing key events, enough nuance to not miss a beat but very brief)
 }
 
-Be precise and only include fields that actually changed.`;
+IMPORTANT: Only include fields in stateUpdates that actually changed. The recap field is ALWAYS required.`;
+
 
 export function createDefaultGameState(): GameStateData {
   return {

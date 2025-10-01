@@ -19,12 +19,12 @@ Preferred communication style: Simple, everyday language.
 **State Management**: Local component state with React hooks. Game state is managed at the top level and passed down through props. TanStack Query handles server state and API caching.
 
 **Component Structure**:
-- **Home page**: Main game container orchestrating character creation, settings, and gameplay
-- **CharacterCreationModal**: Multi-step character creation with race/class selection and attribute point-buy system
-- **SettingsModal**: LLM configuration interface with model selection, API key input, and custom prompt editing for both DM and Parser system prompts
-- **NarrativePanel**: Primary game interface displaying story progression and action input. Implements context limiting by sending only parsed history summaries plus 3 most recent messages to the LLM
+- **Home page** (`/`): Main game container orchestrating gameplay with character stats, narrative panel, and inventory/quest display
+- **Settings page** (`/settings`): LLM configuration interface with model selection, API key input, and custom prompt editing for both DM and Parser system prompts
+- **Character Creation page** (`/character-creation`): Multi-step character creation with race/class selection and attribute point-buy system
+- **NarrativePanel**: Primary game interface displaying story progression and action input. Shows DM responses immediately, then parses in background
 - **CharacterStats**: Real-time display of character attributes, health, XP, and status effects
-- **InventoryQuestPanel**: Side panel for inventory management and quest tracking
+- **InventoryQuestPanel**: Side panel for inventory management, quest tracking, and history display (shows all parsed recaps)
 
 **Path Aliases**: Uses TypeScript path mapping for clean imports (`@/` for client source, `@shared/` for shared types).
 
@@ -43,20 +43,36 @@ Preferred communication style: Simple, everyday language.
 
 ### Dual-LLM Architecture
 
-**Primary LLM**: Generates rich, immersive narrative responses (200-400 words) with sensory details, NPC dialogue, and environmental descriptions. Receives parsed history summaries, 3 most recent messages, and the current action to create engaging story progression without hallucination issues from long context windows.
+**Primary LLM**: Generates rich, immersive narrative responses (200-400 words) with sensory details, NPC dialogue, and environmental descriptions. Receives a comprehensive context package including all character stats, game state, parsed history summaries, and the last 3 messages to create engaging story progression.
 
-**Parser LLM**: Extracts structured game state updates from narrative responses, including health changes, gold/XP gains, inventory modifications, location updates, and quest progress. Also generates compressed 2-3 sentence recaps that are stored in `parsedRecaps` array for future context building.
+**Parser LLM**: Runs AFTER the narrative is displayed to the player. Extracts structured game state updates from narrative responses, including:
+- Health, gold, XP, and attribute changes
+- Status effects and their durations
+- Location updates
+- Inventory modifications
+- Quest progress and new quests
+- Brief 2-3 sentence history recap (stored in `parsedRecaps` for future context)
 
-**Context Management**: To minimize hallucinations and token costs, the application only sends the Primary LLM:
+**Execution Flow**:
+1. Player submits action
+2. Primary LLM generates narrative response
+3. Response is immediately displayed to player
+4. Parser LLM analyzes the narrative in background
+5. Game state is updated with parsed changes
+6. History recap is added to `parsedRecaps` array
+
+**Context Management**: To minimize hallucinations and token costs, the Primary LLM receives:
 - All parsed history recaps (condensed summaries of past turns)
-- The 3 most recent narrative messages
-- Current character state and action
+- Last 3 messages back and forth (recent conversation)
+- Complete character stats (HP, gold, XP, attributes)
+- Current game state (location, inventory, status effects, quests)
+- Current player action
 
 This approach maintains narrative coherence while keeping context windows manageable and reducing the risk of LLM hallucinations from long histories.
 
-**Rationale**: Separating concerns allows using more powerful (expensive) models for creative storytelling while using efficient (cheaper) models for structured data extraction, optimizing cost-per-turn.
+**Rationale**: Separating concerns allows using more powerful (expensive) models for creative storytelling while using efficient (cheaper) models for structured data extraction, optimizing cost-per-turn. Displaying responses before parsing provides better UX.
 
-**System Prompts**: Both DM and Parser prompts are fully customizable in the settings modal. Default prompts guide each LLM's behavior - DM prompt focuses on immersive storytelling while parser prompt emphasizes accurate JSON extraction and recap generation.
+**System Prompts**: Both DM and Parser prompts are fully customizable in the settings page. Default prompts guide each LLM's behavior - DM prompt focuses on immersive storytelling while parser prompt emphasizes accurate JSON extraction, comprehensive state tracking, and brief history recap generation.
 
 ### Data Storage Solutions
 

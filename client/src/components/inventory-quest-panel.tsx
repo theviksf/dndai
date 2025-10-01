@@ -1,13 +1,14 @@
 import type { GameStateData } from '@shared/schema';
-import { Package, ScrollText, CheckCircle2 } from 'lucide-react';
+import { Package, ScrollText, CheckCircle2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface InventoryQuestPanelProps {
   inventory: GameStateData['inventory'];
   quests: GameStateData['quests'];
+  history: string[];
 }
 
-export default function InventoryQuestPanel({ inventory, quests }: InventoryQuestPanelProps) {
+export default function InventoryQuestPanel({ inventory, quests, history }: InventoryQuestPanelProps) {
   const activeQuests = quests.filter(q => !q.completed);
   const completedQuests = quests.filter(q => q.completed);
 
@@ -183,6 +184,34 @@ export default function InventoryQuestPanel({ inventory, quests }: InventoryQues
                 </div>
               ))}
             </>
+          )}
+        </div>
+      </div>
+
+      {/* History */}
+      <div className="bg-card border-2 border-border rounded-lg ornate-border parchment-texture overflow-hidden">
+        <div className="bg-gradient-to-b from-primary/20 to-transparent p-4 border-b border-border">
+          <h2 className="text-xl font-serif font-semibold text-primary flex items-center gap-2">
+            <BookOpen className="w-5 h-5" />
+            History
+          </h2>
+        </div>
+
+        <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+          {history.length > 0 ? (
+            history.map((entry, idx) => (
+              <div
+                key={idx}
+                className="bg-muted/30 border border-border rounded-md p-3"
+                data-testid={`history-entry-${idx}`}
+              >
+                <p className="text-xs text-foreground leading-relaxed">{entry}</p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-sm text-muted-foreground">
+              Your journey begins...
+            </div>
           )}
         </div>
       </div>
