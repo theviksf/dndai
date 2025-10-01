@@ -21,10 +21,12 @@ Return ONLY a valid JSON object (no code fences, no prose, no comments). Use thi
 {
   "stateUpdates": {
     "name": string | undefined (character name if it changed),
+    "race": string | undefined (character race if it changed - e.g., "Half-Elf", "Human"),
     "class": string | undefined (character class if it changed),
     "age": string | undefined (character age if it changed or revealed - MUST BE STRING),
     "level": number | undefined (character level if it changed - MUST BE NUMBER),
     "hp": number | undefined (current HP if it changed - MUST BE NUMBER),
+    "maxHp": number | undefined (maximum HP if it changed - MUST BE NUMBER),
     "gold": number | undefined (current gold if it changed - MUST BE NUMBER),
     "xp": number | undefined (current XP if it changed - MUST BE NUMBER),
     "attributes": { "str": number, "dex": number, "con": number, "int": number, "wis": number, "cha": number } | undefined (any attributes that changed),

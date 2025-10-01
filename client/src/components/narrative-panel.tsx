@@ -129,6 +129,7 @@ function validateAndCoerceParserData(data: any): any {
     
     // Coerce string fields from character (nested or flat)
     if (char.name !== undefined) result.stateUpdates.name = String(char.name);
+    if (char.race !== undefined) result.stateUpdates.race = String(char.race);
     if (char.class !== undefined) result.stateUpdates.class = String(char.class);
     if (char.age !== undefined) result.stateUpdates.age = String(char.age);
     
@@ -143,6 +144,12 @@ function validateAndCoerceParserData(data: any): any {
       const hp = Number(char.hp);
       if (Number.isFinite(hp) && hp >= 0) {
         result.stateUpdates.hp = Math.floor(hp);
+      }
+    }
+    if (char.maxHp !== undefined) {
+      const maxHp = Number(char.maxHp);
+      if (Number.isFinite(maxHp) && maxHp >= 1) {
+        result.stateUpdates.maxHp = Math.floor(maxHp);
       }
     }
     if (char.gold !== undefined) {
@@ -305,6 +312,10 @@ export default function NarrativePanel({
       try {
         const extracted = extractAndParseJSON(parserResponse.content);
         parsedData = validateAndCoerceParserData(extracted);
+        
+        // Debug logging
+        console.log('Parser extracted data:', parsedData);
+        console.log('State updates:', parsedData?.stateUpdates);
       } catch (error: any) {
         // Log the raw response for debugging
         console.error('Failed to parse parser response:', error.message);
@@ -331,6 +342,9 @@ export default function NarrativePanel({
           if (stateUpdates.name !== undefined) {
             updated.character.name = stateUpdates.name;
           }
+          if (stateUpdates.race !== undefined) {
+            updated.character.race = stateUpdates.race;
+          }
           if (stateUpdates.class !== undefined) {
             updated.character.class = stateUpdates.class;
           }
@@ -342,8 +356,16 @@ export default function NarrativePanel({
           }
           
           // Update character stats
+          // Update maxHp first if provided, then hp
+          if (stateUpdates.maxHp !== undefined) {
+            updated.character.maxHp = stateUpdates.maxHp;
+          }
           if (stateUpdates.hp !== undefined) {
-            updated.character.hp = Math.max(0, Math.min(stateUpdates.hp, prev.character.maxHp));
+            // If new HP is higher than current maxHp, increase maxHp to match
+            if (stateUpdates.hp > updated.character.maxHp) {
+              updated.character.maxHp = stateUpdates.hp;
+            }
+            updated.character.hp = Math.max(0, Math.min(stateUpdates.hp, updated.character.maxHp));
           }
           if (stateUpdates.gold !== undefined) {
             updated.character.gold = stateUpdates.gold;
