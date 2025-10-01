@@ -17,16 +17,16 @@ Your task:
 2. Identify ALL state changes including: character details (name, class, age, level), health, gold, XP, attributes, status effects, location, quests, inventory, spells, companions, and encountered characters
 3. Be precise with nuance - capture important details without being verbose
 
-Return a JSON object with this exact structure:
+Return ONLY a valid JSON object (no code fences, no prose, no comments). Use this exact structure:
 {
   "stateUpdates": {
     "name": string | undefined (character name if it changed),
     "class": string | undefined (character class if it changed),
-    "age": string | undefined (character age if it changed or revealed),
-    "level": number | undefined (character level if it changed),
-    "hp": number | undefined (current HP if it changed),
-    "gold": number | undefined (current gold if it changed),
-    "xp": number | undefined (current XP if it changed),
+    "age": string | undefined (character age if it changed or revealed - MUST BE STRING),
+    "level": number | undefined (character level if it changed - MUST BE NUMBER),
+    "hp": number | undefined (current HP if it changed - MUST BE NUMBER),
+    "gold": number | undefined (current gold if it changed - MUST BE NUMBER),
+    "xp": number | undefined (current XP if it changed - MUST BE NUMBER),
     "attributes": { "str": number, "dex": number, "con": number, "int": number, "wis": number, "cha": number } | undefined (any attributes that changed),
     "location": { "name": string, "description": string } | undefined (if location changed),
     "statusEffects": [{ "id": string, "name": string, "description": string, "icon": string, "turnsRemaining": number }] | undefined (current active effects),
@@ -39,7 +39,12 @@ Return a JSON object with this exact structure:
   "recap": string (REQUIRED: 2-3 sentence summary capturing key events, enough nuance to not miss a beat but very brief)
 }
 
-IMPORTANT: Only include fields in stateUpdates that actually changed. The recap field is ALWAYS required.`;
+CRITICAL FORMATTING RULES:
+- Return ONLY the JSON object - no markdown code fences, no explanatory text
+- Use strict JSON: no trailing commas, no comments, use double quotes only
+- Use correct types: numbers for hp/gold/xp/level, strings for age/name/class
+- Only include fields in stateUpdates that actually changed
+- The recap field is ALWAYS required`;
 
 
 export function createDefaultGameState(): GameStateData {

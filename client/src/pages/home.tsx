@@ -71,14 +71,17 @@ export default function Home() {
     },
   });
 
-  // Show settings on first load if no API key
+  // Show settings/character creation on first load based on state
   useEffect(() => {
-    if (!config.openRouterApiKey) {
-      setLocation('/settings');
-    } else if (!gameState.character.name) {
-      // If we have API key but no character, go to character creation
+    if (!gameState.character.name) {
+      // No character exists - go to character creation
       setLocation('/character-creation');
+    } else if (!config.openRouterApiKey && !isGameStarted) {
+      // Character exists but no API key and game not started yet - go to settings
+      setLocation('/settings');
     }
+    // If character exists and game is started, stay on home page even without API key
+    // (player will get error when trying to take action)
   }, []);
 
   // Reload config and character when page is visible again (returning from other pages)

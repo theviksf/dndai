@@ -28,6 +28,12 @@ Preferred communication style: Simple, everyday language.
 
 **Path Aliases**: Uses TypeScript path mapping for clean imports (`@/` for client source, `@shared/` for shared types).
 
+**Routing Logic**: Smart navigation flow prevents redirect loops and ensures smooth user experience:
+- No character exists → redirect to character creation (`/character-creation`)
+- Character exists but no API key and game not started → redirect to settings (`/settings`)
+- Character exists and game started → stay on home page even without API key (player will get error when trying to take action)
+- This allows players to return from settings page to game page after creating a character, even without an API key
+
 ### Backend Architecture
 
 **Server Framework**: Express.js running on Node.js with TypeScript, using ESM modules.
@@ -62,8 +68,23 @@ Preferred communication style: Simple, everyday language.
 2. Primary LLM generates narrative response
 3. Response is immediately displayed to player
 4. Parser LLM analyzes the narrative in background
-5. Game state is updated with parsed changes
-6. History recap is added to `parsedRecaps` array
+5. Game state is updated with parsed changes (or continues without updates if parsing fails)
+6. History recap is added to `parsedRecaps` array (if parsing succeeds)
+7. Cost tracker is updated regardless of parser success/failure
+
+**Error Handling & Resilience**:
+- **Robust JSON Parsing**: Multi-strategy extraction system handles malformed LLM responses
+  - Primary: Extract JSON from code fences (```json...```)
+  - Fallback 1: Direct JSON parsing of response
+  - Fallback 2: Balanced-brace scanning to extract JSON objects
+  - Sanitization: Removes BOM, normalizes smart quotes, strips trailing commas
+- **Type Coercion**: Validates and coerces parsed data to expected types with finite number checks
+- **Defensive Defaults**: All UI components use defensive defaults (|| []) to handle undefined fields gracefully
+- **Graceful Degradation**: If parser fails, game continues with narrative-only update (no state changes)
+  - Non-destructive warning toast shown to player
+  - Error details logged to console for debugging
+  - Turn count still increments
+  - Cost tracking always updates
 
 **Context Management**: To minimize hallucinations and token costs, the Primary LLM receives:
 - All parsed history recaps (condensed summaries of past turns)

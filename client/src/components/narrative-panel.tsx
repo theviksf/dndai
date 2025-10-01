@@ -23,6 +23,176 @@ const QUICK_ACTIONS = [
   { id: 'use', label: 'Use Item', description: 'Access inventory', icon: Package },
 ];
 
+// Robust JSON parsing helper
+function sanitizeJSON(jsonString: string): string {
+  // Remove BOM
+  let cleaned = jsonString.replace(/^\uFEFF/, '');
+  
+  // Normalize curly quotes to straight quotes using unicode ranges
+  cleaned = cleaned.replace(/[\u201C\u201D]/g, '"'); // " " to "
+  cleaned = cleaned.replace(/[\u2018\u2019]/g, "'"); // ' ' to '
+  
+  // Remove trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+  
+  return cleaned.trim();
+}
+
+function extractAndParseJSON(content: string): any {
+  const rawContent = content.trim();
+  
+  // Strategy 1: Try to extract from code fences
+  const allFences = rawContent.matchAll(/```([a-zA-Z]*)\s*([\s\S]*?)\s*```/g);
+  const fencedBlocks = Array.from(allFences);
+  
+  for (const match of fencedBlocks) {
+    const candidate = match[2].trim();
+    if (candidate.startsWith('{') || candidate.startsWith('[')) {
+      try {
+        const sanitized = sanitizeJSON(candidate);
+        const parsed = JSON.parse(sanitized);
+        if (parsed && typeof parsed === 'object') {
+          return parsed;
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+  
+  // Strategy 2: Try raw content if it looks like JSON
+  if (rawContent.startsWith('{') || rawContent.startsWith('[')) {
+    try {
+      const sanitized = sanitizeJSON(rawContent);
+      const parsed = JSON.parse(sanitized);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (e) {
+      // Continue to next strategy
+    }
+  }
+  
+  // Strategy 3: Try to find the first balanced JSON object using brace counting
+  let braceCount = 0;
+  let startIndex = -1;
+  
+  for (let i = 0; i < rawContent.length; i++) {
+    if (rawContent[i] === '{') {
+      if (braceCount === 0) startIndex = i;
+      braceCount++;
+    } else if (rawContent[i] === '}') {
+      braceCount--;
+      if (braceCount === 0 && startIndex !== -1) {
+        try {
+          const candidate = rawContent.substring(startIndex, i + 1);
+          const sanitized = sanitizeJSON(candidate);
+          const parsed = JSON.parse(sanitized);
+          if (parsed && typeof parsed === 'object') {
+            return parsed;
+          }
+        } catch (e) {
+          // Continue searching
+        }
+        startIndex = -1;
+      }
+    }
+  }
+  
+  throw new Error('No valid JSON found in parser response');
+}
+
+function validateAndCoerceParserData(data: any): any {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Parser data is not an object');
+  }
+  
+  // Must have at least recap or stateUpdates
+  if (!data.recap && !data.stateUpdates) {
+    throw new Error('Parser data missing both recap and stateUpdates');
+  }
+  
+  const result: any = {};
+  
+  // Copy recap as-is if present
+  if (data.recap) {
+    result.recap = String(data.recap);
+  }
+  
+  // Process and coerce stateUpdates if present
+  if (data.stateUpdates) {
+    const updates = data.stateUpdates;
+    result.stateUpdates = {};
+    
+    // Coerce string fields
+    if (updates.name !== undefined) result.stateUpdates.name = String(updates.name);
+    if (updates.class !== undefined) result.stateUpdates.class = String(updates.class);
+    if (updates.age !== undefined) result.stateUpdates.age = String(updates.age);
+    
+    // Coerce numeric fields with finite check
+    if (updates.level !== undefined) {
+      const level = Number(updates.level);
+      if (Number.isFinite(level) && level >= 1) {
+        result.stateUpdates.level = Math.floor(level);
+      }
+    }
+    if (updates.hp !== undefined) {
+      const hp = Number(updates.hp);
+      if (Number.isFinite(hp) && hp >= 0) {
+        result.stateUpdates.hp = Math.floor(hp);
+      }
+    }
+    if (updates.gold !== undefined) {
+      const gold = Number(updates.gold);
+      if (Number.isFinite(gold) && gold >= 0) {
+        result.stateUpdates.gold = Math.floor(gold);
+      }
+    }
+    if (updates.xp !== undefined) {
+      const xp = Number(updates.xp);
+      if (Number.isFinite(xp) && xp >= 0) {
+        result.stateUpdates.xp = Math.floor(xp);
+      }
+    }
+    
+    // Copy complex fields as-is
+    if (updates.attributes !== undefined) result.stateUpdates.attributes = updates.attributes;
+    if (updates.location !== undefined) result.stateUpdates.location = updates.location;
+    if (updates.statusEffects !== undefined) {
+      result.stateUpdates.statusEffects = Array.isArray(updates.statusEffects) 
+        ? updates.statusEffects 
+        : [updates.statusEffects];
+    }
+    if (updates.inventory !== undefined) {
+      result.stateUpdates.inventory = Array.isArray(updates.inventory) 
+        ? updates.inventory 
+        : [updates.inventory];
+    }
+    if (updates.spells !== undefined) {
+      result.stateUpdates.spells = Array.isArray(updates.spells) 
+        ? updates.spells 
+        : [updates.spells];
+    }
+    if (updates.quests !== undefined) {
+      result.stateUpdates.quests = Array.isArray(updates.quests) 
+        ? updates.quests 
+        : [updates.quests];
+    }
+    if (updates.companions !== undefined) {
+      result.stateUpdates.companions = Array.isArray(updates.companions) 
+        ? updates.companions 
+        : [updates.companions];
+    }
+    if (updates.encounteredCharacters !== undefined) {
+      result.stateUpdates.encounteredCharacters = Array.isArray(updates.encounteredCharacters) 
+        ? updates.encounteredCharacters 
+        : [updates.encounteredCharacters];
+    }
+  }
+  
+  return result;
+}
+
 export default function NarrativePanel({ 
   gameState, 
   setGameState, 
@@ -123,94 +293,103 @@ export default function NarrativePanel({
         config.openRouterApiKey
       );
 
-      // Extract JSON from markdown code fences if present
-      let jsonContent = parserResponse.content.trim();
-      const jsonMatch = jsonContent.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1];
-      } else {
-        // Try to find JSON without the json tag
-        const codeMatch = jsonContent.match(/```\s*([\s\S]*?)\s*```/);
-        if (codeMatch) {
-          jsonContent = codeMatch[1];
-        }
+      // Parse and validate JSON with robust error handling
+      let parsedData: any = null;
+      let parsingFailed = false;
+      try {
+        const extracted = extractAndParseJSON(parserResponse.content);
+        parsedData = validateAndCoerceParserData(extracted);
+      } catch (error: any) {
+        // Log the raw response for debugging
+        console.error('Failed to parse parser response:', error.message);
+        console.debug('Raw parser response:', parserResponse.content);
+        
+        // Show non-destructive error toast
+        toast({
+          title: 'Parser Warning',
+          description: 'Could not extract game state updates. Narrative will continue without state changes.',
+          variant: 'default',
+        });
+        
+        parsingFailed = true;
       }
 
-      const parsedData = JSON.parse(jsonContent);
-
-      // Update game state with parsed data (defensive guard for stateUpdates)
+      // Update game state (with or without parsed data)
       setGameState(prev => {
         const updated = { ...prev };
-        const stateUpdates = parsedData.stateUpdates || {};
         
-        // Update character basic info
-        if (stateUpdates.name !== undefined) {
-          updated.character.name = stateUpdates.name;
-        }
-        if (stateUpdates.class !== undefined) {
-          updated.character.class = stateUpdates.class;
-        }
-        if (stateUpdates.age !== undefined) {
-          updated.character.age = stateUpdates.age;
-        }
-        if (stateUpdates.level !== undefined) {
-          updated.character.level = stateUpdates.level;
-        }
-        
-        // Update character stats
-        if (stateUpdates.hp !== undefined) {
-          updated.character.hp = Math.max(0, Math.min(stateUpdates.hp, prev.character.maxHp));
-        }
-        if (stateUpdates.gold !== undefined) {
-          updated.character.gold = stateUpdates.gold;
-        }
-        if (stateUpdates.xp !== undefined) {
-          updated.character.xp = stateUpdates.xp;
-        }
-        
-        // Update attributes if changed
-        if (stateUpdates.attributes !== undefined) {
-          updated.character.attributes = { ...updated.character.attributes, ...stateUpdates.attributes };
-        }
-        
-        // Update location
-        if (stateUpdates.location !== undefined) {
-          updated.location = stateUpdates.location;
-        }
-        
-        // Update status effects
-        if (stateUpdates.statusEffects !== undefined) {
-          updated.statusEffects = stateUpdates.statusEffects;
-        }
-        
-        // Update inventory
-        if (stateUpdates.inventory !== undefined) {
-          updated.inventory = stateUpdates.inventory;
-        }
-        
-        // Update spells
-        if (stateUpdates.spells !== undefined) {
-          updated.spells = stateUpdates.spells;
-        }
-        
-        // Update quests
-        if (stateUpdates.quests !== undefined) {
-          updated.quests = stateUpdates.quests;
-        }
-        
-        // Update companions
-        if (stateUpdates.companions !== undefined) {
-          updated.companions = stateUpdates.companions;
-        }
-        
-        // Update encountered characters
-        if (stateUpdates.encounteredCharacters !== undefined) {
-          updated.encounteredCharacters = stateUpdates.encounteredCharacters;
-        }
+        if (!parsingFailed && parsedData) {
+          const stateUpdates = parsedData.stateUpdates || {};
+          
+          // Update character basic info
+          if (stateUpdates.name !== undefined) {
+            updated.character.name = stateUpdates.name;
+          }
+          if (stateUpdates.class !== undefined) {
+            updated.character.class = stateUpdates.class;
+          }
+          if (stateUpdates.age !== undefined) {
+            updated.character.age = stateUpdates.age;
+          }
+          if (stateUpdates.level !== undefined) {
+            updated.character.level = stateUpdates.level;
+          }
+          
+          // Update character stats
+          if (stateUpdates.hp !== undefined) {
+            updated.character.hp = Math.max(0, Math.min(stateUpdates.hp, prev.character.maxHp));
+          }
+          if (stateUpdates.gold !== undefined) {
+            updated.character.gold = stateUpdates.gold;
+          }
+          if (stateUpdates.xp !== undefined) {
+            updated.character.xp = stateUpdates.xp;
+          }
+          
+          // Update attributes if changed
+          if (stateUpdates.attributes !== undefined) {
+            updated.character.attributes = { ...updated.character.attributes, ...stateUpdates.attributes };
+          }
+          
+          // Update location
+          if (stateUpdates.location !== undefined) {
+            updated.location = stateUpdates.location;
+          }
+          
+          // Update status effects
+          if (stateUpdates.statusEffects !== undefined) {
+            updated.statusEffects = stateUpdates.statusEffects;
+          }
+          
+          // Update inventory
+          if (stateUpdates.inventory !== undefined) {
+            updated.inventory = stateUpdates.inventory;
+          }
+          
+          // Update spells
+          if (stateUpdates.spells !== undefined) {
+            updated.spells = stateUpdates.spells;
+          }
+          
+          // Update quests
+          if (stateUpdates.quests !== undefined) {
+            updated.quests = stateUpdates.quests;
+          }
+          
+          // Update companions
+          if (stateUpdates.companions !== undefined) {
+            updated.companions = stateUpdates.companions;
+          }
+          
+          // Update encountered characters
+          if (stateUpdates.encounteredCharacters !== undefined) {
+            updated.encounteredCharacters = stateUpdates.encounteredCharacters;
+          }
 
-        // Store parsed recap for future context
-        if (parsedData.recap) {
-          updated.parsedRecaps = [...updated.parsedRecaps, parsedData.recap];
+          // Store parsed recap for future context
+          if (parsedData.recap) {
+            updated.parsedRecaps = [...updated.parsedRecaps, parsedData.recap];
+          }
         }
 
         updated.turnCount = prev.turnCount + 1;
