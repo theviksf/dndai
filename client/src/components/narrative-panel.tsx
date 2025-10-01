@@ -94,7 +94,20 @@ export default function NarrativePanel({
         config.openRouterApiKey
       );
 
-      const parsedData = JSON.parse(parserResponse.content);
+      // Extract JSON from markdown code fences if present
+      let jsonContent = parserResponse.content.trim();
+      const jsonMatch = jsonContent.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1];
+      } else {
+        // Try to find JSON without the json tag
+        const codeMatch = jsonContent.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          jsonContent = codeMatch[1];
+        }
+      }
+
+      const parsedData = JSON.parse(jsonContent);
 
       // Update game state
       setGameState(prev => {
