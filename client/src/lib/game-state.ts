@@ -14,13 +14,8 @@ export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adven
 
 Your task:
 1. Generate a brief 2-3 sentence summary capturing the key events (for history tracking)
-2. Identify ALL state changes including: character details (name, race, class, age, level), health, gold, XP, attributes, status effects, location, quests, inventory, spells, companions, and encountered characters
+2. Identify ALL state changes including: character details (name, class, age, level), health, gold, XP, attributes, status effects, location, quests, inventory, spells, companions, and encountered characters
 3. Be precise with nuance - capture important details without being verbose
-
-CRITICAL: If the narrative mentions the character's level, race, or class (even if just confirming current state), you MUST include those fields in stateUpdates. For example:
-- If narrative says "level 5 wizard" → include "level": 5 and "class": "Wizard"
-- If narrative says "half-elf rogue" → include "race": "Half-Elf" and "class": "Rogue"
-- If narrative confirms "you are a level 3 fighter" → include "level": 3 and "class": "Fighter"`
 
 Return ONLY a valid JSON object (no code fences, no prose, no comments). Use this exact structure:
 {
