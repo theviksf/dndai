@@ -164,6 +164,12 @@ function validateAndCoerceParserData(data: any): any {
         result.stateUpdates.xp = Math.floor(xp);
       }
     }
+    if (char.nextLevelXp !== undefined) {
+      const nextLevelXp = Number(char.nextLevelXp);
+      if (Number.isFinite(nextLevelXp) && nextLevelXp >= 1) {
+        result.stateUpdates.nextLevelXp = Math.floor(nextLevelXp);
+      }
+    }
     
     // Handle attributes from nested or flat structure
     const attrs = char.attributes || updates.attributes;
@@ -312,10 +318,6 @@ export default function NarrativePanel({
       try {
         const extracted = extractAndParseJSON(parserResponse.content);
         parsedData = validateAndCoerceParserData(extracted);
-        
-        // Debug logging
-        console.log('Parser extracted data:', parsedData);
-        console.log('State updates:', parsedData?.stateUpdates);
       } catch (error: any) {
         // Log the raw response for debugging
         console.error('Failed to parse parser response:', error.message);
@@ -353,6 +355,17 @@ export default function NarrativePanel({
           }
           if (stateUpdates.level !== undefined) {
             updated.character.level = stateUpdates.level;
+            
+            // If level changed but nextLevelXp wasn't provided, compute it
+            if (stateUpdates.nextLevelXp === undefined) {
+              const levelXpTable: Record<number, number> = {
+                1: 0, 2: 300, 3: 900, 4: 2700, 5: 6500, 6: 14000, 
+                7: 23000, 8: 34000, 9: 48000, 10: 64000, 11: 85000,
+                12: 100000, 13: 120000, 14: 140000, 15: 165000,
+                16: 195000, 17: 225000, 18: 265000, 19: 305000, 20: 355000
+              };
+              updated.character.nextLevelXp = levelXpTable[stateUpdates.level + 1] || 355000;
+            }
           }
           
           // Update character stats
@@ -372,6 +385,9 @@ export default function NarrativePanel({
           }
           if (stateUpdates.xp !== undefined) {
             updated.character.xp = stateUpdates.xp;
+          }
+          if (stateUpdates.nextLevelXp !== undefined) {
+            updated.character.nextLevelXp = stateUpdates.nextLevelXp;
           }
           
           // Update attributes if changed

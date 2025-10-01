@@ -14,8 +14,9 @@ export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adven
 
 Your task:
 1. Generate a brief 2-3 sentence summary capturing the key events (for history tracking)
-2. Identify ALL state changes including: character details (name, class, age, level), health, gold, XP, attributes, status effects, location, quests, inventory, spells, companions, and encountered characters
+2. Identify ALL state changes including: character details (name, RACE, class, age, level), health (hp, maxHp), gold, XP (xp, nextLevelXp), attributes, status effects, location, quests, inventory, spells, companions, and encountered characters
 3. Be precise with nuance - capture important details without being verbose
+4. CRITICAL: If the narrative mentions the character is a different race, class, or level than before, you MUST include those fields in stateUpdates
 
 Return ONLY a valid JSON object (no code fences, no prose, no comments). Use this exact structure:
 {
@@ -29,6 +30,7 @@ Return ONLY a valid JSON object (no code fences, no prose, no comments). Use thi
     "maxHp": number | undefined (maximum HP if it changed - MUST BE NUMBER),
     "gold": number | undefined (current gold if it changed - MUST BE NUMBER),
     "xp": number | undefined (current XP if it changed - MUST BE NUMBER),
+    "nextLevelXp": number | undefined (XP needed for next level if it changed - MUST BE NUMBER),
     "attributes": { "str": number, "dex": number, "con": number, "int": number, "wis": number, "cha": number } | undefined (any attributes that changed),
     "location": { "name": string, "description": string } | undefined (if location changed),
     "statusEffects": [{ "id": string, "name": string, "description": string, "icon": string, "turnsRemaining": number }] | undefined (current active effects),
@@ -44,9 +46,11 @@ Return ONLY a valid JSON object (no code fences, no prose, no comments). Use thi
 CRITICAL FORMATTING RULES:
 - Return ONLY the JSON object - no markdown code fences, no explanatory text
 - Use strict JSON: no trailing commas, no comments, use double quotes only
-- Use correct types: numbers for hp/gold/xp/level, strings for age/name/class
+- Use correct types: numbers for hp/gold/xp/level/nextLevelXp, strings for age/name/class/race
+- Include ALL fields that changed - if narrative says "level 5 half-elf", include both level AND race
 - Only include fields in stateUpdates that actually changed
-- The recap field is ALWAYS required`;
+- The recap field is ALWAYS required
+- When level changes, also update nextLevelXp (level 2=300, level 3=900, level 4=2700, level 5=6500, level 6=14000, level 7=23000, etc.)`;
 
 
 export function createDefaultGameState(): GameStateData {
