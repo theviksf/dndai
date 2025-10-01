@@ -124,39 +124,45 @@ function validateAndCoerceParserData(data: any): any {
     const updates = data.stateUpdates;
     result.stateUpdates = {};
     
-    // Coerce string fields
-    if (updates.name !== undefined) result.stateUpdates.name = String(updates.name);
-    if (updates.class !== undefined) result.stateUpdates.class = String(updates.class);
-    if (updates.age !== undefined) result.stateUpdates.age = String(updates.age);
+    // Handle both flat and nested structures (parser sometimes returns nested character object)
+    const char = updates.character || updates;
+    
+    // Coerce string fields from character (nested or flat)
+    if (char.name !== undefined) result.stateUpdates.name = String(char.name);
+    if (char.class !== undefined) result.stateUpdates.class = String(char.class);
+    if (char.age !== undefined) result.stateUpdates.age = String(char.age);
     
     // Coerce numeric fields with finite check
-    if (updates.level !== undefined) {
-      const level = Number(updates.level);
+    if (char.level !== undefined) {
+      const level = Number(char.level);
       if (Number.isFinite(level) && level >= 1) {
         result.stateUpdates.level = Math.floor(level);
       }
     }
-    if (updates.hp !== undefined) {
-      const hp = Number(updates.hp);
+    if (char.hp !== undefined) {
+      const hp = Number(char.hp);
       if (Number.isFinite(hp) && hp >= 0) {
         result.stateUpdates.hp = Math.floor(hp);
       }
     }
-    if (updates.gold !== undefined) {
-      const gold = Number(updates.gold);
+    if (char.gold !== undefined) {
+      const gold = Number(char.gold);
       if (Number.isFinite(gold) && gold >= 0) {
         result.stateUpdates.gold = Math.floor(gold);
       }
     }
-    if (updates.xp !== undefined) {
-      const xp = Number(updates.xp);
+    if (char.xp !== undefined) {
+      const xp = Number(char.xp);
       if (Number.isFinite(xp) && xp >= 0) {
         result.stateUpdates.xp = Math.floor(xp);
       }
     }
     
-    // Copy complex fields as-is
-    if (updates.attributes !== undefined) result.stateUpdates.attributes = updates.attributes;
+    // Handle attributes from nested or flat structure
+    const attrs = char.attributes || updates.attributes;
+    if (attrs !== undefined) result.stateUpdates.attributes = attrs;
+    
+    // Copy complex fields as-is (always at top level of stateUpdates)
     if (updates.location !== undefined) result.stateUpdates.location = updates.location;
     if (updates.statusEffects !== undefined) {
       result.stateUpdates.statusEffects = Array.isArray(updates.statusEffects) 

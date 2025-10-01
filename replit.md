@@ -78,6 +78,10 @@ Preferred communication style: Simple, everyday language.
   - Fallback 1: Direct JSON parsing of response
   - Fallback 2: Balanced-brace scanning to extract JSON objects
   - Sanitization: Removes BOM, normalizes smart quotes, strips trailing commas
+- **Dual Structure Support**: Parser validation handles both flat and nested JSON structures
+  - Flat: `stateUpdates.level`, `stateUpdates.class`, `stateUpdates.companions`
+  - Nested: `stateUpdates.character.level`, `stateUpdates.character.class`, plus top-level arrays
+  - Ensures companions, level changes, and class changes are always extracted correctly
 - **Type Coercion**: Validates and coerces parsed data to expected types with finite number checks
 - **Defensive Defaults**: All UI components use defensive defaults (|| []) to handle undefined fields gracefully
 - **Graceful Degradation**: If parser fails, game continues with narrative-only update (no state changes)
