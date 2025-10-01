@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker } from '@/lib/game-state';
+import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt } from '@/lib/game-state';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
 import CharacterStats from '@/components/character-stats';
 import NarrativePanel from '@/components/narrative-panel';
@@ -28,7 +28,8 @@ export default function Home() {
   const [config, setConfig] = useState<GameConfig>(() => {
     // Load config from localStorage
     const savedConfig = localStorage.getItem('gameConfig');
-    return savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
+    const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
+    return migrateParserPrompt(loadedConfig);
   });
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
   const [isGameStarted, setIsGameStarted] = useState(() => {
@@ -93,7 +94,8 @@ export default function Home() {
         const gameStarted = localStorage.getItem('isGameStarted');
         
         if (savedConfig) {
-          setConfig(JSON.parse(savedConfig));
+          const loadedConfig = JSON.parse(savedConfig);
+          setConfig(migrateParserPrompt(loadedConfig));
         }
         if (savedCharacter) {
           setGameState(prev => ({

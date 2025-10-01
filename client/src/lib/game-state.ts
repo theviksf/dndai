@@ -161,6 +161,25 @@ export function createDefaultConfig(): GameConfig {
   };
 }
 
+export function migrateParserPrompt(config: GameConfig): GameConfig {
+  // Check if config has old parser prompt (contains "questUpdates" or missing "companions")
+  const hasOldPrompt = 
+    config.parserSystemPrompt.includes('questUpdates') || 
+    !config.parserSystemPrompt.includes('companions') ||
+    !config.parserSystemPrompt.includes('encounteredCharacters') ||
+    !config.parserSystemPrompt.includes('spells');
+  
+  if (hasOldPrompt) {
+    console.log('Migrating old parser prompt to new comprehensive version');
+    return {
+      ...config,
+      parserSystemPrompt: PARSER_SYSTEM_PROMPT,
+    };
+  }
+  
+  return config;
+}
+
 export function createDefaultCostTracker(): CostTracker {
   return {
     sessionCost: 0,

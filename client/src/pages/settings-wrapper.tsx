@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultConfig } from '@/lib/game-state';
+import { createDefaultConfig, migrateParserPrompt } from '@/lib/game-state';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import SettingsPage from '@/pages/settings';
 
@@ -11,7 +11,8 @@ export default function SettingsWrapper() {
   const [config, setConfig] = useState<GameConfig>(() => {
     // Try to load config from localStorage
     const savedConfig = localStorage.getItem('gameConfig');
-    return savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
+    const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
+    return migrateParserPrompt(loadedConfig);
   });
 
   // Fetch OpenRouter models
