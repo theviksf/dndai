@@ -5,7 +5,6 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker } from '@/lib/game-state';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
-import CharacterCreationModal from '@/components/character-creation-modal';
 import CharacterStats from '@/components/character-stats';
 import NarrativePanel from '@/components/narrative-panel';
 import InventoryQuestPanel from '@/components/inventory-quest-panel';
@@ -17,15 +16,24 @@ export default function Home() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
-  const [gameState, setGameState] = useState<GameStateData>(createDefaultGameState());
+  const [gameState, setGameState] = useState<GameStateData>(() => {
+    const defaultState = createDefaultGameState();
+    // Load character from localStorage if exists
+    const savedCharacter = localStorage.getItem('gameCharacter');
+    if (savedCharacter) {
+      defaultState.character = JSON.parse(savedCharacter);
+    }
+    return defaultState;
+  });
   const [config, setConfig] = useState<GameConfig>(() => {
     // Load config from localStorage
     const savedConfig = localStorage.getItem('gameConfig');
     return savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
   });
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
-  const [showCharacterCreation, setShowCharacterCreation] = useState(false);
-  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isGameStarted, setIsGameStarted] = useState(() => {
+    return localStorage.getItem('isGameStarted') === 'true';
+  });
 
   // Fetch OpenRouter models
   const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
@@ -63,40 +71,46 @@ export default function Home() {
     },
   });
 
-  // Show settings on first load if no game started
+  // Show settings on first load if no API key
   useEffect(() => {
-    if (!isGameStarted && !config.openRouterApiKey) {
+    if (!config.openRouterApiKey) {
       setLocation('/settings');
+    } else if (!gameState.character.name) {
+      // If we have API key but no character, go to character creation
+      setLocation('/character-creation');
     }
   }, []);
 
-  // Reload config when returning from settings
+  // Reload config and character when page is visible again (returning from other pages)
   useEffect(() => {
-    const savedConfig = localStorage.getItem('gameConfig');
-    if (savedConfig) {
-      setConfig(JSON.parse(savedConfig));
-    }
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        const savedConfig = localStorage.getItem('gameConfig');
+        const savedCharacter = localStorage.getItem('gameCharacter');
+        const gameStarted = localStorage.getItem('isGameStarted');
+        
+        if (savedConfig) {
+          setConfig(JSON.parse(savedConfig));
+        }
+        if (savedCharacter) {
+          setGameState(prev => ({
+            ...prev,
+            character: JSON.parse(savedCharacter)
+          }));
+        }
+        if (gameStarted === 'true') {
+          setIsGameStarted(true);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const handleSaveGame = () => {
     saveMutation.mutate();
   };
-
-  const handleCharacterCreated = (character: GameStateData['character']) => {
-    setGameState(prev => ({
-      ...prev,
-      character,
-    }));
-    setShowCharacterCreation(false);
-    setIsGameStarted(true);
-  };
-
-  // Show character creation modal if returning from settings with API key but no character
-  useEffect(() => {
-    if (config.openRouterApiKey && !isGameStarted && !gameState.character.name) {
-      setShowCharacterCreation(true);
-    }
-  }, [config.openRouterApiKey]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -165,13 +179,6 @@ export default function Home() {
           <InventoryQuestPanel inventory={gameState.inventory} quests={gameState.quests} />
         </div>
       </div>
-
-      {/* Character Creation Modal */}
-      <CharacterCreationModal
-        open={showCharacterCreation}
-        onOpenChange={setShowCharacterCreation}
-        onComplete={handleCharacterCreated}
-      />
     </div>
   );
 }
