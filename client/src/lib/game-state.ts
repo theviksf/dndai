@@ -17,8 +17,13 @@ CRITICAL EXTRACTION RULES:
 2. Look for ability score changes: If narrative says "+2 CHA" or "CHA 17", extract attributes.cha:17
 3. Look for XP thresholds: If narrative says "650/1800 XP" or "enough XP for level X", extract xp:650 AND nextLevelXp:1800
 4. Look for HP changes: If narrative says "33/33 HP", extract hp:33 AND maxHp:33
-5. Extract ALL companions, NPCs, inventory items, quests, spells, and location changes mentioned
-6. Generate a brief 2-3 sentence summary (recap) of key events
+5. COMPANIONS vs ENCOUNTERED CHARACTERS:
+   - companions = party members who travel with the player (Lyra the fighter, Borin the cleric, etc.)
+   - encounteredCharacters = other NPCs met during adventure (village elders, quest givers, enemies, etc.)
+6. SPELLS: Each spell must be a separate object with: id, name, level (number 0-9), school, description, icon
+   - DO NOT group spells by level or use nested structures
+   - Extract each individual spell mentioned
+7. Generate a brief 2-3 sentence summary (recap) of key events
 
 Return ONLY a valid JSON object (no code fences, no prose, no comments). Use this exact structure:
 {
@@ -68,6 +73,32 @@ Extract:
     "attributes": { "cha": 17 }
   },
   "recap": "Charisma increased to 17"
+}
+
+Narrative: "You learn the spells Fireball and Shield"
+Extract:
+{
+  "stateUpdates": {
+    "spells": [
+      {"id": "fireball", "name": "Fireball", "level": 3, "school": "Evocation", "description": "A bright streak flashes to a point and blossoms into flame", "icon": "🔥"},
+      {"id": "shield", "name": "Shield", "level": 1, "school": "Abjuration", "description": "An invisible barrier of magical force appears", "icon": "🛡️"}
+    ]
+  },
+  "recap": "Learned Fireball and Shield spells"
+}
+
+Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. You also meet Elder Morin."
+Extract:
+{
+  "stateUpdates": {
+    "companions": [
+      {"id": "lyra", "name": "Lyra", "race": "Human", "age": "28", "class": "Fighter", "level": 5, "appearance": "Fiery fighter with scarred knuckles", "personality": "Bold and determined", "criticalMemories": "", "feelingsTowardsPlayer": "Loyal ally", "relationship": "Party member"}
+    ],
+    "encounteredCharacters": [
+      {"id": "morin", "name": "Elder Morin", "role": "Village Elder", "appearance": "Elderly human with wise eyes", "description": "Village elder who provides quests"}
+    ]
+  },
+  "recap": "Lyra and Borin joined the party, met Elder Morin"
 }
 
 CRITICAL FORMATTING RULES:

@@ -188,9 +188,50 @@ function validateAndCoerceParserData(data: any): any {
         : [updates.inventory];
     }
     if (updates.spells !== undefined) {
-      result.stateUpdates.spells = Array.isArray(updates.spells) 
-        ? updates.spells 
-        : [updates.spells];
+      let spellsList = Array.isArray(updates.spells) ? updates.spells : [updates.spells];
+      
+      // Normalize spells - parser sometimes returns grouped structure
+      // Check if first item has cantrips/1stLevel/etc instead of proper spell objects
+      if (spellsList.length > 0 && spellsList[0].cantrips !== undefined) {
+        console.warn('Parser returned grouped spell structure, flattening to individual spells');
+        const grouped = spellsList[0];
+        const flatSpells: any[] = [];
+        
+        // Extract cantrips (level 0)
+        if (grouped.cantrips) {
+          grouped.cantrips.forEach((name: string, idx: number) => {
+            flatSpells.push({
+              id: `cantrip-${name.toLowerCase().replace(/\s+/g, '-')}`,
+              name,
+              level: 0,
+              school: 'Evocation',
+              description: `Cantrip: ${name}`,
+              icon: '✨'
+            });
+          });
+        }
+        
+        // Extract leveled spells
+        ['1stLevel', '2ndLevel', '3rdLevel', '4thLevel', '5thLevel', '6thLevel', '7thLevel', '8thLevel', '9thLevel'].forEach((key, levelIdx) => {
+          const level = levelIdx + 1;
+          if (grouped[key]) {
+            grouped[key].forEach((name: string) => {
+              flatSpells.push({
+                id: `spell-${name.toLowerCase().replace(/\s+/g, '-')}`,
+                name,
+                level,
+                school: 'Evocation',
+                description: `Level ${level} spell: ${name}`,
+                icon: level <= 3 ? '✨' : level <= 6 ? '🔮' : '⚡'
+              });
+            });
+          }
+        });
+        
+        result.stateUpdates.spells = flatSpells;
+      } else {
+        result.stateUpdates.spells = spellsList;
+      }
     }
     if (updates.quests !== undefined) {
       result.stateUpdates.quests = Array.isArray(updates.quests) 
@@ -409,6 +450,13 @@ export default function NarrativePanel({
           // Update maxHp first if provided, then hp
           if (stateUpdates.maxHp !== undefined) {
             updated.character.maxHp = stateUpdates.maxHp;
+            
+            // If maxHp increased but hp wasn't specified, heal to new max
+            // (this handles level-up scenarios where HP increases)
+            if (stateUpdates.hp === undefined && stateUpdates.maxHp > prev.character.hp) {
+              updated.character.hp = stateUpdates.maxHp;
+              console.log(`MaxHP increased to ${stateUpdates.maxHp}, healing HP to match`);
+            }
           }
           if (stateUpdates.hp !== undefined) {
             // If new HP is higher than current maxHp, increase maxHp to match
