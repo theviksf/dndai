@@ -59,7 +59,7 @@ export default function SettingsModal({ open, onOpenChange, config, onSave, mode
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] bg-card border-2 border-border ornate-border parchment-texture">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-card border-2 border-border ornate-border parchment-texture">
         <DialogHeader>
           <DialogTitle className="text-3xl font-serif font-bold text-primary">Game Settings</DialogTitle>
         </DialogHeader>
