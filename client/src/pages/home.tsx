@@ -176,7 +176,13 @@ export default function Home() {
             setCostTracker={setCostTracker}
             models={models || []}
           />
-          <InventoryQuestPanel inventory={gameState.inventory} quests={gameState.quests} history={gameState.parsedRecaps || []} />
+          <InventoryQuestPanel 
+            inventory={gameState.inventory} 
+            quests={gameState.quests} 
+            companions={gameState.companions} 
+            encounteredCharacters={gameState.encounteredCharacters} 
+            history={gameState.parsedRecaps || []} 
+          />
         </div>
       </div>
     </div>

@@ -1,14 +1,16 @@
 import type { GameStateData } from '@shared/schema';
-import { Package, ScrollText, CheckCircle2, BookOpen } from 'lucide-react';
+import { Package, ScrollText, CheckCircle2, BookOpen, Users, UserCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface InventoryQuestPanelProps {
   inventory: GameStateData['inventory'];
   quests: GameStateData['quests'];
+  companions: GameStateData['companions'];
+  encounteredCharacters: GameStateData['encounteredCharacters'];
   history: string[];
 }
 
-export default function InventoryQuestPanel({ inventory, quests, history }: InventoryQuestPanelProps) {
+export default function InventoryQuestPanel({ inventory, quests, companions, encounteredCharacters, history }: InventoryQuestPanelProps) {
   const activeQuests = quests.filter(q => !q.completed);
   const completedQuests = quests.filter(q => q.completed);
 
@@ -184,6 +186,101 @@ export default function InventoryQuestPanel({ inventory, quests, history }: Inve
                 </div>
               ))}
             </>
+          )}
+        </div>
+      </div>
+
+      {/* Companions */}
+      <div className="bg-card border-2 border-border rounded-lg ornate-border parchment-texture overflow-hidden">
+        <div className="bg-gradient-to-b from-primary/20 to-transparent p-4 border-b border-border">
+          <h2 className="text-xl font-serif font-semibold text-primary flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Companions
+          </h2>
+        </div>
+
+        <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
+          {companions.length > 0 ? (
+            companions.map(companion => (
+              <div
+                key={companion.id}
+                className="bg-muted/30 border-2 border-border rounded-md p-3"
+                data-testid={`companion-${companion.id}`}
+              >
+                <div className="mb-2">
+                  <div className="text-sm font-serif font-semibold text-primary">{companion.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {companion.race} {companion.class} • Level {companion.level} • Age {companion.age}
+                  </div>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <span className="font-semibold text-foreground">Appearance: </span>
+                    <span className="text-muted-foreground">{companion.appearance}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">Personality: </span>
+                    <span className="text-muted-foreground">{companion.personality}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">Memories: </span>
+                    <span className="text-muted-foreground">{companion.criticalMemories}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">Feelings: </span>
+                    <span className="text-muted-foreground">{companion.feelingsTowardsPlayer}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">Relationship: </span>
+                    <span className="text-muted-foreground">{companion.relationship}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-sm text-muted-foreground">
+              No companions yet
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Encountered Characters */}
+      <div className="bg-card border-2 border-border rounded-lg ornate-border parchment-texture overflow-hidden">
+        <div className="bg-gradient-to-b from-primary/20 to-transparent p-4 border-b border-border">
+          <h2 className="text-xl font-serif font-semibold text-primary flex items-center gap-2">
+            <UserCircle2 className="w-5 h-5" />
+            Encountered Characters
+          </h2>
+        </div>
+
+        <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
+          {encounteredCharacters.length > 0 ? (
+            encounteredCharacters.map(character => (
+              <div
+                key={character.id}
+                className="bg-muted/30 border border-border rounded-md p-3"
+                data-testid={`encountered-character-${character.id}`}
+              >
+                <div className="mb-1">
+                  <div className="text-sm font-serif font-semibold text-primary">{character.name}</div>
+                  <div className="text-xs text-accent">{character.role}</div>
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div>
+                    <span className="font-semibold text-foreground">Appearance: </span>
+                    <span className="text-muted-foreground">{character.appearance}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{character.description}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-sm text-muted-foreground">
+              No characters encountered yet
+            </div>
           )}
         </div>
       </div>
