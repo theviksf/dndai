@@ -318,6 +318,9 @@ export default function NarrativePanel({
       try {
         const extracted = extractAndParseJSON(parserResponse.content);
         parsedData = validateAndCoerceParserData(extracted);
+        
+        // Debug: Log what we extracted
+        console.log('Parser extracted:', parsedData.stateUpdates);
       } catch (error: any) {
         // Log the raw response for debugging
         console.error('Failed to parse parser response:', error.message);
@@ -364,8 +367,15 @@ export default function NarrativePanel({
                 12: 100000, 13: 120000, 14: 140000, 15: 165000,
                 16: 195000, 17: 225000, 18: 265000, 19: 305000, 20: 355000
               };
-              updated.character.nextLevelXp = levelXpTable[stateUpdates.level + 1] || 355000;
+              const computedNextLevel = levelXpTable[stateUpdates.level + 1] || 355000;
+              updated.character.nextLevelXp = computedNextLevel;
+              console.log(`Level changed to ${stateUpdates.level}, auto-computed nextLevelXp to ${computedNextLevel}`);
             }
+          }
+          
+          if (stateUpdates.nextLevelXp !== undefined) {
+            updated.character.nextLevelXp = stateUpdates.nextLevelXp;
+            console.log(`Setting nextLevelXp from parser: ${stateUpdates.nextLevelXp}`);
           }
           
           // Update character stats
