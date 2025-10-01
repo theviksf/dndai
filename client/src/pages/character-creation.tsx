@@ -31,6 +31,7 @@ const CLASSES = [
 export default function CharacterCreationPage({ onComplete }: CharacterCreationPageProps) {
   const [, setLocation] = useLocation();
   const [name, setName] = useState('');
+  const [age, setAge] = useState('');
   const [selectedRace, setSelectedRace] = useState('elf');
   const [selectedClass, setSelectedClass] = useState('');
   const [attributes, setAttributes] = useState({
@@ -89,6 +90,7 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
       name,
       race: RACES.find(r => r.id === selectedRace)?.name || '',
       class: CLASSES.find(c => c.id === selectedClass)?.name || '',
+      age: age || 'Unknown',
       level: 1,
       xp: 0,
       nextLevelXp: 300,
@@ -137,6 +139,18 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
                 placeholder="Enter your character's name..."
                 className="bg-input border-border"
                 data-testid="input-character-name"
+              />
+            </div>
+
+            {/* Character Age */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-foreground">Age (Optional)</label>
+              <Input
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="Enter your character's age..."
+                className="bg-input border-border"
+                data-testid="input-character-age"
               />
             </div>
 

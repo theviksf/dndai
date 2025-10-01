@@ -49,6 +49,37 @@ export type Quest = {
   };
 };
 
+export type Spell = {
+  id: string;
+  name: string;
+  level: number;
+  school: string;
+  description: string;
+  icon: string;
+};
+
+export type Companion = {
+  id: string;
+  name: string;
+  race: string;
+  age: string;
+  class: string;
+  level: number;
+  appearance: string;
+  personality: string;
+  criticalMemories: string;
+  feelingsTowardsPlayer: string;
+  relationship: string;
+};
+
+export type EncounteredCharacter = {
+  id: string;
+  name: string;
+  role: string;
+  appearance: string;
+  description: string;
+};
+
 export type NarrativeMessage = {
   id: string;
   type: 'dm' | 'player';
@@ -65,6 +96,7 @@ export type GameCharacter = {
   name: string;
   race: string;
   class: string;
+  age: string;
   level: number;
   xp: number;
   nextLevelXp: number;
@@ -81,8 +113,11 @@ export type GameStateData = {
     description: string;
   };
   inventory: InventoryItem[];
+  spells: Spell[];
   statusEffects: StatusEffect[];
   quests: Quest[];
+  companions: Companion[];
+  encounteredCharacters: EncounteredCharacter[];
   narrativeHistory: NarrativeMessage[];
   parsedRecaps: string[];
   turnCount: number;
