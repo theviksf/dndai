@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker } from '@/lib/game-state';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
-import SettingsModal from '@/components/settings-modal';
+import SettingsPage from '@/pages/settings';
 import CharacterCreationModal from '@/components/character-creation-modal';
 import CharacterStats from '@/components/character-stats';
 import NarrativePanel from '@/components/narrative-panel';
@@ -15,11 +16,11 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
   const [gameState, setGameState] = useState<GameStateData>(createDefaultGameState());
   const [config, setConfig] = useState<GameConfig>(createDefaultConfig());
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
-  const [showSettings, setShowSettings] = useState(false);
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
   const [isGameStarted, setIsGameStarted] = useState(false);
 
@@ -61,10 +62,10 @@ export default function Home() {
 
   // Show settings on first load if no game started
   useEffect(() => {
-    if (!isGameStarted) {
-      setShowSettings(true);
+    if (!isGameStarted && location === '/') {
+      setLocation('/settings');
     }
-  }, []);
+  }, [isGameStarted, location, setLocation]);
 
   const handleSaveGame = () => {
     saveMutation.mutate();
@@ -72,7 +73,6 @@ export default function Home() {
 
   const handleConfigSave = (newConfig: GameConfig) => {
     setConfig(newConfig);
-    setShowSettings(false);
     if (!isGameStarted) {
       setShowCharacterCreation(true);
     }
@@ -87,6 +87,19 @@ export default function Home() {
     setIsGameStarted(true);
   };
 
+  // Render settings page if on settings route
+  if (location === '/settings') {
+    return (
+      <SettingsPage
+        config={config}
+        onSave={handleConfigSave}
+        models={models || []}
+        onRefreshModels={() => refetchModels()}
+      />
+    );
+  }
+
+  // Render game UI
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
@@ -126,7 +139,7 @@ export default function Home() {
               </Button>
               
               <Button
-                onClick={() => setShowSettings(true)}
+                onClick={() => setLocation('/settings')}
                 variant="outline"
                 className="bg-muted hover:bg-muted/80"
                 data-testid="button-settings"
@@ -155,16 +168,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Modals */}
-      <SettingsModal
-        open={showSettings}
-        onOpenChange={setShowSettings}
-        config={config}
-        onSave={handleConfigSave}
-        models={models || []}
-        onRefreshModels={() => refetchModels()}
-      />
-      
+      {/* Character Creation Modal */}
       <CharacterCreationModal
         open={showCharacterCreation}
         onOpenChange={setShowCharacterCreation}
