@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import { RECOMMENDED_CONFIGS, estimateTurnCost } from '@/lib/openrouter';
-import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText } from 'lucide-react';
+import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText, RefreshCw } from 'lucide-react';
 
 interface SettingsModalProps {
   open: boolean;
@@ -15,9 +16,10 @@ interface SettingsModalProps {
   config: GameConfig;
   onSave: (config: GameConfig) => void;
   models: OpenRouterModel[];
+  onRefreshModels: () => void;
 }
 
-export default function SettingsModal({ open, onOpenChange, config, onSave, models }: SettingsModalProps) {
+export default function SettingsModal({ open, onOpenChange, config, onSave, models, onRefreshModels }: SettingsModalProps) {
   const [localConfig, setLocalConfig] = useState<GameConfig>(config);
   const [estimatedCost, setEstimatedCost] = useState(0);
   
@@ -50,162 +52,209 @@ export default function SettingsModal({ open, onOpenChange, config, onSave, mode
     onSave(localConfig);
   };
 
+  const handleSaveApiKey = () => {
+    onSave(localConfig);
+    onRefreshModels();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-2 border-border ornate-border parchment-texture">
+      <DialogContent className="max-w-4xl max-h-[85vh] bg-card border-2 border-border ornate-border parchment-texture">
         <DialogHeader>
           <DialogTitle className="text-3xl font-serif font-bold text-primary">Game Settings</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* API Key */}
-          <section className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Key className="w-6 h-6 text-primary" />
-              <h3 className="text-xl font-serif font-semibold text-primary">OpenRouter API Key</h3>
-            </div>
-            <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-              <label className="block text-sm font-semibold text-foreground">
-                API Key <span className="text-destructive">*</span>
-              </label>
-              <Input
-                type="password"
-                value={localConfig.openRouterApiKey}
-                onChange={(e) => setLocalConfig(prev => ({ ...prev, openRouterApiKey: e.target.value }))}
-                placeholder="sk-or-v1-..."
-                className="font-mono text-sm bg-input border-border"
-                data-testid="input-api-key"
-              />
-              <p className="text-xs text-muted-foreground">
-                Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a>
-              </p>
-            </div>
-          </section>
+        <Tabs defaultValue="api-key" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/50">
+            <TabsTrigger value="api-key" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Key className="w-4 h-4 mr-2" />
+              API Key
+            </TabsTrigger>
+            <TabsTrigger value="models" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Cpu className="w-4 h-4 mr-2" />
+              Models
+            </TabsTrigger>
+            <TabsTrigger value="prompts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <FileText className="w-4 h-4 mr-2" />
+              Prompts
+            </TabsTrigger>
+            <TabsTrigger value="game" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Settings2 className="w-4 h-4 mr-2" />
+              Game
+            </TabsTrigger>
+          </TabsList>
 
-          {/* LLM Configuration */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 mb-4">
-              <Cpu className="w-6 h-6 text-primary" />
-              <h3 className="text-xl font-serif font-semibold text-primary">LLM Configuration</h3>
-            </div>
-
-            {/* Primary LLM */}
-            <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-              <label className="block text-sm font-semibold text-foreground">
-                Primary LLM <span className="text-primary">(Narrative Generation)</span>
-              </label>
-              <Select 
-                value={localConfig.primaryLLM} 
-                onValueChange={(value) => setLocalConfig(prev => ({ ...prev, primaryLLM: value }))}
-              >
-                <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-primary-llm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map(model => (
-                    <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                      {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Parser LLM */}
-            <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-              <label className="block text-sm font-semibold text-foreground">
-                Parser LLM <span className="text-primary">(State Extraction)</span>
-              </label>
-              <Select 
-                value={localConfig.parserLLM} 
-                onValueChange={(value) => setLocalConfig(prev => ({ ...prev, parserLLM: value }))}
-              >
-                <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-parser-llm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map(model => (
-                    <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                      {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Cost Estimate */}
-            <div className="bg-accent/10 border-2 border-accent rounded-md p-4 glow-effect">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">Estimated Cost per Turn:</span>
-                <span className="text-2xl font-mono font-bold text-accent" data-testid="text-estimated-cost">
-                  ${estimatedCost.toFixed(4)}
-                </span>
+          {/* API Key Tab */}
+          <TabsContent value="api-key" className="space-y-4 mt-4">
+            <div className="bg-muted/30 border border-border rounded-md p-6 space-y-4">
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-foreground">
+                  OpenRouter API Key <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="password"
+                  value={localConfig.openRouterApiKey}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, openRouterApiKey: e.target.value }))}
+                  placeholder="sk-or-v1-..."
+                  className="font-mono text-sm bg-input border-border"
+                  data-testid="input-api-key"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a>
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Based on ~1500 prompt + 600 completion tokens</p>
-            </div>
 
-            {/* Presets */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-foreground">Quick Presets:</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex gap-3 pt-2">
                 <Button 
-                  onClick={() => handlePresetConfig('premium')}
-                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground h-auto py-3"
-                  data-testid="button-preset-premium"
+                  onClick={handleSaveApiKey}
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                  data-testid="button-save-api-key"
+                  disabled={!localConfig.openRouterApiKey}
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  <div className="text-left">
-                    <div className="text-sm font-semibold">Premium</div>
-                    <div className="text-xs opacity-80">Best quality</div>
-                  </div>
-                </Button>
-
-                <Button 
-                  onClick={() => handlePresetConfig('balanced')}
-                  className="bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-accent-foreground h-auto py-3"
-                  data-testid="button-preset-balanced"
-                >
-                  <Scale className="w-5 h-5 mr-2" />
-                  <div className="text-left">
-                    <div className="text-sm font-semibold">Balanced</div>
-                    <div className="text-xs opacity-80">Great value</div>
-                  </div>
-                </Button>
-
-                <Button 
-                  onClick={() => handlePresetConfig('budget')}
-                  className="bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-secondary-foreground h-auto py-3"
-                  data-testid="button-preset-budget"
-                >
-                  <DollarSign className="w-5 h-5 mr-2" />
-                  <div className="text-left">
-                    <div className="text-sm font-semibold">Budget</div>
-                    <div className="text-xs opacity-80">Cost effective</div>
-                  </div>
-                </Button>
-
-                <Button 
-                  onClick={() => handlePresetConfig('experimental')}
-                  className="bg-gradient-to-r from-muted to-muted/80 hover:from-muted/90 hover:to-muted/70 text-foreground h-auto py-3"
-                  data-testid="button-preset-experimental"
-                >
-                  <FlaskConical className="w-5 h-5 mr-2" />
-                  <div className="text-left">
-                    <div className="text-sm font-semibold">Experimental</div>
-                    <div className="text-xs opacity-80">Open source</div>
-                  </div>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Save & Load Models
                 </Button>
               </div>
-            </div>
-          </section>
 
-          {/* Prompts */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-primary" />
-              <h3 className="text-xl font-serif font-semibold text-primary">System Prompts</h3>
+              <div className="bg-accent/10 border border-accent rounded-md p-4 mt-4">
+                <p className="text-sm text-foreground">
+                  <strong>Important:</strong> After entering your API key, click "Save & Load Models" to fetch available models from OpenRouter.
+                </p>
+              </div>
             </div>
+          </TabsContent>
 
+          {/* Models Tab */}
+          <TabsContent value="models" className="space-y-4 mt-4">
+            {models.length === 0 ? (
+              <div className="bg-muted/30 border border-border rounded-md p-6 text-center space-y-4">
+                <p className="text-muted-foreground">No models loaded. Please enter your API key in the API Key tab first.</p>
+                <Button 
+                  onClick={onRefreshModels}
+                  variant="outline"
+                  disabled={!localConfig.openRouterApiKey}
+                  data-testid="button-refresh-models"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Models
+                </Button>
+              </div>
+            ) : (
+              <>
+                {/* Primary LLM */}
+                <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Primary LLM <span className="text-primary">(Narrative Generation)</span>
+                  </label>
+                  <Select 
+                    value={localConfig.primaryLLM} 
+                    onValueChange={(value) => setLocalConfig(prev => ({ ...prev, primaryLLM: value }))}
+                  >
+                    <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-primary-llm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {models.map(model => (
+                        <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                          {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Parser LLM */}
+                <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Parser LLM <span className="text-primary">(State Extraction)</span>
+                  </label>
+                  <Select 
+                    value={localConfig.parserLLM} 
+                    onValueChange={(value) => setLocalConfig(prev => ({ ...prev, parserLLM: value }))}
+                  >
+                    <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-parser-llm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {models.map(model => (
+                        <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                          {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Cost Estimate */}
+                <div className="bg-accent/10 border-2 border-accent rounded-md p-4 glow-effect">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-foreground">Estimated Cost per Turn:</span>
+                    <span className="text-2xl font-mono font-bold text-accent" data-testid="text-estimated-cost">
+                      ${estimatedCost.toFixed(4)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Based on ~1500 prompt + 600 completion tokens</p>
+                </div>
+
+                {/* Presets */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground">Quick Presets:</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      onClick={() => handlePresetConfig('premium')}
+                      className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground h-auto py-3"
+                      data-testid="button-preset-premium"
+                    >
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      <div className="text-left">
+                        <div className="text-sm font-semibold">Premium</div>
+                        <div className="text-xs opacity-80">Best quality</div>
+                      </div>
+                    </Button>
+
+                    <Button 
+                      onClick={() => handlePresetConfig('balanced')}
+                      className="bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-accent-foreground h-auto py-3"
+                      data-testid="button-preset-balanced"
+                    >
+                      <Scale className="w-5 h-5 mr-2" />
+                      <div className="text-left">
+                        <div className="text-sm font-semibold">Balanced</div>
+                        <div className="text-xs opacity-80">Great value</div>
+                      </div>
+                    </Button>
+
+                    <Button 
+                      onClick={() => handlePresetConfig('budget')}
+                      className="bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-secondary-foreground h-auto py-3"
+                      data-testid="button-preset-budget"
+                    >
+                      <DollarSign className="w-5 h-5 mr-2" />
+                      <div className="text-left">
+                        <div className="text-sm font-semibold">Budget</div>
+                        <div className="text-xs opacity-80">Cost effective</div>
+                      </div>
+                    </Button>
+
+                    <Button 
+                      onClick={() => handlePresetConfig('experimental')}
+                      className="bg-gradient-to-r from-muted to-muted/80 hover:from-muted/90 hover:to-muted/70 text-foreground h-auto py-3"
+                      data-testid="button-preset-experimental"
+                    >
+                      <FlaskConical className="w-5 h-5 mr-2" />
+                      <div className="text-left">
+                        <div className="text-sm font-semibold">Experimental</div>
+                        <div className="text-xs opacity-80">Open source</div>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </TabsContent>
+
+          {/* Prompts Tab */}
+          <TabsContent value="prompts" className="space-y-4 mt-4">
             {/* DM Prompt */}
             <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
               <label className="block text-sm font-semibold text-foreground">
@@ -214,7 +263,7 @@ export default function SettingsModal({ open, onOpenChange, config, onSave, mode
               <Textarea
                 value={localConfig.dmSystemPrompt}
                 onChange={(e) => setLocalConfig(prev => ({ ...prev, dmSystemPrompt: e.target.value }))}
-                rows={6}
+                rows={8}
                 className="font-mono text-xs bg-input border-border"
                 data-testid="textarea-dm-prompt"
               />
@@ -228,20 +277,15 @@ export default function SettingsModal({ open, onOpenChange, config, onSave, mode
               <Textarea
                 value={localConfig.parserSystemPrompt}
                 onChange={(e) => setLocalConfig(prev => ({ ...prev, parserSystemPrompt: e.target.value }))}
-                rows={6}
+                rows={8}
                 className="font-mono text-xs bg-input border-border"
                 data-testid="textarea-parser-prompt"
               />
             </div>
-          </section>
+          </TabsContent>
 
-          {/* Game Settings */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Settings2 className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-serif font-semibold text-primary">Game Settings</h3>
-            </div>
-
+          {/* Game Settings Tab */}
+          <TabsContent value="game" className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground">Difficulty</label>
@@ -291,26 +335,26 @@ export default function SettingsModal({ open, onOpenChange, config, onSave, mode
                 data-testid="switch-autosave"
               />
             </div>
-          </section>
+          </TabsContent>
+        </Tabs>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button 
-              onClick={handleSave} 
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-              data-testid="button-save-settings"
-            >
-              Save & Start Game
-            </Button>
-            <Button 
-              onClick={() => onOpenChange(false)} 
-              variant="outline"
-              className="bg-muted hover:bg-muted/80"
-              data-testid="button-cancel-settings"
-            >
-              Cancel
-            </Button>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4 border-t border-border">
+          <Button 
+            onClick={handleSave} 
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+            data-testid="button-save-settings"
+          >
+            Save Settings
+          </Button>
+          <Button 
+            onClick={() => onOpenChange(false)} 
+            variant="outline"
+            className="bg-muted hover:bg-muted/80"
+            data-testid="button-cancel-settings"
+          >
+            Cancel
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

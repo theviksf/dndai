@@ -162,6 +162,7 @@ export default function Home() {
         config={config}
         onSave={handleConfigSave}
         models={models || []}
+        onRefreshModels={() => refetchModels()}
       />
       
       <CharacterCreationModal
