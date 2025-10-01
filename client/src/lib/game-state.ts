@@ -10,13 +10,15 @@ export const DM_SYSTEM_PROMPT = `You are an experienced Dungeon Master running a
 
 Keep responses vivid but concise (200-400 words). Include sensory details, dialogue from NPCs, and environmental descriptions. When skill checks are needed, specify the type and DC.`;
 
-export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adventure game. Analyze the DM's narrative response and extract structured data changes.
+export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adventure game. Your ONLY job is to extract structured data changes from the narrative.
 
-Your task:
-1. Generate a brief 2-3 sentence summary capturing the key events (for history tracking)
-2. Identify ALL state changes including: character details (name, RACE, class, age, level), health (hp, maxHp), gold, XP (xp, nextLevelXp), attributes, status effects, location, quests, inventory, spells, companions, and encountered characters
-3. Be precise with nuance - capture important details without being verbose
-4. CRITICAL: If the narrative mentions the character is a different race, class, or level than before, you MUST include those fields in stateUpdates
+CRITICAL EXTRACTION RULES:
+1. Look for character stat changes: If narrative says "Level 5", extract level:5. If it says "Half-Elf", extract race:"Half-Elf"
+2. Look for ability score changes: If narrative says "+2 CHA" or "CHA 17", extract attributes.cha:17
+3. Look for XP thresholds: If narrative says "650/1800 XP" or "enough XP for level X", extract xp:650 AND nextLevelXp:1800
+4. Look for HP changes: If narrative says "33/33 HP", extract hp:33 AND maxHp:33
+5. Extract ALL companions, NPCs, inventory items, quests, spells, and location changes mentioned
+6. Generate a brief 2-3 sentence summary (recap) of key events
 
 Return ONLY a valid JSON object (no code fences, no prose, no comments). Use this exact structure:
 {
@@ -43,14 +45,38 @@ Return ONLY a valid JSON object (no code fences, no prose, no comments). Use thi
   "recap": string (REQUIRED: 2-3 sentence summary capturing key events, enough nuance to not miss a beat but very brief)
 }
 
+EXAMPLE EXTRACTIONS:
+
+Narrative: "You are now a level 5 half-elf wizard with 33/33 HP and 650/1800 XP"
+Extract:
+{
+  "stateUpdates": {
+    "race": "Half-Elf",
+    "level": 5,
+    "hp": 33,
+    "maxHp": 33,
+    "xp": 650,
+    "nextLevelXp": 1800
+  },
+  "recap": "Character updated to level 5 half-elf wizard with increased HP"
+}
+
+Narrative: "Your charisma increases by +2 to 17"
+Extract:
+{
+  "stateUpdates": {
+    "attributes": { "cha": 17 }
+  },
+  "recap": "Charisma increased to 17"
+}
+
 CRITICAL FORMATTING RULES:
 - Return ONLY the JSON object - no markdown code fences, no explanatory text
 - Use strict JSON: no trailing commas, no comments, use double quotes only
-- Use correct types: numbers for hp/gold/xp/level/nextLevelXp, strings for age/name/class/race
+- Use correct types: numbers for hp/gold/xp/level/nextLevelXp/attributes, strings for age/name/class/race
 - Include ALL fields that changed - if narrative says "level 5 half-elf", include both level AND race
-- Only include fields in stateUpdates that actually changed
-- The recap field is ALWAYS required
-- When level changes, also update nextLevelXp (level 2=300, level 3=900, level 4=2700, level 5=6500, level 6=14000, level 7=23000, etc.)`;
+- Extract numeric values from patterns like "X/Y" (e.g., "650/1800 XP" → xp:650, nextLevelXp:1800)
+- The recap field is ALWAYS required`;
 
 
 export function createDefaultGameState(): GameStateData {
