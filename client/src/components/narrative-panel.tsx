@@ -365,7 +365,7 @@ export default function NarrativePanel({
 
       setIsStreaming(false);
 
-      // Now add the complete DM message to history
+      // Now add the complete DM message to history and capture updated state for parser
       const dmMessage = {
         id: `dm-${Date.now()}`,
         type: 'dm' as const,
@@ -373,10 +373,15 @@ export default function NarrativePanel({
         timestamp: Date.now(),
       };
 
-      setGameState(prev => ({
-        ...prev,
-        narrativeHistory: [...prev.narrativeHistory, dmMessage],
-      }));
+      let updatedStateForParser = gameState;
+      setGameState(prev => {
+        const updated = {
+          ...prev,
+          narrativeHistory: [...prev.narrativeHistory, dmMessage],
+        };
+        updatedStateForParser = updated;
+        return updated;
+      });
 
       // Log primary LLM call to debug log
       const primaryLogEntry = {
@@ -398,11 +403,20 @@ export default function NarrativePanel({
       // Show parser progress
       setIsParsing(true);
 
-      // Now call Parser LLM to extract state updates
-      // Note: gameState already has both player and DM messages from the streaming updates
+      // Now call Parser LLM to extract state updates with ESSENTIAL state (exclude narrativeHistory to reduce tokens)
       const parserPrompt = JSON.stringify({
         narrative: primaryResponse.content,
-        currentState: gameState,
+        currentState: {
+          character: updatedStateForParser.character,
+          location: updatedStateForParser.location,
+          inventory: updatedStateForParser.inventory,
+          statusEffects: updatedStateForParser.statusEffects,
+          spells: updatedStateForParser.spells,
+          quests: updatedStateForParser.quests,
+          companions: updatedStateForParser.companions,
+          encounteredCharacters: updatedStateForParser.encounteredCharacters,
+          // Exclude narrativeHistory and parsedRecaps - parser doesn't need them
+        },
       });
       
       const parserResponse = await callLLM(
