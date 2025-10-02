@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -359,10 +360,13 @@ export default function NarrativePanel({
         config.openRouterApiKey,
         (chunk) => {
           console.log('[COMPONENT] Received chunk in callback:', chunk);
-          setStreamingContent(prev => {
-            const newContent = prev + chunk;
-            console.log('[COMPONENT] New streaming content:', newContent);
-            return newContent;
+          // Use flushSync to force React to render this chunk immediately
+          flushSync(() => {
+            setStreamingContent(prev => {
+              const newContent = prev + chunk;
+              console.log('[COMPONENT] New streaming content:', newContent);
+              return newContent;
+            });
           });
         }
       );
