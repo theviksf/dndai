@@ -92,12 +92,12 @@ Preferred communication style: Simple, everyday language.
 
 **Context Management**: To minimize hallucinations and token costs, the Primary LLM receives:
 - All parsed history recaps (condensed summaries of past turns)
-- Last 3 messages back and forth (recent conversation)
-- Complete character stats (HP, gold, XP, attributes)
-- Current game state (location, inventory, status effects, quests)
+- Last 6 messages (3 back-and-forth exchanges) from recent conversation
+- Complete character stats (HP, gold, XP, attributes, level, class, race, age)
+- Current game state (location, inventory, status effects, spells, quests, companions with full details, encountered characters)
 - Current player action
 
-This approach maintains narrative coherence while keeping context windows manageable and reducing the risk of LLM hallucinations from long histories.
+This approach maintains narrative coherence while keeping context windows manageable and reducing the risk of LLM hallucinations from long histories. The full companion details (appearance, personality, memories, feelings, relationship) and encountered character data ensure the LLM can reference NPCs accurately.
 
 **Rationale**: Separating concerns allows using more powerful (expensive) models for creative storytelling while using efficient (cheaper) models for structured data extraction, optimizing cost-per-turn. Displaying responses before parsing provides better UX.
 
