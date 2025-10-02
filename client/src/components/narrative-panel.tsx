@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
-import { callLLM } from '@/lib/openrouter';
+import { callLLM, callLLMStream } from '@/lib/openrouter';
 import { DM_SYSTEM_PROMPT, PARSER_SYSTEM_PROMPT } from '@/lib/game-state';
-import { ArrowRight, Search, MessageCircle, Sword, Package } from 'lucide-react';
+import { ArrowRight, Search, MessageCircle, Sword, Package, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface NarrativePanelProps {
@@ -290,6 +291,9 @@ export default function NarrativePanel({
 }: NarrativePanelProps) {
   const [actionInput, setActionInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
   const narrativeRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -341,13 +345,51 @@ export default function NarrativePanel({
         action,
       };
 
-      const primaryResponse = await callLLM(
+      // Create a temporary DM message ID for streaming
+      const dmMessageId = Date.now().toString();
+      
+      // Add empty DM message to show streaming content
+      setGameState(prev => ({
+        ...prev,
+        narrativeHistory: [...prev.narrativeHistory, {
+          id: dmMessageId,
+          type: 'dm' as const,
+          content: '',
+          timestamp: Date.now(),
+        }],
+      }));
+
+      // Stream Primary LLM response
+      setIsStreaming(true);
+      setStreamingContent('');
+      
+      const primaryResponse = await callLLMStream(
         config.primaryLLM,
         [{ role: 'user', content: JSON.stringify(context) }],
         config.dmSystemPrompt,
         800,
-        config.openRouterApiKey
+        config.openRouterApiKey,
+        (chunk) => {
+          // Update streaming content
+          setStreamingContent(prev => {
+            const newContent = prev + chunk;
+            
+            // Update the DM message in history with streamed content
+            setGameState(prevState => ({
+              ...prevState,
+              narrativeHistory: prevState.narrativeHistory.map(msg =>
+                msg.id === dmMessageId
+                  ? { ...msg, content: newContent }
+                  : msg
+              ),
+            }));
+            
+            return newContent;
+          });
+        }
       );
+
+      setIsStreaming(false);
 
       // Log primary LLM call to debug log
       const primaryLogEntry = {
@@ -366,29 +408,14 @@ export default function NarrativePanel({
         },
       };
 
-      // Display DM response immediately
-      const dmMessage = {
-        id: Date.now().toString(),
-        type: 'dm' as const,
-        content: primaryResponse.content,
-        timestamp: Date.now(),
-      };
-
-      setGameState(prev => ({
-        ...prev,
-        narrativeHistory: [...prev.narrativeHistory, dmMessage],
-      }));
-
-      // Build fresh current state for parser (includes DM message)
-      const freshCurrentState = {
-        ...gameState,
-        narrativeHistory: [...gameState.narrativeHistory, playerMessage, dmMessage],
-      };
+      // Show parser progress
+      setIsParsing(true);
 
       // Now call Parser LLM to extract state updates
+      // Note: gameState already has both player and DM messages from the streaming updates
       const parserPrompt = JSON.stringify({
         narrative: primaryResponse.content,
-        currentState: freshCurrentState,
+        currentState: gameState,
       });
       
       const parserResponse = await callLLM(
@@ -601,6 +628,7 @@ export default function NarrativePanel({
       }
 
       setActionInput('');
+      setIsParsing(false);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -609,6 +637,8 @@ export default function NarrativePanel({
       });
     } finally {
       setIsProcessing(false);
+      setIsStreaming(false);
+      setIsParsing(false);
     }
   };
 
@@ -678,6 +708,17 @@ export default function NarrativePanel({
           )}
         </div>
       </div>
+
+      {/* Parser Progress Indicator */}
+      {isParsing && (
+        <div className="bg-accent/10 border border-accent rounded-lg p-4 flex items-center gap-3" data-testid="parser-progress">
+          <Loader2 className="w-5 h-5 text-accent animate-spin" />
+          <div className="flex-1">
+            <div className="text-sm font-medium text-accent mb-1">Analyzing narrative...</div>
+            <Progress value={100} className="h-2" />
+          </div>
+        </div>
+      )}
 
       {/* Action Input */}
       <div className="bg-card border-2 border-border rounded-lg ornate-border parchment-texture p-4">

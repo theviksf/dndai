@@ -33,6 +33,129 @@ export async function callLLM(
   return await response.json();
 }
 
+export async function callLLMStream(
+  modelId: string,
+  messages: { role: string; content: string }[],
+  systemPrompt: string,
+  maxTokens: number = 1000,
+  apiKey: string | undefined,
+  onChunk: (chunk: string) => void
+): Promise<{
+  content: string;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  model: string;
+}> {
+  const response = await fetch('/api/llm/chat/stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      modelId,
+      messages,
+      systemPrompt,
+      maxTokens,
+      apiKey,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error('No response body');
+  }
+
+  const decoder = new TextDecoder();
+  let fullContent = '';
+  let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+  let model = modelId;
+  let buffer = ''; // Buffer for incomplete lines
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      // Add new chunk to buffer
+      buffer += decoder.decode(value, { stream: true });
+      
+      // Process complete lines (ending with \n)
+      const lines = buffer.split('\n');
+      
+      // Keep the last potentially incomplete line in buffer
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          
+          if (data === '[DONE]') {
+            continue;
+          }
+
+          try {
+            const parsed = JSON.parse(data);
+            
+            if (parsed.choices && parsed.choices[0]?.delta?.content) {
+              const content = parsed.choices[0].delta.content;
+              fullContent += content;
+              onChunk(content);
+            }
+
+            if (parsed.usage) {
+              usage = parsed.usage;
+            }
+
+            if (parsed.model) {
+              model = parsed.model;
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
+            console.warn('Failed to parse SSE line:', data, e);
+          }
+        }
+      }
+    }
+    
+    // Process any remaining buffered content
+    if (buffer.trim()) {
+      if (buffer.startsWith('data: ')) {
+        const data = buffer.slice(6).trim();
+        if (data && data !== '[DONE]') {
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.choices && parsed.choices[0]?.delta?.content) {
+              const content = parsed.choices[0].delta.content;
+              fullContent += content;
+              onChunk(content);
+            }
+            if (parsed.usage) usage = parsed.usage;
+            if (parsed.model) model = parsed.model;
+          } catch (e) {
+            console.warn('Failed to parse final SSE line:', data, e);
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return {
+    content: fullContent,
+    usage,
+    model,
+  };
+}
+
 export const RECOMMENDED_CONFIGS = {
   premium: {
     primary: 'anthropic/claude-3-opus',

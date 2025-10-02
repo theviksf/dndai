@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // OpenRouter chat completion proxy
+  // OpenRouter chat completion proxy (non-streaming)
   app.post('/api/llm/chat', async (req, res) => {
     const { modelId, messages, systemPrompt, maxTokens = 1000, apiKey } = req.body;
     
@@ -76,6 +76,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         usage: data.usage,
         model: data.model
       });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // OpenRouter chat completion proxy (streaming)
+  app.post('/api/llm/chat/stream', async (req, res) => {
+    const { modelId, messages, systemPrompt, maxTokens = 1000, apiKey } = req.body;
+    
+    try {
+      const key = apiKey || OPENROUTER_API_KEY;
+      
+      if (!key) {
+        return res.status(400).json({ error: 'API key required' });
+      }
+      
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'HTTP-Referer': req.headers.referer || 'http://localhost:5000',
+          'X-Title': 'D&D Adventure Game',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          max_tokens: maxTokens,
+          temperature: 0.7,
+          route: 'fallback',
+          stream: true,
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+      
+      // Set headers for SSE streaming
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      
+      // Pipe the stream directly to the client
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value);
+            res.write(chunk);
+          }
+          res.end();
+        } catch (error) {
+          console.error('Streaming error:', error);
+          res.end();
+        }
+      } else {
+        res.end();
+      }
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
