@@ -107,10 +107,7 @@ export async function callLLMStream(
             if (parsed.choices && parsed.choices[0]?.delta?.content) {
               const content = parsed.choices[0].delta.content;
               fullContent += content;
-              console.log('[SSE] Calling onChunk with:', content);
               onChunk(content);
-              // Small delay to let browser paint
-              await new Promise(resolve => setTimeout(resolve, 1));
             }
 
             if (parsed.usage) {
@@ -122,7 +119,6 @@ export async function callLLMStream(
             }
           } catch (e) {
             // Skip invalid JSON lines
-            console.warn('Failed to parse SSE line:', data, e);
           }
         }
       }

@@ -349,12 +349,8 @@ export default function NarrativePanel({
       };
 
       // Stream Primary LLM response
-      console.log('[STREAMING] Setting isStreaming to true');
       setIsStreaming(true);
       setStreamingContent('');
-      
-      // Force a render with isStreaming=true before chunks arrive
-      await new Promise(resolve => setTimeout(resolve, 0));
       
       const primaryResponse = await callLLMStream(
         config.primaryLLM,
@@ -363,21 +359,11 @@ export default function NarrativePanel({
         800,
         config.openRouterApiKey,
         (chunk) => {
-          console.log('[COMPONENT] Received chunk in callback:', chunk);
-          // Use flushSync to force React to render this chunk immediately
-          flushSync(() => {
-            setStreamingContent(prev => {
-              const newContent = prev + chunk;
-              console.log('[COMPONENT] New streaming content:', newContent);
-              return newContent;
-            });
-          });
+          // Update state immediately - React will batch renders naturally
+          setStreamingContent(prev => prev + chunk);
         }
       );
 
-      // Small delay to ensure final render happens before hiding streaming indicator
-      await new Promise(resolve => setTimeout(resolve, 100));
-      console.log('[STREAMING] Setting isStreaming to false');
       setIsStreaming(false);
 
       // Now add the complete DM message to history and capture updated state for parser
@@ -738,7 +724,6 @@ export default function NarrativePanel({
                   </div>
                 </div>
               )}
-              {console.log('[RENDER] isStreaming:', isStreaming, 'streamingContent length:', streamingContent?.length || 0)}
             </>
           )}
         </div>
