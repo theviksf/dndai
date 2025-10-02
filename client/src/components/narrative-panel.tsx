@@ -639,7 +639,7 @@ export default function NarrativePanel({
 
         <div 
           ref={narrativeRef}
-          className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[600px]" 
+          className="overflow-y-auto p-6 space-y-4 max-h-[600px]" 
           data-testid="narrative-container"
         >
           {gameState.narrativeHistory.length === 0 ? (
