@@ -109,6 +109,8 @@ export async function callLLMStream(
               fullContent += content;
               console.log('[SSE] Calling onChunk with:', content);
               onChunk(content);
+              // Small delay to let browser paint
+              await new Promise(resolve => setTimeout(resolve, 1));
             }
 
             if (parsed.usage) {
