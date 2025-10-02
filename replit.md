@@ -40,7 +40,8 @@ Preferred communication style: Simple, everyday language.
 
 **API Design**: RESTful endpoints proxying requests to OpenRouter's API:
 - `POST /api/models`: Fetches available LLM models from OpenRouter
-- `POST /api/llm/chat`: Proxies chat completion requests to OpenRouter
+- `POST /api/llm/chat`: Proxies chat completion requests to OpenRouter (standard request/response)
+- `POST /api/llm/chat/stream`: Proxies streaming chat completion requests via Server-Sent Events (SSE)
 - Game state CRUD endpoints (planned but not fully implemented in current codebase)
 
 **Session Management**: In-memory storage implementation with plans for PostgreSQL persistence. The storage layer is abstracted through an `IStorage` interface allowing easy database swapping.
@@ -65,12 +66,20 @@ Preferred communication style: Simple, everyday language.
 
 **Execution Flow**:
 1. Player submits action
-2. Primary LLM generates narrative response
-3. Response is immediately displayed to player
-4. Parser LLM analyzes the narrative in background
-5. Game state is updated with parsed changes (or continues without updates if parsing fails)
-6. History recap is added to `parsedRecaps` array (if parsing succeeds)
-7. Cost tracker is updated regardless of parser success/failure
+2. Primary LLM streams narrative response in real-time (word-by-word via SSE)
+3. Response chunks are displayed to player as they arrive
+4. After streaming completes, parser progress indicator appears
+5. Parser LLM analyzes the complete narrative (synchronous)
+6. Game state is updated with parsed changes (or continues without updates if parsing fails)
+7. Parser progress indicator disappears
+8. History recap is added to `parsedRecaps` array (if parsing succeeds)
+9. Cost tracker is updated regardless of parser success/failure
+
+**Streaming Implementation**:
+- Primary LLM uses Server-Sent Events (SSE) for real-time text streaming via `/api/llm/chat/stream`
+- Client buffers incomplete SSE lines across chunk boundaries to prevent data loss
+- Parser LLM uses standard request/response (no streaming) via `/api/llm/chat`
+- Visual feedback: streaming text appears in real-time, then "Analyzing narrative..." progress bar during parsing
 
 **Error Handling & Resilience**:
 - **Robust JSON Parsing**: Multi-strategy extraction system handles malformed LLM responses
