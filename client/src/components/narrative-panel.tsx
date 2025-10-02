@@ -318,10 +318,10 @@ export default function NarrativePanel({
         narrativeHistory: [...prev.narrativeHistory, playerMessage],
       }));
 
-      // Call Primary LLM - send parsed recaps + 3 most recent messages + all stats for context
-      // Include the just-submitted player message in recent context
-      const updatedHistory = [...gameState.narrativeHistory, playerMessage];
-      const recentMessages = updatedHistory.slice(-3);
+      // Call Primary LLM - send parsed recaps + last 3 back-and-forth exchanges + all stats for context
+      // Last 3 exchanges = 6 messages (player, DM, player, DM, player, DM)
+      // Take from existing history (before adding current player message)
+      const recentMessages = gameState.narrativeHistory.slice(-6);
       const context = {
         // Character stats
         character: gameState.character,
@@ -329,10 +329,13 @@ export default function NarrativePanel({
         location: gameState.location,
         inventory: gameState.inventory,
         statusEffects: gameState.statusEffects,
+        spells: gameState.spells || [],
         quests: gameState.quests,
+        companions: gameState.companions || [],
+        encounteredCharacters: gameState.encounteredCharacters || [],
         // Historical context (condensed)
         parsedHistory: gameState.parsedRecaps.join('\n\n'),
-        // Recent conversation (last 3 messages including current player message)
+        // Recent conversation (last 3 back-and-forth exchanges = 6 messages)
         recentMessages: recentMessages,
         // Current action
         action,
