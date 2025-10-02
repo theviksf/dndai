@@ -107,6 +107,7 @@ export async function callLLMStream(
             if (parsed.choices && parsed.choices[0]?.delta?.content) {
               const content = parsed.choices[0].delta.content;
               fullContent += content;
+              console.log('[SSE] Calling onChunk with:', content);
               onChunk(content);
             }
 

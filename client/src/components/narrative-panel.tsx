@@ -358,7 +358,12 @@ export default function NarrativePanel({
         800,
         config.openRouterApiKey,
         (chunk) => {
-          setStreamingContent(prev => prev + chunk);
+          console.log('[COMPONENT] Received chunk in callback:', chunk);
+          setStreamingContent(prev => {
+            const newContent = prev + chunk;
+            console.log('[COMPONENT] New streaming content:', newContent);
+            return newContent;
+          });
         }
       );
 
