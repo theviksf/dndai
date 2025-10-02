@@ -301,7 +301,7 @@ export default function NarrativePanel({
     if (narrativeRef.current) {
       narrativeRef.current.scrollTop = narrativeRef.current.scrollHeight;
     }
-  }, [gameState.narrativeHistory]);
+  }, [gameState.narrativeHistory, streamingContent]);
 
   const processAction = async (action: string) => {
     if (!action.trim() || isProcessing) return;
@@ -309,12 +309,14 @@ export default function NarrativePanel({
     setIsProcessing(true);
 
     try {
+      const playerTimestamp = Date.now();
+      
       // Add player message to history
       const playerMessage = {
-        id: Date.now().toString(),
+        id: `player-${playerTimestamp}`,
         type: 'player' as const,
         content: action,
-        timestamp: Date.now(),
+        timestamp: playerTimestamp,
       };
 
       setGameState(prev => ({
@@ -345,20 +347,6 @@ export default function NarrativePanel({
         action,
       };
 
-      // Create a temporary DM message ID for streaming
-      const dmMessageId = Date.now().toString();
-      
-      // Add empty DM message to show streaming content
-      setGameState(prev => ({
-        ...prev,
-        narrativeHistory: [...prev.narrativeHistory, {
-          id: dmMessageId,
-          type: 'dm' as const,
-          content: '',
-          timestamp: Date.now(),
-        }],
-      }));
-
       // Stream Primary LLM response
       setIsStreaming(true);
       setStreamingContent('');
@@ -370,26 +358,25 @@ export default function NarrativePanel({
         800,
         config.openRouterApiKey,
         (chunk) => {
-          // Update streaming content
-          setStreamingContent(prev => {
-            const newContent = prev + chunk;
-            
-            // Update the DM message in history with streamed content
-            setGameState(prevState => ({
-              ...prevState,
-              narrativeHistory: prevState.narrativeHistory.map(msg =>
-                msg.id === dmMessageId
-                  ? { ...msg, content: newContent }
-                  : msg
-              ),
-            }));
-            
-            return newContent;
-          });
+          // Just update local streaming state, don't touch gameState
+          setStreamingContent(prev => prev + chunk);
         }
       );
 
       setIsStreaming(false);
+
+      // Now add the complete DM message to history
+      const dmMessage = {
+        id: `dm-${Date.now()}`,
+        type: 'dm' as const,
+        content: primaryResponse.content,
+        timestamp: Date.now(),
+      };
+
+      setGameState(prev => ({
+        ...prev,
+        narrativeHistory: [...prev.narrativeHistory, dmMessage],
+      }));
 
       // Log primary LLM call to debug log
       const primaryLogEntry = {
@@ -629,6 +616,7 @@ export default function NarrativePanel({
 
       setActionInput('');
       setIsParsing(false);
+      setStreamingContent('');
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -675,36 +663,50 @@ export default function NarrativePanel({
           className="overflow-y-auto p-6 space-y-4 max-h-[600px]" 
           data-testid="narrative-container"
         >
-          {gameState.narrativeHistory.length === 0 ? (
+          {gameState.narrativeHistory.length === 0 && !isStreaming ? (
             <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4 fade-in">
               <p className="text-foreground leading-relaxed">
                 Your adventure begins here. What will you do?
               </p>
             </div>
           ) : (
-            gameState.narrativeHistory.map((message) => (
-              <div 
-                key={message.id} 
-                className={`fade-in ${message.type === 'player' ? 'flex justify-end' : ''}`}
-                data-testid={`message-${message.type}-${message.id}`}
-              >
-                {message.type === 'dm' ? (
-                  <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
-                    <p className="text-foreground leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                  </div>
-                ) : (
-                  <div className="bg-accent/20 border border-accent rounded-lg p-3 max-w-md">
-                    <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      You:
+            <>
+              {gameState.narrativeHistory.map((message) => (
+                <div 
+                  key={message.id} 
+                  className={`fade-in ${message.type === 'player' ? 'flex justify-end' : ''}`}
+                  data-testid={`message-${message.type}-${message.id}`}
+                >
+                  {message.type === 'dm' ? (
+                    <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
+                      <p className="text-foreground leading-relaxed whitespace-pre-wrap">{message.content}</p>
                     </div>
-                    <p className="text-sm text-foreground">{message.content}</p>
+                  ) : (
+                    <div className="bg-accent/20 border border-accent rounded-lg p-3 max-w-md">
+                      <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        You:
+                      </div>
+                      <p className="text-sm text-foreground">{message.content}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {/* Streaming content */}
+              {isStreaming && streamingContent && (
+                <div className="fade-in" data-testid="message-dm-streaming">
+                  <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
+                    <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+                      {streamingContent}
+                      <span className="inline-block w-1 h-4 ml-1 bg-primary animate-pulse" />
+                    </p>
                   </div>
-                )}
-              </div>
-            ))
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
