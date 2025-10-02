@@ -92,6 +92,19 @@ export type NarrativeMessage = {
   };
 };
 
+export type DebugLogEntry = {
+  id: string;
+  timestamp: number;
+  type: 'primary' | 'parser';
+  prompt: string;
+  response: string;
+  model: string;
+  tokens?: {
+    prompt: number;
+    completion: number;
+  };
+};
+
 export type GameCharacter = {
   name: string;
   race: string;
@@ -121,6 +134,7 @@ export type GameStateData = {
   narrativeHistory: NarrativeMessage[];
   parsedRecaps: string[];
   turnCount: number;
+  debugLog?: DebugLogEntry[];
 };
 
 export type GameConfig = {

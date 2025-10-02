@@ -346,6 +346,23 @@ export default function NarrativePanel({
         config.openRouterApiKey
       );
 
+      // Log primary LLM call to debug log
+      const primaryLogEntry = {
+        id: `primary-${Date.now()}`,
+        timestamp: Date.now(),
+        type: 'primary' as const,
+        prompt: JSON.stringify({
+          system: config.dmSystemPrompt,
+          context
+        }, null, 2),
+        response: primaryResponse.content,
+        model: config.primaryLLM,
+        tokens: {
+          prompt: primaryResponse.usage?.prompt_tokens || 0,
+          completion: primaryResponse.usage?.completion_tokens || 0,
+        },
+      };
+
       // Display DM response immediately
       const dmMessage = {
         id: Date.now().toString(),
@@ -366,19 +383,38 @@ export default function NarrativePanel({
       };
 
       // Now call Parser LLM to extract state updates
+      const parserPrompt = JSON.stringify({
+        narrative: primaryResponse.content,
+        currentState: freshCurrentState,
+      });
+      
       const parserResponse = await callLLM(
         config.parserLLM,
         [{
           role: 'user',
-          content: JSON.stringify({
-            narrative: primaryResponse.content,
-            currentState: freshCurrentState,
-          })
+          content: parserPrompt
         }],
         config.parserSystemPrompt,
         2000,  // Increased from 500 to handle complex game states with companions, encounters, etc.
         config.openRouterApiKey
       );
+
+      // Log parser LLM call to debug log
+      const parserLogEntry = {
+        id: `parser-${Date.now()}`,
+        timestamp: Date.now(),
+        type: 'parser' as const,
+        prompt: JSON.stringify({
+          system: config.parserSystemPrompt,
+          input: JSON.parse(parserPrompt)
+        }, null, 2),
+        response: parserResponse.content,
+        model: config.parserLLM,
+        tokens: {
+          prompt: parserResponse.usage?.prompt_tokens || 0,
+          completion: parserResponse.usage?.completion_tokens || 0,
+        },
+      };
 
       // Parse and validate JSON with robust error handling
       let parsedData: any = null;
@@ -523,6 +559,13 @@ export default function NarrativePanel({
 
         updated.turnCount = prev.turnCount + 1;
 
+        // Add debug log entries
+        updated.debugLog = [
+          ...(prev.debugLog || []),
+          primaryLogEntry,
+          parserLogEntry,
+        ];
+
         return updated;
       });
 
@@ -596,7 +639,7 @@ export default function NarrativePanel({
 
         <div 
           ref={narrativeRef}
-          className="flex-1 overflow-y-auto p-6 space-y-4" 
+          className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[600px]" 
           data-testid="narrative-container"
         >
           {gameState.narrativeHistory.length === 0 ? (

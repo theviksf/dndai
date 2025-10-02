@@ -8,8 +8,9 @@ import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@s
 import CharacterStats from '@/components/character-stats';
 import NarrativePanel from '@/components/narrative-panel';
 import InventoryQuestPanel from '@/components/inventory-quest-panel';
+import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
-import { Settings, Save } from 'lucide-react';
+import { Settings, Save, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
@@ -35,6 +36,7 @@ export default function Home() {
   const [isGameStarted, setIsGameStarted] = useState(() => {
     return localStorage.getItem('isGameStarted') === 'true';
   });
+  const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
 
   // Fetch OpenRouter models
   const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
@@ -156,6 +158,16 @@ export default function Home() {
               </Button>
               
               <Button
+                onClick={() => setIsDebugLogOpen(true)}
+                variant="outline"
+                className="bg-muted hover:bg-muted/80"
+                data-testid="button-view-log"
+              >
+                <Terminal className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">View Log</span>
+              </Button>
+              
+              <Button
                 onClick={() => setLocation('/settings')}
                 variant="outline"
                 className="bg-muted hover:bg-muted/80"
@@ -195,6 +207,13 @@ export default function Home() {
           />
         </div>
       </div>
+
+      {/* Debug Log Viewer */}
+      <DebugLogViewer
+        debugLog={gameState.debugLog || []}
+        isOpen={isDebugLogOpen}
+        onClose={() => setIsDebugLogOpen(false)}
+      />
     </div>
   );
 }

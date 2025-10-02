@@ -1,0 +1,190 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { DebugLogEntry } from '@shared/schema';
+import { Terminal, Brain, Clock } from 'lucide-react';
+
+interface DebugLogViewerProps {
+  debugLog: DebugLogEntry[];
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogViewerProps) {
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString() + '.' + date.getMilliseconds();
+  };
+
+  const primaryLogs = debugLog.filter(log => log.type === 'primary');
+  const parserLogs = debugLog.filter(log => log.type === 'parser');
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-6xl max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-primary">
+            <Terminal className="w-5 h-5" />
+            LLM Debug Log
+          </DialogTitle>
+        </DialogHeader>
+
+        <Tabs defaultValue="all" className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all">All ({debugLog.length})</TabsTrigger>
+            <TabsTrigger value="primary">Primary DM ({primaryLogs.length})</TabsTrigger>
+            <TabsTrigger value="parser">Parser ({parserLogs.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="flex-1 min-h-0">
+            <ScrollArea className="h-[500px] w-full rounded-md border p-4">
+              <div className="space-y-4">
+                {debugLog.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No debug logs yet. Take an action to see LLM interactions.
+                  </div>
+                ) : (
+                  debugLog.map((log) => (
+                    <div key={log.id} className="border rounded-lg p-4 space-y-3 bg-muted/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {log.type === 'primary' ? (
+                            <Brain className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Terminal className="w-4 h-4 text-accent" />
+                          )}
+                          <span className="font-semibold text-sm">
+                            {log.type === 'primary' ? 'Primary DM' : 'Parser'}
+                          </span>
+                          <span className="text-xs text-muted-foreground font-mono">{log.model}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {formatTimestamp(log.timestamp)}
+                        </div>
+                      </div>
+
+                      {log.tokens && (
+                        <div className="text-xs text-muted-foreground">
+                          Tokens: {log.tokens.prompt} prompt + {log.tokens.completion} completion = {log.tokens.prompt + log.tokens.completion} total
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="text-xs font-semibold text-foreground mb-1">Prompt:</div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.prompt}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold text-foreground mb-1">Response:</div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.response}
+                        </pre>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="primary" className="flex-1 min-h-0">
+            <ScrollArea className="h-[500px] w-full rounded-md border p-4">
+              <div className="space-y-4">
+                {primaryLogs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No primary DM logs yet.
+                  </div>
+                ) : (
+                  primaryLogs.map((log) => (
+                    <div key={log.id} className="border rounded-lg p-4 space-y-3 bg-primary/5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Brain className="w-4 h-4 text-primary" />
+                          <span className="text-xs text-muted-foreground font-mono">{log.model}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {formatTimestamp(log.timestamp)}
+                        </div>
+                      </div>
+
+                      {log.tokens && (
+                        <div className="text-xs text-muted-foreground">
+                          Tokens: {log.tokens.prompt} prompt + {log.tokens.completion} completion = {log.tokens.prompt + log.tokens.completion} total
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="text-xs font-semibold text-foreground mb-1">Prompt:</div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.prompt}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold text-foreground mb-1">Response:</div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.response}
+                        </pre>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="parser" className="flex-1 min-h-0">
+            <ScrollArea className="h-[500px] w-full rounded-md border p-4">
+              <div className="space-y-4">
+                {parserLogs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No parser logs yet.
+                  </div>
+                ) : (
+                  parserLogs.map((log) => (
+                    <div key={log.id} className="border rounded-lg p-4 space-y-3 bg-accent/5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Terminal className="w-4 h-4 text-accent" />
+                          <span className="text-xs text-muted-foreground font-mono">{log.model}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {formatTimestamp(log.timestamp)}
+                        </div>
+                      </div>
+
+                      {log.tokens && (
+                        <div className="text-xs text-muted-foreground">
+                          Tokens: {log.tokens.prompt} prompt + {log.tokens.completion} completion = {log.tokens.prompt + log.tokens.completion} total
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="text-xs font-semibold text-foreground mb-1">Prompt:</div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.prompt}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold text-foreground mb-1">Response:</div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.response}
+                        </pre>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
