@@ -403,7 +403,9 @@ export default function NarrativePanel({
       // Show parser progress
       setIsParsing(true);
 
-      // Now call Parser LLM to extract state updates with ESSENTIAL state (exclude narrativeHistory to reduce tokens)
+      // Now call Parser LLM to extract state updates with ESSENTIAL state
+      // Include last recap for context (e.g., "She hands back the amulet" needs to know who "she" is)
+      // But exclude full narrativeHistory to keep token count low
       const parserPrompt = JSON.stringify({
         narrative: primaryResponse.content,
         currentState: {
@@ -415,8 +417,9 @@ export default function NarrativePanel({
           quests: updatedStateForParser.quests,
           companions: updatedStateForParser.companions,
           encounteredCharacters: updatedStateForParser.encounteredCharacters,
-          // Exclude narrativeHistory and parsedRecaps - parser doesn't need them
         },
+        // Include last recap for context, but exclude full conversation history
+        recentContext: updatedStateForParser.parsedRecaps.slice(-1)[0] || 'Adventure just beginning',
       });
       
       const parserResponse = await callLLM(
