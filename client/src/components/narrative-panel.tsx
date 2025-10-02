@@ -358,7 +358,6 @@ export default function NarrativePanel({
         800,
         config.openRouterApiKey,
         (chunk) => {
-          // Just update local streaming state, don't touch gameState
           setStreamingContent(prev => prev + chunk);
         }
       );
@@ -665,8 +664,8 @@ export default function NarrativePanel({
   return (
     <main className="lg:col-span-6 flex flex-col space-y-4">
       {/* Narrative Display */}
-      <div className="flex-1 bg-card border-2 border-border rounded-lg ornate-border parchment-texture overflow-hidden flex flex-col min-h-[400px]">
-        <div className="bg-gradient-to-b from-primary/20 to-transparent p-4 border-b border-border">
+      <div className="bg-card border-2 border-border rounded-lg ornate-border parchment-texture overflow-hidden flex flex-col h-[500px]">
+        <div className="bg-gradient-to-b from-primary/20 to-transparent p-4 border-b border-border flex-shrink-0">
           <h2 className="text-xl font-serif font-semibold text-primary flex items-center gap-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -677,7 +676,7 @@ export default function NarrativePanel({
 
         <div 
           ref={narrativeRef}
-          className="overflow-y-auto p-6 space-y-4 max-h-[600px]" 
+          className="flex-1 overflow-y-auto p-6 space-y-4" 
           data-testid="narrative-container"
         >
           {gameState.narrativeHistory.length === 0 && !isStreaming ? (
@@ -713,11 +712,11 @@ export default function NarrativePanel({
               ))}
               
               {/* Streaming content */}
-              {isStreaming && streamingContent && (
+              {isStreaming && (
                 <div className="fade-in" data-testid="message-dm-streaming">
                   <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
                     <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                      {streamingContent}
+                      {streamingContent || ''}
                       <span className="inline-block w-1 h-4 ml-1 bg-primary animate-pulse" />
                     </p>
                   </div>
