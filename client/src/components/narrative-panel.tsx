@@ -305,6 +305,27 @@ export default function NarrativePanel({
     try {
       const playerTimestamp = Date.now();
       
+      // Create snapshot of current state before action (for undo)
+      const snapshot = {
+        state: {
+          character: JSON.parse(JSON.stringify(gameState.character)),
+          location: JSON.parse(JSON.stringify(gameState.location)),
+          previousLocations: [...(gameState.previousLocations || [])],
+          inventory: JSON.parse(JSON.stringify(gameState.inventory)),
+          spells: JSON.parse(JSON.stringify(gameState.spells || [])),
+          statusEffects: JSON.parse(JSON.stringify(gameState.statusEffects)),
+          quests: JSON.parse(JSON.stringify(gameState.quests)),
+          companions: JSON.parse(JSON.stringify(gameState.companions || [])),
+          encounteredCharacters: JSON.parse(JSON.stringify(gameState.encounteredCharacters || [])),
+          narrativeHistory: [...gameState.narrativeHistory],
+          parsedRecaps: [...(gameState.parsedRecaps || [])],
+          turnCount: gameState.turnCount,
+          debugLog: gameState.debugLog ? [...gameState.debugLog] : [],
+        },
+        costTracker: JSON.parse(JSON.stringify(costTracker)),
+        timestamp: playerTimestamp,
+      };
+      
       // Add player message to history
       const playerMessage = {
         id: `player-${playerTimestamp}`,
@@ -316,6 +337,7 @@ export default function NarrativePanel({
       setGameState(prev => ({
         ...prev,
         narrativeHistory: [...prev.narrativeHistory, playerMessage],
+        turnSnapshots: [...(prev.turnSnapshots || []), snapshot],
       }));
 
       // Call Primary LLM - send parsed recaps + last 3 back-and-forth exchanges + all stats for context
