@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt } from '@/lib/game-state';
-import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
+import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
 import GameInfoTabs from '@/components/game-info-tabs';
@@ -51,6 +51,7 @@ export default function Home() {
     return localStorage.getItem('isGameStarted') === 'true';
   });
   const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
+  const [turnSnapshots, setTurnSnapshots] = useState<TurnSnapshot[]>([]);
 
   // Fetch OpenRouter models
   const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
@@ -179,9 +180,16 @@ export default function Home() {
     }
   };
 
+  const createSnapshot = () => {
+    const snapshot: TurnSnapshot = {
+      state: { ...gameState },
+      costTracker: { ...costTracker },
+    };
+    setTurnSnapshots(prev => [...prev, snapshot]);
+  };
+
   const handleUndo = () => {
-    const snapshots = gameState.turnSnapshots || [];
-    if (snapshots.length === 0) {
+    if (turnSnapshots.length === 0) {
       toast({
         title: "Nothing to undo",
         description: "No previous turns to restore",
@@ -191,17 +199,17 @@ export default function Home() {
     }
 
     // Pop the latest snapshot
-    const latestSnapshot = snapshots[snapshots.length - 1];
-    const remainingSnapshots = snapshots.slice(0, -1);
+    const latestSnapshot = turnSnapshots[turnSnapshots.length - 1];
+    const remainingSnapshots = turnSnapshots.slice(0, -1);
 
     // Restore state from snapshot
-    setGameState({
-      ...latestSnapshot.state,
-      turnSnapshots: remainingSnapshots,
-    });
+    setGameState(latestSnapshot.state);
 
     // Restore cost tracker
     setCostTracker(latestSnapshot.costTracker);
+
+    // Update snapshots array
+    setTurnSnapshots(remainingSnapshots);
 
     // Update localStorage with restored character
     localStorage.setItem('gameCharacter', JSON.stringify(latestSnapshot.state.character));
@@ -242,7 +250,7 @@ export default function Home() {
               {/* Game Actions */}
               <Button
                 onClick={handleUndo}
-                disabled={!gameState.turnSnapshots || gameState.turnSnapshots.length === 0}
+                disabled={turnSnapshots.length === 0}
                 variant="outline"
                 className="bg-muted hover:bg-muted/80"
                 data-testid="button-undo"
@@ -304,6 +312,7 @@ export default function Home() {
               costTracker={costTracker}
               setCostTracker={setCostTracker}
               models={models || []}
+              createSnapshot={createSnapshot}
             />
           </div>
           <div className="lg:col-span-4">
