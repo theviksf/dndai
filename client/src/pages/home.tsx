@@ -10,7 +10,7 @@ import NarrativePanel from '@/components/narrative-panel';
 import GameInfoTabs from '@/components/game-info-tabs';
 import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
-import { Settings, Save, Terminal } from 'lucide-react';
+import { Settings, Save, Terminal, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
@@ -179,6 +179,39 @@ export default function Home() {
     }
   };
 
+  const handleUndo = () => {
+    const snapshots = gameState.turnSnapshots || [];
+    if (snapshots.length === 0) {
+      toast({
+        title: "Nothing to undo",
+        description: "No previous turns to restore",
+        variant: "default",
+      });
+      return;
+    }
+
+    // Pop the latest snapshot
+    const latestSnapshot = snapshots[snapshots.length - 1];
+    const remainingSnapshots = snapshots.slice(0, -1);
+
+    // Restore state from snapshot
+    setGameState({
+      ...latestSnapshot.state,
+      turnSnapshots: remainingSnapshots,
+    });
+
+    // Restore cost tracker
+    setCostTracker(latestSnapshot.costTracker);
+
+    // Update localStorage with restored character
+    localStorage.setItem('gameCharacter', JSON.stringify(latestSnapshot.state.character));
+
+    toast({
+      title: "Turn undone",
+      description: "Restored to previous state",
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
@@ -207,6 +240,17 @@ export default function Home() {
               </div>
               
               {/* Game Actions */}
+              <Button
+                onClick={handleUndo}
+                disabled={!gameState.turnSnapshots || gameState.turnSnapshots.length === 0}
+                variant="outline"
+                className="bg-muted hover:bg-muted/80"
+                data-testid="button-undo"
+              >
+                <Undo2 className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Undo</span>
+              </Button>
+              
               <Button
                 onClick={handleSaveGame}
                 disabled={saveMutation.isPending}
