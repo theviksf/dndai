@@ -317,6 +317,7 @@ export default function NarrativePanel({
           quests: JSON.parse(JSON.stringify(gameState.quests)),
           companions: JSON.parse(JSON.stringify(gameState.companions || [])),
           encounteredCharacters: JSON.parse(JSON.stringify(gameState.encounteredCharacters || [])),
+          businesses: JSON.parse(JSON.stringify(gameState.businesses || [])),
           narrativeHistory: [...gameState.narrativeHistory],
           parsedRecaps: [...(gameState.parsedRecaps || [])],
           turnCount: gameState.turnCount,

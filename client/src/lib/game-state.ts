@@ -170,6 +170,7 @@ export function createDefaultGameState(): GameStateData {
     quests: [],
     companions: [],
     encounteredCharacters: [],
+    businesses: [],
     narrativeHistory: [],
     parsedRecaps: [],
     turnCount: 0,

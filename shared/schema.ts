@@ -76,8 +76,20 @@ export type Companion = {
 export type EncounteredCharacter = {
   id: string;
   name: string;
+  age: string;
   role: string;
+  location: string;
   appearance: string;
+  description: string;
+};
+
+export type Business = {
+  id: string;
+  name: string;
+  weeklyIncome: number;
+  purchaseCost: number;
+  manager: string;
+  runningCost: number;
   description: string;
 };
 
@@ -139,6 +151,7 @@ export type GameStateData = {
   quests: Quest[];
   companions: Companion[];
   encounteredCharacters: EncounteredCharacter[];
+  businesses: Business[];
   narrativeHistory: NarrativeMessage[];
   parsedRecaps: string[];
   turnCount: number;
