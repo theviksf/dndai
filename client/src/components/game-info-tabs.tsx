@@ -1,11 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Backpack, ScrollText, Users, UserCircle, History } from 'lucide-react';
-import type { InventoryItem, Quest, Companion, EncounteredCharacter } from '@shared/schema';
+import { Backpack, ScrollText, Users, UserCircle, History, Sparkles } from 'lucide-react';
+import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell } from '@shared/schema';
 
 interface GameInfoTabsProps {
   inventory: InventoryItem[];
   quests: Quest[];
+  spells: Spell[];
   companions: Companion[];
   encounteredCharacters: EncounteredCharacter[];
   history: string[];
@@ -14,32 +15,37 @@ interface GameInfoTabsProps {
 export default function GameInfoTabs({
   inventory,
   quests,
+  spells,
   companions,
   encounteredCharacters,
   history,
 }: GameInfoTabsProps) {
   return (
     <Tabs defaultValue="inventory" className="w-full h-full flex flex-col">
-      <TabsList className="grid w-full grid-cols-5 bg-muted/50 border-b border-border">
-        <TabsTrigger value="inventory" className="gap-2" data-testid="tab-inventory">
+      <TabsList className="grid w-full grid-cols-6 bg-muted/50 border-b border-border">
+        <TabsTrigger value="inventory" className="gap-1 text-xs" data-testid="tab-inventory">
           <Backpack className="w-4 h-4" />
-          <span className="hidden md:inline">Inventory</span>
+          <span className="hidden lg:inline">Inventory</span>
         </TabsTrigger>
-        <TabsTrigger value="quests" className="gap-2" data-testid="tab-quests">
+        <TabsTrigger value="spells" className="gap-1 text-xs" data-testid="tab-spells">
+          <Sparkles className="w-4 h-4" />
+          <span className="hidden lg:inline">Spells</span>
+        </TabsTrigger>
+        <TabsTrigger value="quests" className="gap-1 text-xs" data-testid="tab-quests">
           <ScrollText className="w-4 h-4" />
-          <span className="hidden md:inline">Quests</span>
+          <span className="hidden lg:inline">Quests</span>
         </TabsTrigger>
-        <TabsTrigger value="companions" className="gap-2" data-testid="tab-companions">
+        <TabsTrigger value="companions" className="gap-1 text-xs" data-testid="tab-companions">
           <Users className="w-4 h-4" />
-          <span className="hidden md:inline">Companions</span>
+          <span className="hidden lg:inline">Allies</span>
         </TabsTrigger>
-        <TabsTrigger value="encounters" className="gap-2" data-testid="tab-encounters">
+        <TabsTrigger value="encounters" className="gap-1 text-xs" data-testid="tab-encounters">
           <UserCircle className="w-4 h-4" />
-          <span className="hidden md:inline">Encounters</span>
+          <span className="hidden lg:inline">NPCs</span>
         </TabsTrigger>
-        <TabsTrigger value="history" className="gap-2" data-testid="tab-history">
+        <TabsTrigger value="history" className="gap-1 text-xs" data-testid="tab-history">
           <History className="w-4 h-4" />
-          <span className="hidden md:inline">History</span>
+          <span className="hidden lg:inline">History</span>
         </TabsTrigger>
       </TabsList>
 
@@ -70,6 +76,38 @@ export default function GameInfoTabs({
                       {item.equipped && (
                         <span className="text-xs text-accent mt-1 inline-block">Equipped</span>
                       )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="spells" className="flex-1 mt-0 border-none p-0">
+        <ScrollArea className="h-[calc(100vh-280px)]">
+          <div className="p-4 space-y-3">
+            {spells.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No spells learned</p>
+            ) : (
+              spells.map((spell) => (
+                <div
+                  key={spell.id}
+                  className="border border-border rounded-lg p-3 bg-card hover:bg-accent/5 transition-colors"
+                  data-testid={`spell-${spell.id}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">{spell.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-semibold text-sm">{spell.name}</h4>
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          Lv.{spell.level}
+                        </span>
+                      </div>
+                      <p className="text-xs text-accent mt-1">{spell.school}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{spell.description}</p>
                     </div>
                   </div>
                 </div>
@@ -129,24 +167,33 @@ export default function GameInfoTabs({
 
       <TabsContent value="companions" className="flex-1 mt-0 border-none p-0">
         <ScrollArea className="h-[calc(100vh-280px)]">
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-4">
             {companions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No companions yet</p>
             ) : (
               companions.map((companion) => (
                 <div
                   key={companion.id}
-                  className="border border-border rounded-lg p-3 bg-card"
+                  className="border-2 border-border rounded-lg p-4 bg-card space-y-2"
                   data-testid={`companion-${companion.id}`}
                 >
-                  <h4 className="font-semibold text-sm mb-1">{companion.name}</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-base">{companion.name}</h4>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      Lv. {companion.level}
+                    </span>
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {companion.race} {companion.class} (Lv. {companion.level})
+                    {companion.race} {companion.class}, Age {companion.age}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">{companion.appearance}</p>
-                  <p className="text-xs text-muted-foreground mt-1 italic">{companion.personality}</p>
+                  <div className="pt-2 space-y-2 border-t border-border">
+                    <p className="text-xs text-foreground leading-relaxed">{companion.appearance}</p>
+                    <p className="text-xs text-muted-foreground italic leading-relaxed">{companion.personality}</p>
+                  </div>
                   {companion.relationship && (
-                    <p className="text-xs text-accent mt-2">Relationship: {companion.relationship}</p>
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs font-medium text-accent">Relationship: {companion.relationship}</p>
+                    </div>
                   )}
                 </div>
               ))
@@ -157,20 +204,26 @@ export default function GameInfoTabs({
 
       <TabsContent value="encounters" className="flex-1 mt-0 border-none p-0">
         <ScrollArea className="h-[calc(100vh-280px)]">
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-4">
             {encounteredCharacters.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No characters encountered</p>
             ) : (
               encounteredCharacters.map((character) => (
                 <div
                   key={character.id}
-                  className="border border-border rounded-lg p-3 bg-card"
+                  className="border-2 border-border rounded-lg p-4 bg-card space-y-2"
                   data-testid={`encountered-${character.id}`}
                 >
-                  <h4 className="font-semibold text-sm">{character.name}</h4>
-                  <p className="text-xs text-primary mt-1">{character.role}</p>
-                  <p className="text-xs text-muted-foreground mt-2">{character.appearance}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{character.description}</p>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-base">{character.name}</h4>
+                    <span className="text-xs bg-accent/10 text-accent px-2 py-1 rounded">
+                      {character.role}
+                    </span>
+                  </div>
+                  <div className="pt-2 space-y-2 border-t border-border">
+                    <p className="text-xs text-foreground leading-relaxed">{character.appearance}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{character.description}</p>
+                  </div>
                 </div>
               ))
             )}

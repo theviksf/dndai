@@ -1,4 +1,4 @@
-import { Heart, Coins, MapPin, Zap } from 'lucide-react';
+import { Heart, Coins, MapPin, Zap, Shield } from 'lucide-react';
 import type { GameCharacter, StatusEffect, GameStateData } from '@shared/schema';
 
 interface CharacterStatsBarProps {
@@ -7,73 +7,148 @@ interface CharacterStatsBarProps {
   location: GameStateData['location'];
 }
 
+function getModifier(score: number): string {
+  const mod = Math.floor((score - 10) / 2);
+  return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
 export default function CharacterStatsBar({ character, statusEffects, location }: CharacterStatsBarProps) {
+  const hpPercentage = (character.hp / character.maxHp) * 100;
+  
   return (
     <div className="bg-card border-b-2 border-border parchment-texture">
-      <div className="max-w-[1920px] mx-auto px-4 py-2">
-        <div className="flex flex-wrap items-center gap-4 text-sm">
+      <div className="max-w-[1920px] mx-auto px-4 py-3">
+        {/* Row 1: Character Info, HP Bar, Gold, Location */}
+        <div className="flex flex-wrap items-center gap-4 mb-3">
           {/* Character Name & Level */}
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="text-primary" data-testid="text-character-name">{character.name}</span>
-            <span className="text-muted-foreground">
-              Lv.{character.level} {character.race} {character.class}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-primary" data-testid="text-character-name">
+                {character.name}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Lv.{character.level} {character.race} {character.class}
+              </span>
+            </div>
           </div>
 
-          {/* HP */}
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-destructive/10 rounded-md border border-destructive/20">
-            <Heart className="w-4 h-4 text-destructive" />
-            <span className="font-mono font-semibold" data-testid="text-character-hp">
-              {character.hp}/{character.maxHp}
-            </span>
+          {/* HP Bar */}
+          <div className="flex-1 min-w-[200px] max-w-[300px]">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                <Heart className="w-4 h-4 text-destructive" />
+                <span className="text-xs font-medium">Health</span>
+              </div>
+              <span className="text-xs font-mono font-semibold" data-testid="text-character-hp">
+                {character.hp}/{character.maxHp}
+              </span>
+            </div>
+            <div className="w-full bg-destructive/20 rounded-full h-2 overflow-hidden">
+              <div 
+                className={`h-full transition-all ${hpPercentage > 50 ? 'bg-green-500' : hpPercentage > 25 ? 'bg-yellow-500' : 'bg-destructive'}`}
+                style={{ width: `${hpPercentage}%` }}
+              />
+            </div>
           </div>
 
           {/* Gold */}
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 rounded-md border border-yellow-500/20">
-            <Coins className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
-            <span className="font-mono font-semibold" data-testid="text-character-gold">
-              {character.gold}
-            </span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 rounded-md border border-yellow-500/20">
+            <Coins className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Gold</span>
+              <span className="text-sm font-mono font-semibold" data-testid="text-character-gold">
+                {character.gold}
+              </span>
+            </div>
           </div>
 
           {/* Location */}
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-md border border-primary/20">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span className="font-medium" data-testid="text-location">
-              {location?.name || 'Unknown'}
-            </span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-md border border-primary/20 flex-1 min-w-[200px]">
+            <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs text-muted-foreground">Location</span>
+              <span className="text-sm font-medium truncate" data-testid="text-location">
+                {location?.name || 'Unknown'}
+              </span>
+              {location?.description && (
+                <span className="text-xs text-muted-foreground truncate">
+                  {location.description}
+                </span>
+              )}
+            </div>
           </div>
+        </div>
 
-          {/* Attributes */}
-          <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-md border border-border">
+        {/* Row 2: Attributes & Status Effects */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Attributes with Modifiers */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-md border border-border">
             <Zap className="w-4 h-4 text-muted-foreground" />
             <div className="flex gap-3 text-xs font-mono">
-              <span data-testid="text-str">STR {character.attributes.str}</span>
-              <span data-testid="text-dex">DEX {character.attributes.dex}</span>
-              <span data-testid="text-con">CON {character.attributes.con}</span>
-              <span data-testid="text-int">INT {character.attributes.int}</span>
-              <span data-testid="text-wis">WIS {character.attributes.wis}</span>
-              <span data-testid="text-cha">CHA {character.attributes.cha}</span>
+              <div className="flex flex-col items-center" data-testid="text-str">
+                <span className="text-muted-foreground">STR</span>
+                <span className="font-semibold">{character.attributes.str}</span>
+                <span className="text-[10px] text-accent">{getModifier(character.attributes.str)}</span>
+              </div>
+              <div className="flex flex-col items-center" data-testid="text-dex">
+                <span className="text-muted-foreground">DEX</span>
+                <span className="font-semibold">{character.attributes.dex}</span>
+                <span className="text-[10px] text-accent">{getModifier(character.attributes.dex)}</span>
+              </div>
+              <div className="flex flex-col items-center" data-testid="text-con">
+                <span className="text-muted-foreground">CON</span>
+                <span className="font-semibold">{character.attributes.con}</span>
+                <span className="text-[10px] text-accent">{getModifier(character.attributes.con)}</span>
+              </div>
+              <div className="flex flex-col items-center" data-testid="text-int">
+                <span className="text-muted-foreground">INT</span>
+                <span className="font-semibold">{character.attributes.int}</span>
+                <span className="text-[10px] text-accent">{getModifier(character.attributes.int)}</span>
+              </div>
+              <div className="flex flex-col items-center" data-testid="text-wis">
+                <span className="text-muted-foreground">WIS</span>
+                <span className="font-semibold">{character.attributes.wis}</span>
+                <span className="text-[10px] text-accent">{getModifier(character.attributes.wis)}</span>
+              </div>
+              <div className="flex flex-col items-center" data-testid="text-cha">
+                <span className="text-muted-foreground">CHA</span>
+                <span className="font-semibold">{character.attributes.cha}</span>
+                <span className="text-[10px] text-accent">{getModifier(character.attributes.cha)}</span>
+              </div>
             </div>
           </div>
 
           {/* Status Effects */}
-          {statusEffects.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-accent/10 rounded-md border border-accent/20">
-              <span className="text-xs font-medium text-accent">Effects:</span>
-              <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            {statusEffects.length > 0 ? (
+              <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-md border border-accent/20 flex-wrap">
+                <Shield className="w-4 h-4 text-accent flex-shrink-0" />
+                <span className="text-xs font-medium text-accent">Effects:</span>
                 {statusEffects.map((effect, index) => (
-                  <span 
-                    key={index} 
-                    className="text-xs font-medium text-accent-foreground"
+                  <div 
+                    key={index}
+                    className="flex items-center gap-1 bg-accent/20 px-2 py-1 rounded"
                     data-testid={`status-effect-${index}`}
                   >
-                    {effect.name} ({effect.turnsRemaining})
-                  </span>
+                    <span className="text-lg">{effect.icon}</span>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-accent-foreground leading-tight">
+                        {effect.name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground leading-tight">
+                        {effect.turnsRemaining} turns
+                      </span>
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border border-border">
+                <Shield className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">No active effects</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

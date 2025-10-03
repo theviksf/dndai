@@ -205,6 +205,7 @@ export default function Home() {
             <GameInfoTabs 
               inventory={gameState.inventory} 
               quests={gameState.quests} 
+              spells={gameState.spells || []}
               companions={gameState.companions || []} 
               encounteredCharacters={gameState.encounteredCharacters || []} 
               history={gameState.parsedRecaps || []} 
