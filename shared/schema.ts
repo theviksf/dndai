@@ -120,6 +120,12 @@ export type GameCharacter = {
   attributes: Attribute;
 };
 
+export type TurnSnapshot = {
+  state: Omit<GameStateData, 'turnSnapshots'>;
+  costTracker: CostTracker;
+  timestamp: number;
+};
+
 export type GameStateData = {
   character: GameCharacter;
   location: {
@@ -136,6 +142,7 @@ export type GameStateData = {
   narrativeHistory: NarrativeMessage[];
   parsedRecaps: string[];
   turnCount: number;
+  turnSnapshots: TurnSnapshot[];
   debugLog?: DebugLogEntry[];
 };
 
