@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin, Building2 } from 'lucide-react';
 import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
@@ -27,6 +30,15 @@ export default function GameInfoTabs({
   previousLocations,
   onUpdate,
 }: GameInfoTabsProps) {
+  const [npcSortBy, setNpcSortBy] = useState<'name' | 'role' | 'location'>('name');
+
+  const sortedNPCs = [...encounteredCharacters].sort((a, b) => {
+    if (npcSortBy === 'name') return a.name.localeCompare(b.name);
+    if (npcSortBy === 'role') return a.role.localeCompare(b.role);
+    if (npcSortBy === 'location') return (a.location || '').localeCompare(b.location || '');
+    return 0;
+  });
+
   return (
     <Tabs defaultValue="inventory" className="w-full h-full flex flex-col">
       <TabsList className="grid w-full grid-cols-8 bg-muted/50 border-b border-border">
@@ -533,91 +545,144 @@ export default function GameInfoTabs({
       </TabsContent>
 
       <TabsContent value="encounters" className="flex-1 mt-0 border-none p-0">
-        <ScrollArea className="h-[calc(100vh-280px)]">
-          <div className="p-4 space-y-4">
-            {encounteredCharacters.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No characters encountered</p>
-            ) : (
-              encounteredCharacters.map((character, index) => (
-                <div
-                  key={character.id}
-                  className="border-2 border-border rounded-lg p-4 bg-card space-y-2"
-                  data-testid={`encountered-${character.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-base">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={character.name}
-                          onSave={(value) => {
-                            const updated = [...encounteredCharacters];
-                            updated[index] = { ...character, name: String(value) };
-                            onUpdate({ encounteredCharacters: updated });
-                          }}
-                          inputClassName="text-base font-semibold"
-                        />
-                      ) : (
-                        <span>{character.name}</span>
-                      )}
-                    </h4>
-                    <span className="text-xs bg-accent/10 text-accent px-2 py-1 rounded">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={character.role}
-                          onSave={(value) => {
-                            const updated = [...encounteredCharacters];
-                            updated[index] = { ...character, role: String(value) };
-                            onUpdate({ encounteredCharacters: updated });
-                          }}
-                          className="text-xs"
-                          inputClassName="h-5 text-xs"
-                        />
-                      ) : (
-                        <span>{character.role}</span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="pt-2 space-y-2 border-t border-border">
-                    <p className="text-xs text-foreground leading-relaxed">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={character.appearance}
-                          onSave={(value) => {
-                            const updated = [...encounteredCharacters];
-                            updated[index] = { ...character, appearance: String(value) };
-                            onUpdate({ encounteredCharacters: updated });
-                          }}
-                          type="textarea"
-                          className="text-xs"
-                          inputClassName="text-xs"
-                        />
-                      ) : (
-                        <span>{character.appearance}</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={character.description}
-                          onSave={(value) => {
-                            const updated = [...encounteredCharacters];
-                            updated[index] = { ...character, description: String(value) };
-                            onUpdate({ encounteredCharacters: updated });
-                          }}
-                          type="textarea"
-                          className="text-xs"
-                          inputClassName="text-xs"
-                        />
-                      ) : (
-                        <span>{character.description}</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+        <div className="flex flex-col h-full">
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Sort by:</span>
+              <Select value={npcSortBy} onValueChange={(value: any) => setNpcSortBy(value)}>
+                <SelectTrigger className="w-28 h-7 text-xs" data-testid="select-npc-sort">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="role">Role</SelectItem>
+                  <SelectItem value="location">Location</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </ScrollArea>
+          <ScrollArea className="h-[calc(100vh-320px)]">
+            <div className="p-4">
+              {sortedNPCs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No characters encountered</p>
+              ) : (
+                <Accordion type="multiple" className="space-y-2">
+                  {sortedNPCs.map((character, index) => (
+                    <AccordionItem 
+                      key={character.id} 
+                      value={character.id}
+                      className="border border-border rounded-lg px-3 bg-card"
+                      data-testid={`encountered-${character.id}`}
+                    >
+                      <AccordionTrigger className="hover:no-underline py-3">
+                        <div className="flex items-center justify-between w-full pr-2">
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="font-semibold text-sm">{character.name}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{character.role}</span>
+                              {character.location && (
+                                <>
+                                  <span>•</span>
+                                  <span>{character.location}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-3 pt-1">
+                        <div className="space-y-2 text-xs">
+                          {(character.age || onUpdate) && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">Age:</span>
+                              {onUpdate ? (
+                                <InlineEdit
+                                  value={character.age || ''}
+                                  onSave={(value) => {
+                                    const updated = [...encounteredCharacters];
+                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
+                                    updated[origIndex] = { ...character, age: String(value) };
+                                    onUpdate({ encounteredCharacters: updated });
+                                  }}
+                                  className="text-xs"
+                                  inputClassName="h-6 text-xs w-24"
+                                />
+                              ) : (
+                                <span>{character.age}</span>
+                              )}
+                            </div>
+                          )}
+                          {(character.location || onUpdate) && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">Location:</span>
+                              {onUpdate ? (
+                                <InlineEdit
+                                  value={character.location || ''}
+                                  onSave={(value) => {
+                                    const updated = [...encounteredCharacters];
+                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
+                                    updated[origIndex] = { ...character, location: String(value) };
+                                    onUpdate({ encounteredCharacters: updated });
+                                  }}
+                                  className="text-xs"
+                                  inputClassName="h-6 text-xs"
+                                />
+                              ) : (
+                                <span>{character.location}</span>
+                              )}
+                            </div>
+                          )}
+                          <div className="pt-2 border-t border-border">
+                            <p className="text-muted-foreground mb-1">Appearance:</p>
+                            <p className="text-foreground leading-relaxed">
+                              {onUpdate ? (
+                                <InlineEdit
+                                  value={character.appearance}
+                                  onSave={(value) => {
+                                    const updated = [...encounteredCharacters];
+                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
+                                    updated[origIndex] = { ...character, appearance: String(value) };
+                                    onUpdate({ encounteredCharacters: updated });
+                                  }}
+                                  type="textarea"
+                                  className="text-xs"
+                                  inputClassName="text-xs"
+                                />
+                              ) : (
+                                <span>{character.appearance}</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="pt-2 border-t border-border">
+                            <p className="text-muted-foreground mb-1">Description:</p>
+                            <p className="text-foreground leading-relaxed">
+                              {onUpdate ? (
+                                <InlineEdit
+                                  value={character.description}
+                                  onSave={(value) => {
+                                    const updated = [...encounteredCharacters];
+                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
+                                    updated[origIndex] = { ...character, description: String(value) };
+                                    onUpdate({ encounteredCharacters: updated });
+                                  }}
+                                  type="textarea"
+                                  className="text-xs"
+                                  inputClassName="text-xs"
+                                />
+                              ) : (
+                                <span>{character.description}</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </TabsContent>
 
       <TabsContent value="history" className="flex-1 mt-0 border-none p-0">
