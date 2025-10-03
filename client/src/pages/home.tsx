@@ -313,6 +313,7 @@ export default function Home() {
               spells={gameState.spells || []}
               companions={gameState.companions || []} 
               encounteredCharacters={gameState.encounteredCharacters || []} 
+              businesses={gameState.businesses || []}
               history={gameState.parsedRecaps || []} 
               previousLocations={gameState.previousLocations || []}
               onUpdate={updateGameState}

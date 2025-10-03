@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin } from 'lucide-react';
-import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, GameStateData } from '@shared/schema';
+import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin, Building2 } from 'lucide-react';
+import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 
 interface GameInfoTabsProps {
@@ -10,6 +10,7 @@ interface GameInfoTabsProps {
   spells: Spell[];
   companions: Companion[];
   encounteredCharacters: EncounteredCharacter[];
+  businesses: Business[];
   history: string[];
   previousLocations: string[];
   onUpdate?: (updates: Partial<GameStateData>) => void;
@@ -21,13 +22,14 @@ export default function GameInfoTabs({
   spells,
   companions,
   encounteredCharacters,
+  businesses,
   history,
   previousLocations,
   onUpdate,
 }: GameInfoTabsProps) {
   return (
     <Tabs defaultValue="inventory" className="w-full h-full flex flex-col">
-      <TabsList className="grid w-full grid-cols-7 bg-muted/50 border-b border-border">
+      <TabsList className="grid w-full grid-cols-8 bg-muted/50 border-b border-border">
         <TabsTrigger value="inventory" className="gap-1 text-xs" data-testid="tab-inventory">
           <Backpack className="w-4 h-4" />
           <span className="hidden lg:inline">Inventory</span>
@@ -39,6 +41,10 @@ export default function GameInfoTabs({
         <TabsTrigger value="locations" className="gap-1 text-xs" data-testid="tab-locations">
           <MapPin className="w-4 h-4" />
           <span className="hidden lg:inline">Locations</span>
+        </TabsTrigger>
+        <TabsTrigger value="businesses" className="gap-1 text-xs" data-testid="tab-businesses">
+          <Building2 className="w-4 h-4" />
+          <span className="hidden lg:inline">Business</span>
         </TabsTrigger>
         <TabsTrigger value="quests" className="gap-1 text-xs" data-testid="tab-quests">
           <ScrollText className="w-4 h-4" />
@@ -222,6 +228,64 @@ export default function GameInfoTabs({
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="businesses" className="flex-1 mt-0 border-none p-0">
+        <ScrollArea className="h-[calc(100vh-280px)]">
+          <div className="p-4 space-y-3">
+            {!businesses || businesses.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No businesses owned</p>
+            ) : (
+              businesses.map((business) => (
+                <div
+                  key={business.id}
+                  className="border border-border rounded-lg p-4 bg-card hover:bg-accent/5 transition-colors"
+                  data-testid={`business-${business.id}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <Building2 className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm mb-2">{business.name}</h4>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">Weekly Income:</span>
+                          <span className="font-mono font-semibold text-green-600 dark:text-green-500">
+                            +{business.weeklyIncome.toLocaleString()} gold
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">Running Cost:</span>
+                          <span className="font-mono font-semibold text-red-600 dark:text-red-500">
+                            -{business.runningCost.toLocaleString()} gold
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">Net Profit:</span>
+                          <span className="font-mono font-semibold text-primary">
+                            {(business.weeklyIncome - business.runningCost).toLocaleString()} gold/week
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs border-t border-border pt-1.5 mt-2">
+                          <span className="text-muted-foreground">Purchase Cost:</span>
+                          <span className="font-mono text-xs">{business.purchaseCost.toLocaleString()} gold</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">Manager:</span>
+                          <span className="text-xs">{business.manager}</span>
+                        </div>
+                      </div>
+                      {business.description && (
+                        <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
+                          {business.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </ScrollArea>
