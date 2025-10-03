@@ -10,6 +10,7 @@ export type Attribute = {
   int: number;
   wis: number;
   cha: number;
+  ac: number;
 };
 
 export type StatusEffect = {
@@ -125,6 +126,7 @@ export type GameStateData = {
     name: string;
     description: string;
   };
+  previousLocations: string[];
   inventory: InventoryItem[];
   spells: Spell[];
   statusEffects: StatusEffect[];

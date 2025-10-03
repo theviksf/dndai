@@ -57,8 +57,9 @@ FIELD SPECIFICATIONS:
 - gold: number (MUST BE NUMBER)
 - xp: number (current experience, MUST BE NUMBER)
 - nextLevelXp: number (XP needed for next level, MUST BE NUMBER)
-- attributes: object with "str", "dex", "con", "int", "wis", "cha" (ALL NUMBERS)
+- attributes: object with "str", "dex", "con", "int", "wis", "cha", "ac" (ALL NUMBERS, ac is Armor Class)
 - location: object with "name" (string) and "description" (string)
+- previousLocations: array of strings (location names) - APPEND new location when location changes, do not replace
 - statusEffects: array of objects, each with "id", "name", "description", "icon", "turnsRemaining" (number)
 - inventory: array of objects, each with "id", "name", "description", "icon", "type", "quantity" (number), "equipped" (boolean), "magical" (boolean)
 - spells: array of objects, each with "id", "name", "level" (number), "school", "description", "icon"
@@ -106,18 +107,19 @@ YOUR RESPONSE (raw JSON only):
 }
 
 EXAMPLE 4 - Party and NPCs:
-Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. You also meet Elder Morin."
+Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. Lyra is a scarred veteran who fought in the war of the three kingdoms and deeply respects your leadership. You also meet Elder Morin."
 YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "companions": [
-      {"id": "lyra", "name": "Lyra", "race": "Human", "age": "28", "class": "Fighter", "level": 5, "appearance": "Fiery fighter with scarred knuckles", "personality": "Bold and determined", "criticalMemories": "", "feelingsTowardsPlayer": "Loyal ally", "relationship": "Party member"}
+      {"id": "lyra", "name": "Lyra", "race": "Human", "age": "28", "class": "Fighter", "level": 5, "appearance": "Fiery fighter with scarred knuckles and battle-worn armor", "personality": "Bold, determined, and fiercely protective of her allies", "criticalMemories": "Lost her entire squad in the war of the three kingdoms", "feelingsTowardsPlayer": "Deeply respects your leadership and sees you as the commander she wishes she had in the war", "relationship": "Loyal party member and trusted companion"},
+      {"id": "borin", "name": "Borin", "race": "Dwarf", "age": "156", "class": "Cleric", "level": 5, "appearance": "Stout dwarf with a braided beard and holy symbol", "personality": "Wise, calm, and devoted to his deity", "criticalMemories": "Witnessed the fall of his mountain temple to darkness", "feelingsTowardsPlayer": "Believes you are destined for greatness and guided by divine purpose", "relationship": "Spiritual guide and healer"}
     ],
     "encounteredCharacters": [
-      {"id": "morin", "name": "Elder Morin", "role": "Village Elder", "appearance": "Elderly human with wise eyes", "description": "Village elder who provides quests"}
+      {"id": "morin", "name": "Elder Morin", "role": "Village Elder", "appearance": "Elderly human with wise eyes and weathered face", "description": "Village elder who provides quests and local knowledge"}
     ]
   },
-  "recap": "Lyra and Borin joined the party, met Elder Morin"
+  "recap": "Lyra and Borin joined the party as companions, met Elder Morin in the village"
 }
 
 CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):
@@ -154,12 +156,14 @@ export function createDefaultGameState(): GameStateData {
         int: 10,
         wis: 10,
         cha: 10,
+        ac: 10,
       },
     },
     location: {
       name: 'Starting Village',
       description: 'A peaceful hamlet at the edge of the wilderness',
     },
+    previousLocations: [],
     inventory: [],
     spells: [],
     statusEffects: [],
