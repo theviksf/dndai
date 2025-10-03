@@ -173,6 +173,7 @@ export function createDefaultGameState(): GameStateData {
     narrativeHistory: [],
     parsedRecaps: [],
     turnCount: 0,
+    turnSnapshots: [],
     debugLog: [],
   };
 }
