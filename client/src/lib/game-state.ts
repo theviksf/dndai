@@ -25,35 +25,51 @@ CRITICAL EXTRACTION RULES:
    - Extract each individual spell mentioned
 7. Generate a brief 2-3 sentence summary (recap) of key events
 
-Return ONLY a valid JSON object (no code fences, no prose, no comments). Use this exact structure:
+=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
+
+Your response must be ONLY the JSON object below. Do NOT include:
+- Code fences (no \`\`\`json or \`\`\`)
+- Explanatory text before or after the JSON
+- Comments or notes
+- Any text that is not valid JSON
+
+EXACT JSON FORMAT TO RETURN:
 {
   "stateUpdates": {
-    "name": string | undefined (character name if it changed),
-    "race": string | undefined (character race if it changed - e.g., "Half-Elf", "Human"),
-    "class": string | undefined (character class if it changed),
-    "age": string | undefined (character age if it changed or revealed - MUST BE STRING),
-    "level": number | undefined (character level if it changed - MUST BE NUMBER),
-    "hp": number | undefined (current HP if it changed - MUST BE NUMBER),
-    "maxHp": number | undefined (maximum HP if it changed - MUST BE NUMBER),
-    "gold": number | undefined (current gold if it changed - MUST BE NUMBER),
-    "xp": number | undefined (current XP if it changed - MUST BE NUMBER),
-    "nextLevelXp": number | undefined (XP needed for next level if it changed - MUST BE NUMBER),
-    "attributes": { "str": number, "dex": number, "con": number, "int": number, "wis": number, "cha": number } | undefined (any attributes that changed),
-    "location": { "name": string, "description": string } | undefined (if location changed),
-    "statusEffects": [{ "id": string, "name": string, "description": string, "icon": string, "turnsRemaining": number }] | undefined (current active effects),
-    "inventory": [{ "id": string, "name": string, "description": string, "icon": string, "type": string, "quantity": number, "equipped": boolean, "magical": boolean }] | undefined (complete inventory if it changed),
-    "spells": [{ "id": string, "name": string, "level": number, "school": string, "description": string, "icon": string }] | undefined (complete spell list if it changed - when character learns/forgets spells),
-    "quests": [{ "id": string, "title": string, "description": string, "type": "main" | "side", "icon": string, "completed": boolean, "objectives": [{ "text": string, "completed": boolean }], "progress": { "current": number, "total": number } }] | undefined (complete quest list if it changed),
-    "companions": [{ "id": string, "name": string, "race": string, "age": string, "class": string, "level": number, "appearance": string, "personality": string, "criticalMemories": string, "feelingsTowardsPlayer": string, "relationship": string }] | undefined (complete companion list if it changed - when companions join/leave/develop),
-    "encounteredCharacters": [{ "id": string, "name": string, "role": string, "appearance": string, "description": string }] | undefined (complete list of NPCs met - add new characters or update existing ones)
+    // Only include fields that actually changed (omit fields with no changes)
+    // String fields: "name", "race", "class", "age" 
+    // Number fields: "level", "hp", "maxHp", "gold", "xp", "nextLevelXp"
+    // Object field: "attributes" with properties: "str", "dex", "con", "int", "wis", "cha" (all numbers)
+    // Object field: "location" with properties: "name" (string), "description" (string)
+    // Array fields: "statusEffects", "inventory", "spells", "quests", "companions", "encounteredCharacters"
   },
-  "recap": string (REQUIRED: 2-3 sentence summary capturing key events, enough nuance to not miss a beat but very brief)
+  "recap": "REQUIRED: A 2-3 sentence summary of key events"
 }
 
-EXAMPLE EXTRACTIONS:
+FIELD SPECIFICATIONS:
+- name: string (only if character name changed)
+- race: string (only if race changed, e.g. "Half-Elf", "Human", "Dwarf")
+- class: string (only if class changed, e.g. "Wizard", "Fighter")
+- age: string (MUST BE STRING, e.g. "25", "Ancient")
+- level: number (MUST BE NUMBER, e.g. 5, not "5")
+- hp: number (current hit points, MUST BE NUMBER)
+- maxHp: number (maximum hit points, MUST BE NUMBER)
+- gold: number (MUST BE NUMBER)
+- xp: number (current experience, MUST BE NUMBER)
+- nextLevelXp: number (XP needed for next level, MUST BE NUMBER)
+- attributes: object with "str", "dex", "con", "int", "wis", "cha" (ALL NUMBERS)
+- location: object with "name" (string) and "description" (string)
+- statusEffects: array of objects, each with "id", "name", "description", "icon", "turnsRemaining" (number)
+- inventory: array of objects, each with "id", "name", "description", "icon", "type", "quantity" (number), "equipped" (boolean), "magical" (boolean)
+- spells: array of objects, each with "id", "name", "level" (number), "school", "description", "icon"
+- quests: array of objects, each with "id", "title", "description", "type" ("main" or "side"), "icon", "completed" (boolean), "objectives" (array), "progress" (object with "current" and "total" numbers)
+- companions: array of objects, each with "id", "name", "race", "age", "class", "level" (number), "appearance", "personality", "criticalMemories", "feelingsTowardsPlayer", "relationship"
+- encounteredCharacters: array of objects, each with "id", "name", "role", "appearance", "description"
+- recap: string (ALWAYS REQUIRED - never omit this field)
 
+EXAMPLE 1 - Character level up:
 Narrative: "You are now a level 5 half-elf wizard with 33/33 HP and 650/1800 XP"
-Extract:
+YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "race": "Half-Elf",
@@ -66,8 +82,9 @@ Extract:
   "recap": "Character updated to level 5 half-elf wizard with increased HP"
 }
 
+EXAMPLE 2 - Attribute change:
 Narrative: "Your charisma increases by +2 to 17"
-Extract:
+YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "attributes": { "cha": 17 }
@@ -75,8 +92,9 @@ Extract:
   "recap": "Charisma increased to 17"
 }
 
+EXAMPLE 3 - Learning spells:
 Narrative: "You learn the spells Fireball and Shield"
-Extract:
+YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "spells": [
@@ -87,8 +105,9 @@ Extract:
   "recap": "Learned Fireball and Shield spells"
 }
 
+EXAMPLE 4 - Party and NPCs:
 Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. You also meet Elder Morin."
-Extract:
+YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "companions": [
@@ -101,13 +120,18 @@ Extract:
   "recap": "Lyra and Borin joined the party, met Elder Morin"
 }
 
-CRITICAL FORMATTING RULES:
-- Return ONLY the JSON object - no markdown code fences, no explanatory text
-- Use strict JSON: no trailing commas, no comments, use double quotes only
-- Use correct types: numbers for hp/gold/xp/level/nextLevelXp/attributes, strings for age/name/class/race
-- Include ALL fields that changed - if narrative says "level 5 half-elf", include both level AND race
-- Extract numeric values from patterns like "X/Y" (e.g., "650/1800 XP" → xp:650, nextLevelXp:1800)
-- The recap field is ALWAYS required`;
+CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):
+1. Return ONLY raw JSON - do NOT wrap in code fences like \`\`\`json
+2. Do NOT add any text before or after the JSON object
+3. Use strict JSON syntax: double quotes only, no trailing commas, no comments
+4. Use correct data types: numbers for numeric fields (level, hp, xp, etc.), strings for text fields (name, race, age, etc.), booleans for true/false
+5. Include ALL fields that changed in the narrative
+6. Extract numeric values from patterns like "X/Y" (e.g., "650/1800 XP" means xp:650, nextLevelXp:1800)
+7. The "recap" field is ALWAYS required - never omit it
+8. Only include fields in "stateUpdates" that actually changed - omit unchanged fields
+9. For arrays (inventory, spells, etc.), provide the COMPLETE updated list, not just changes
+
+REMEMBER: Your entire response must be valid, parseable JSON. Nothing else.`;
 
 
 export function createDefaultGameState(): GameStateData {
