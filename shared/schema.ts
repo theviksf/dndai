@@ -81,6 +81,7 @@ export type EncounteredCharacter = {
   location: string;
   appearance: string;
   description: string;
+  status: 'alive' | 'dead';
 };
 
 export type Business = {

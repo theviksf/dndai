@@ -257,9 +257,25 @@ function validateAndCoerceParserData(data: any): any {
       result.stateUpdates.encounteredCharacters = encounterList.map((e: any, idx: number) => ({
         id: e.id || `encounter-${Date.now()}-${idx}`,
         name: e.name || 'Unknown',
+        age: e.age || 'Unknown',
         role: e.role || 'NPC',
+        location: e.location || 'Unknown',
         appearance: e.appearance || e.description || 'No description',
-        description: e.description || e.appearance || 'No description'
+        description: e.description || e.appearance || 'No description',
+        status: e.status || 'alive'
+      }));
+    }
+    if (updates.businesses !== undefined) {
+      // Normalize businesses - ensure they have required fields
+      const businessList = Array.isArray(updates.businesses) ? updates.businesses : [updates.businesses];
+      result.stateUpdates.businesses = businessList.map((b: any, idx: number) => ({
+        id: b.id || `business-${Date.now()}-${idx}`,
+        name: b.name || 'Unknown Business',
+        weeklyIncome: typeof b.weeklyIncome === 'number' ? b.weeklyIncome : 0,
+        purchaseCost: typeof b.purchaseCost === 'number' ? b.purchaseCost : 0,
+        manager: b.manager || 'Unknown',
+        runningCost: typeof b.runningCost === 'number' ? b.runningCost : 0,
+        description: b.description || 'No description'
       }));
     }
     
@@ -579,9 +595,44 @@ export default function NarrativePanel({
             updated.companions = stateUpdates.companions;
           }
           
-          // Update encountered characters
+          // Update encountered characters - NEVER DELETE, only merge/add
           if (stateUpdates.encounteredCharacters !== undefined) {
-            updated.encounteredCharacters = stateUpdates.encounteredCharacters;
+            const existingNPCs = prev.encounteredCharacters || [];
+            const newNPCs = stateUpdates.encounteredCharacters;
+            
+            // Merge NPCs - update existing ones or add new ones
+            const mergedNPCs = [...existingNPCs];
+            newNPCs.forEach((newNPC: any) => {
+              const existingIndex = mergedNPCs.findIndex(npc => npc.id === newNPC.id);
+              if (existingIndex >= 0) {
+                // Update existing NPC
+                mergedNPCs[existingIndex] = { ...mergedNPCs[existingIndex], ...newNPC };
+              } else {
+                // Add new NPC
+                mergedNPCs.push(newNPC);
+              }
+            });
+            updated.encounteredCharacters = mergedNPCs;
+          }
+          
+          // Update businesses - merge/add, never delete
+          if (stateUpdates.businesses !== undefined) {
+            const existingBusinesses = prev.businesses || [];
+            const newBusinesses = stateUpdates.businesses;
+            
+            // Merge businesses - update existing ones or add new ones
+            const mergedBusinesses = [...existingBusinesses];
+            newBusinesses.forEach((newBusiness: any) => {
+              const existingIndex = mergedBusinesses.findIndex(b => b.id === newBusiness.id);
+              if (existingIndex >= 0) {
+                // Update existing business
+                mergedBusinesses[existingIndex] = { ...mergedBusinesses[existingIndex], ...newBusiness };
+              } else {
+                // Add new business
+                mergedBusinesses.push(newBusiness);
+              }
+            });
+            updated.businesses = mergedBusinesses;
           }
 
           // Store parsed recap for future context

@@ -181,9 +181,13 @@ export default function Home() {
   };
 
   const createSnapshot = () => {
+    // Deep copy of game state to ensure nested objects are captured
+    // Exclude turnSnapshots from the snapshot to avoid circular reference
+    const { turnSnapshots: _, ...stateToSave } = gameState;
     const snapshot: TurnSnapshot = {
-      state: { ...gameState },
-      costTracker: { ...costTracker },
+      state: JSON.parse(JSON.stringify(stateToSave)),
+      costTracker: JSON.parse(JSON.stringify(costTracker)),
+      timestamp: Date.now(),
     };
     setTurnSnapshots(prev => [...prev, snapshot]);
   };
@@ -202,8 +206,11 @@ export default function Home() {
     const latestSnapshot = turnSnapshots[turnSnapshots.length - 1];
     const remainingSnapshots = turnSnapshots.slice(0, -1);
 
-    // Restore state from snapshot
-    setGameState(latestSnapshot.state);
+    // Restore state from snapshot (add back turnSnapshots field)
+    setGameState({
+      ...latestSnapshot.state,
+      turnSnapshots: [],  // Will be managed by setTurnSnapshots below
+    });
 
     // Restore cost tracker
     setCostTracker(latestSnapshot.costTracker);

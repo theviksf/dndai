@@ -632,6 +632,19 @@ export default function GameInfoTabs({
                               )}
                             </div>
                           )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Status:</span>
+                            <span 
+                              className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                character.status === 'alive' 
+                                  ? 'bg-green-500/20 text-green-700 dark:text-green-400' 
+                                  : 'bg-red-500/20 text-red-700 dark:text-red-400'
+                              }`}
+                              data-testid={`status-${character.id}`}
+                            >
+                              {character.status || 'alive'}
+                            </span>
+                          </div>
                           <div className="pt-2 border-t border-border">
                             <p className="text-muted-foreground mb-1">Appearance:</p>
                             <p className="text-foreground leading-relaxed">
