@@ -19,12 +19,12 @@ Preferred communication style: Simple, everyday language.
 **State Management**: Local component state with React hooks. Game state is managed at the top level and passed down through props. TanStack Query handles server state and API caching.
 
 **Component Structure**:
-- **Home page** (`/`): Main game container with compact layout - character stats bar at top, narrative panel in center (8 cols), tabbed info panel on right (4 cols)
+- **Home page** (`/`): Main game container with optimized layout - expanded character stats bar at top (double height, two rows), narrative panel in center (8 cols), tabbed info panel on right (4 cols)
 - **Settings page** (`/settings`): LLM configuration interface with model selection, API key input, and custom prompt editing for both DM and Parser system prompts
 - **Character Creation page** (`/character-creation`): Multi-step character creation with race/class/age selection and attribute point-buy system
-- **CharacterStatsBar**: Compact horizontal bar displaying character name, level, race, class, HP, gold, location, attributes (STR, DEX, CON, INT, WIS, CHA), and status effects
+- **CharacterStatsBar**: Expanded two-row stats bar for better information display. Row 1: character name/level/race/class, visual health bar with color coding (green>50%, yellow 25-50%, red<25%), gold, and location with description. Row 2: attributes with modifiers displayed below each value (+3, -1, etc.), and dedicated status effects section with icons and turn counts
 - **NarrativePanel**: Primary game interface displaying story progression with custom action text input only (quick action buttons removed for cleaner UX). Shows DM responses immediately, then parses in background
-- **GameInfoTabs**: Tabbed interface consolidating inventory, quests, companions, encountered characters, and history into a space-efficient panel with 5 tabs
+- **GameInfoTabs**: Tabbed interface consolidating inventory, spells, quests, companions (Allies), encountered characters (NPCs), and history into a space-efficient panel with 6 tabs. Improved card layout with better spacing and visual separation
 
 **Path Aliases**: Uses TypeScript path mapping for clean imports (`@/` for client source, `@shared/` for shared types).
 
