@@ -207,15 +207,17 @@ export function createDefaultConfig(): GameConfig {
 }
 
 export function migrateParserPrompt(config: GameConfig): GameConfig {
-  // Check if config has old parser prompt (contains "questUpdates" or missing "companions")
+  // Check if config has old parser prompt (missing "businesses" or "status" field)
   const hasOldPrompt = 
     config.parserSystemPrompt.includes('questUpdates') || 
     !config.parserSystemPrompt.includes('companions') ||
     !config.parserSystemPrompt.includes('encounteredCharacters') ||
-    !config.parserSystemPrompt.includes('spells');
+    !config.parserSystemPrompt.includes('spells') ||
+    !config.parserSystemPrompt.includes('businesses') ||
+    !config.parserSystemPrompt.includes('"status"');
   
   if (hasOldPrompt) {
-    console.log('Migrating old parser prompt to new comprehensive version');
+    console.log('Migrating old parser prompt to new comprehensive version with businesses and NPC status');
     return {
       ...config,
       parserSystemPrompt: PARSER_SYSTEM_PROMPT,
