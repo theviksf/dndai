@@ -22,7 +22,21 @@ export default function Home() {
     // Load character from localStorage if exists
     const savedCharacter = localStorage.getItem('gameCharacter');
     if (savedCharacter) {
-      defaultState.character = JSON.parse(savedCharacter);
+      const loadedCharacter = JSON.parse(savedCharacter);
+      // Ensure AC exists in attributes for old saves
+      defaultState.character = {
+        ...loadedCharacter,
+        attributes: {
+          str: 10,
+          dex: 10,
+          con: 10,
+          int: 10,
+          wis: 10,
+          cha: 10,
+          ac: 10,
+          ...loadedCharacter.attributes,
+        }
+      };
     }
     return defaultState;
   });
@@ -100,9 +114,23 @@ export default function Home() {
           setConfig(migrateParserPrompt(loadedConfig));
         }
         if (savedCharacter) {
+          const loadedCharacter = JSON.parse(savedCharacter);
           setGameState(prev => ({
             ...prev,
-            character: JSON.parse(savedCharacter)
+            character: {
+              ...loadedCharacter,
+              attributes: {
+                str: 10,
+                dex: 10,
+                con: 10,
+                int: 10,
+                wis: 10,
+                cha: 10,
+                ac: 10,
+                ...loadedCharacter.attributes,
+              }
+            },
+            previousLocations: prev.previousLocations || [],
           }));
         }
         if (gameStarted === 'true') {
@@ -130,9 +158,14 @@ export default function Home() {
       // Track location changes - add old location to previousLocations if location changed
       if (updates.location && updates.location.name && updates.location.name !== prev.location.name) {
         const oldLocation = prev.location.name;
-        if (oldLocation && !prev.previousLocations.includes(oldLocation)) {
-          newState.previousLocations = [...prev.previousLocations, oldLocation];
+        const prevLocations = prev.previousLocations || [];
+        if (oldLocation && !prevLocations.includes(oldLocation)) {
+          newState.previousLocations = [...prevLocations, oldLocation];
+        } else {
+          newState.previousLocations = prevLocations;
         }
+      } else if (!newState.previousLocations) {
+        newState.previousLocations = [];
       }
       
       return newState;

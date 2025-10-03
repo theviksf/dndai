@@ -205,7 +205,7 @@ export default function GameInfoTabs({
       <TabsContent value="locations" className="flex-1 mt-0 border-none p-0">
         <ScrollArea className="h-[calc(100vh-280px)]">
           <div className="p-4 space-y-3">
-            {previousLocations.length === 0 ? (
+            {!previousLocations || previousLocations.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No previous locations</p>
             ) : (
               <div className="space-y-2">
