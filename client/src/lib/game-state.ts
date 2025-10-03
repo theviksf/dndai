@@ -65,7 +65,8 @@ FIELD SPECIFICATIONS:
 - spells: array of objects, each with "id", "name", "level" (number), "school", "description", "icon"
 - quests: array of objects, each with "id", "title", "description", "type" ("main" or "side"), "icon", "completed" (boolean), "objectives" (array), "progress" (object with "current" and "total" numbers)
 - companions: array of objects, each with "id", "name", "race", "age", "class", "level" (number), "appearance", "personality", "criticalMemories", "feelingsTowardsPlayer", "relationship"
-- encounteredCharacters: array of objects, each with "id", "name", "role", "appearance", "description"
+- encounteredCharacters: array of objects, each with "id", "name", "age" (string), "role", "location" (where met/lives), "appearance", "description"
+- businesses: array of objects, each with "id", "name", "weeklyIncome" (number), "purchaseCost" (number), "manager" (string), "runningCost" (number), "description"
 - recap: string (ALWAYS REQUIRED - never omit this field)
 
 EXAMPLE 1 - Character level up:
@@ -107,7 +108,7 @@ YOUR RESPONSE (raw JSON only):
 }
 
 EXAMPLE 4 - Party and NPCs:
-Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. Lyra is a scarred veteran who fought in the war of the three kingdoms and deeply respects your leadership. You also meet Elder Morin."
+Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. Lyra is a scarred veteran who fought in the war of the three kingdoms and deeply respects your leadership. You also meet Elder Morin at his home in Riverdale."
 YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
@@ -116,10 +117,23 @@ YOUR RESPONSE (raw JSON only):
       {"id": "borin", "name": "Borin", "race": "Dwarf", "age": "156", "class": "Cleric", "level": 5, "appearance": "Stout dwarf with a braided beard and holy symbol", "personality": "Wise, calm, and devoted to his deity", "criticalMemories": "Witnessed the fall of his mountain temple to darkness", "feelingsTowardsPlayer": "Believes you are destined for greatness and guided by divine purpose", "relationship": "Spiritual guide and healer"}
     ],
     "encounteredCharacters": [
-      {"id": "morin", "name": "Elder Morin", "role": "Village Elder", "appearance": "Elderly human with wise eyes and weathered face", "description": "Village elder who provides quests and local knowledge"}
+      {"id": "morin", "name": "Elder Morin", "age": "73", "role": "Village Elder", "location": "Riverdale", "appearance": "Elderly human with wise eyes and weathered face", "description": "Village elder who provides quests and local knowledge"}
     ]
   },
-  "recap": "Lyra and Borin joined the party as companions, met Elder Morin in the village"
+  "recap": "Lyra and Borin joined the party as companions, met Elder Morin in Riverdale"
+}
+
+EXAMPLE 5 - Business acquisition:
+Narrative: "You successfully purchase the Golden Goblet tavern for 5000 gold. The previous owner, Marcus, agrees to stay on as manager for 100 gold per week. The tavern brings in 500 gold weekly but costs 200 gold to operate."
+YOUR RESPONSE (raw JSON only):
+{
+  "stateUpdates": {
+    "gold": -5000,
+    "businesses": [
+      {"id": "golden-goblet", "name": "The Golden Goblet", "weeklyIncome": 500, "purchaseCost": 5000, "manager": "Marcus", "runningCost": 200, "description": "A popular tavern in the city center, known for its fine ale and lively atmosphere"}
+    ]
+  },
+  "recap": "Purchased The Golden Goblet tavern for 5000 gold with Marcus as manager"
 }
 
 CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):
