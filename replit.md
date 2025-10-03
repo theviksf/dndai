@@ -19,12 +19,12 @@ Preferred communication style: Simple, everyday language.
 **State Management**: Local component state with React hooks. Game state is managed at the top level and passed down through props. TanStack Query handles server state and API caching.
 
 **Component Structure**:
-- **Home page** (`/`): Main game container orchestrating gameplay with character stats, narrative panel, and inventory/quest display
+- **Home page** (`/`): Main game container with compact layout - character stats bar at top, narrative panel in center (8 cols), tabbed info panel on right (4 cols)
 - **Settings page** (`/settings`): LLM configuration interface with model selection, API key input, and custom prompt editing for both DM and Parser system prompts
 - **Character Creation page** (`/character-creation`): Multi-step character creation with race/class/age selection and attribute point-buy system
-- **NarrativePanel**: Primary game interface displaying story progression and action input. Shows DM responses immediately, then parses in background
-- **CharacterStats**: Real-time display of character attributes, health, XP, status effects, and learned spells
-- **InventoryQuestPanel**: Side panel for inventory management, quest tracking, companions, encountered characters, and history display (shows all parsed recaps)
+- **CharacterStatsBar**: Compact horizontal bar displaying character name, level, race, class, HP, gold, location, attributes (STR, DEX, CON, INT, WIS, CHA), and status effects
+- **NarrativePanel**: Primary game interface displaying story progression with custom action text input only (quick action buttons removed for cleaner UX). Shows DM responses immediately, then parses in background
+- **GameInfoTabs**: Tabbed interface consolidating inventory, quests, companions, encountered characters, and history into a space-efficient panel with 5 tabs
 
 **Path Aliases**: Uses TypeScript path mapping for clean imports (`@/` for client source, `@shared/` for shared types).
 
