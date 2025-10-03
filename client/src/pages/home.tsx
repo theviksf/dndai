@@ -120,11 +120,23 @@ export default function Home() {
   };
 
   const updateGameState = (updates: Partial<GameStateData>) => {
-    setGameState(prev => ({
-      ...prev,
-      ...updates,
-      character: updates.character ? { ...prev.character, ...updates.character } : prev.character,
-    }));
+    setGameState(prev => {
+      const newState = {
+        ...prev,
+        ...updates,
+        character: updates.character ? { ...prev.character, ...updates.character } : prev.character,
+      };
+      
+      // Track location changes - add old location to previousLocations if location changed
+      if (updates.location && updates.location.name && updates.location.name !== prev.location.name) {
+        const oldLocation = prev.location.name;
+        if (oldLocation && !prev.previousLocations.includes(oldLocation)) {
+          newState.previousLocations = [...prev.previousLocations, oldLocation];
+        }
+      }
+      
+      return newState;
+    });
     
     if (updates.character) {
       localStorage.setItem('gameCharacter', JSON.stringify({
@@ -225,6 +237,7 @@ export default function Home() {
               companions={gameState.companions || []} 
               encounteredCharacters={gameState.encounteredCharacters || []} 
               history={gameState.parsedRecaps || []} 
+              previousLocations={gameState.previousLocations || []}
               onUpdate={updateGameState}
             />
           </div>

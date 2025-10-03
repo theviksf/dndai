@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Backpack, ScrollText, Users, UserCircle, History, Sparkles } from 'lucide-react';
+import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin } from 'lucide-react';
 import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, GameStateData } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 
@@ -11,6 +11,7 @@ interface GameInfoTabsProps {
   companions: Companion[];
   encounteredCharacters: EncounteredCharacter[];
   history: string[];
+  previousLocations: string[];
   onUpdate?: (updates: Partial<GameStateData>) => void;
 }
 
@@ -21,11 +22,12 @@ export default function GameInfoTabs({
   companions,
   encounteredCharacters,
   history,
+  previousLocations,
   onUpdate,
 }: GameInfoTabsProps) {
   return (
     <Tabs defaultValue="inventory" className="w-full h-full flex flex-col">
-      <TabsList className="grid w-full grid-cols-6 bg-muted/50 border-b border-border">
+      <TabsList className="grid w-full grid-cols-7 bg-muted/50 border-b border-border">
         <TabsTrigger value="inventory" className="gap-1 text-xs" data-testid="tab-inventory">
           <Backpack className="w-4 h-4" />
           <span className="hidden lg:inline">Inventory</span>
@@ -34,13 +36,17 @@ export default function GameInfoTabs({
           <Sparkles className="w-4 h-4" />
           <span className="hidden lg:inline">Spells</span>
         </TabsTrigger>
+        <TabsTrigger value="locations" className="gap-1 text-xs" data-testid="tab-locations">
+          <MapPin className="w-4 h-4" />
+          <span className="hidden lg:inline">Locations</span>
+        </TabsTrigger>
         <TabsTrigger value="quests" className="gap-1 text-xs" data-testid="tab-quests">
           <ScrollText className="w-4 h-4" />
           <span className="hidden lg:inline">Quests</span>
         </TabsTrigger>
         <TabsTrigger value="companions" className="gap-1 text-xs" data-testid="tab-companions">
           <Users className="w-4 h-4" />
-          <span className="hidden lg:inline">Allies</span>
+          <span className="hidden lg:inline">Party</span>
         </TabsTrigger>
         <TabsTrigger value="encounters" className="gap-1 text-xs" data-testid="tab-encounters">
           <UserCircle className="w-4 h-4" />
@@ -191,6 +197,31 @@ export default function GameInfoTabs({
                   </div>
                 </div>
               ))
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="locations" className="flex-1 mt-0 border-none p-0">
+        <ScrollArea className="h-[calc(100vh-280px)]">
+          <div className="p-4 space-y-3">
+            {previousLocations.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No previous locations</p>
+            ) : (
+              <div className="space-y-2">
+                {previousLocations.map((location, index) => (
+                  <div
+                    key={index}
+                    className="border border-border rounded-lg p-3 bg-card"
+                    data-testid={`location-${index}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">{location}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </ScrollArea>
@@ -365,10 +396,54 @@ export default function GameInfoTabs({
                       )}
                     </p>
                   </div>
+                  {(companion.criticalMemories || onUpdate) && (
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs">
+                        <span className="font-medium text-accent">Critical Memories: </span>
+                        {onUpdate ? (
+                          <InlineEdit
+                            value={companion.criticalMemories || ''}
+                            onSave={(value) => {
+                              const updated = [...companions];
+                              updated[index] = { ...companion, criticalMemories: String(value) };
+                              onUpdate({ companions: updated });
+                            }}
+                            type="textarea"
+                            className="text-xs"
+                            inputClassName="text-xs"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">{companion.criticalMemories}</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {(companion.feelingsTowardsPlayer || onUpdate) && (
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs">
+                        <span className="font-medium text-accent">Feelings Towards You: </span>
+                        {onUpdate ? (
+                          <InlineEdit
+                            value={companion.feelingsTowardsPlayer || ''}
+                            onSave={(value) => {
+                              const updated = [...companions];
+                              updated[index] = { ...companion, feelingsTowardsPlayer: String(value) };
+                              onUpdate({ companions: updated });
+                            }}
+                            type="textarea"
+                            className="text-xs"
+                            inputClassName="text-xs"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">{companion.feelingsTowardsPlayer}</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
                   {(companion.relationship || onUpdate) && (
                     <div className="pt-2 border-t border-border">
-                      <p className="text-xs font-medium text-accent flex items-center gap-1">
-                        Relationship: 
+                      <p className="text-xs">
+                        <span className="font-medium text-accent">Relationship: </span>
                         {onUpdate ? (
                           <InlineEdit
                             value={companion.relationship || ''}
@@ -377,11 +452,11 @@ export default function GameInfoTabs({
                               updated[index] = { ...companion, relationship: String(value) };
                               onUpdate({ companions: updated });
                             }}
-                            className="font-normal"
-                            inputClassName="h-5 text-xs"
+                            className="text-xs"
+                            inputClassName="text-xs"
                           />
                         ) : (
-                          <span>{companion.relationship}</span>
+                          <span className="text-muted-foreground">{companion.relationship}</span>
                         )}
                       </p>
                     </div>
