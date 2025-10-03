@@ -74,6 +74,21 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 ) : (
                   <span>{character.class}</span>
                 )}
+                {character.age && (
+                  <>
+                    {', Age '}
+                    {onUpdate ? (
+                      <InlineEdit
+                        value={character.age}
+                        onSave={(value) => onUpdate({ character: { age: String(value) } })}
+                        className="font-normal"
+                        inputClassName="h-6 text-xs w-16"
+                      />
+                    ) : (
+                      <span>{character.age}</span>
+                    )}
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -288,6 +303,28 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 </span>
                 <span className="text-[10px] text-accent">{getModifier(character.attributes.cha)}</span>
               </div>
+            </div>
+          </div>
+
+          {/* AC (Armor Class) */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-md border border-border">
+            <Shield className="w-4 h-4 text-muted-foreground" />
+            <div className="flex flex-col items-center text-xs font-mono" data-testid="text-ac">
+              <span className="text-muted-foreground">AC</span>
+              <span className="font-semibold text-base">
+                {onUpdate ? (
+                  <InlineEdit
+                    value={character.attributes.ac}
+                    onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, ac: Number(value) } } })}
+                    type="number"
+                    min={1}
+                    max={30}
+                    inputClassName="w-10 h-6 text-base text-center font-semibold"
+                  />
+                ) : (
+                  <span>{character.attributes.ac}</span>
+                )}
+              </span>
             </div>
           </div>
 
