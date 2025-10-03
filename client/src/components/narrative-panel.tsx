@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
 import { callLLM, callLLMStream } from '@/lib/openrouter';
 import { DM_SYSTEM_PROMPT, PARSER_SYSTEM_PROMPT } from '@/lib/game-state';
-import { ArrowRight, Search, MessageCircle, Sword, Package, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface NarrativePanelProps {
@@ -17,13 +17,6 @@ interface NarrativePanelProps {
   setCostTracker: (tracker: CostTracker | ((prev: CostTracker) => CostTracker)) => void;
   models: OpenRouterModel[];
 }
-
-const QUICK_ACTIONS = [
-  { id: 'investigate', label: 'Investigate', description: 'Examine surroundings', icon: Search },
-  { id: 'talk', label: 'Talk', description: 'Speak to someone', icon: MessageCircle },
-  { id: 'attack', label: 'Attack', description: 'Ready your weapon', icon: Sword },
-  { id: 'use', label: 'Use Item', description: 'Access inventory', icon: Package },
-];
 
 // Robust JSON parsing helper
 function sanitizeJSON(jsonString: string): string {
@@ -652,16 +645,6 @@ export default function NarrativePanel({
     processAction(actionInput);
   };
 
-  const handleQuickAction = (actionId: string) => {
-    const templates: Record<string, string> = {
-      investigate: 'I carefully examine my surroundings, looking for clues or anything unusual.',
-      talk: 'I approach and try to start a conversation.',
-      attack: 'I ready my weapon and prepare to attack.',
-      use: 'I search through my inventory for something useful.',
-    };
-    
-    processAction(templates[actionId] || actionId);
-  };
 
   return (
     <main className="lg:col-span-6 flex flex-col space-y-4">
@@ -743,29 +726,6 @@ export default function NarrativePanel({
       {/* Action Input */}
       <div className="bg-card border-2 border-border rounded-lg ornate-border parchment-texture p-4">
         <h3 className="text-sm font-serif font-semibold text-primary mb-3">What do you do?</h3>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {QUICK_ACTIONS.map(action => {
-            const Icon = action.icon;
-            return (
-              <Button
-                key={action.id}
-                onClick={() => handleQuickAction(action.id)}
-                disabled={isProcessing}
-                variant="outline"
-                className="bg-muted hover:bg-muted/80 border-border hover:border-primary justify-start h-auto py-3"
-                data-testid={`button-quick-${action.id}`}
-              >
-                <Icon className="w-5 h-5 mr-2" />
-                <div className="text-left">
-                  <div className="text-sm font-medium">{action.label}</div>
-                  <div className="text-xs text-muted-foreground">{action.description}</div>
-                </div>
-              </Button>
-            );
-          })}
-        </div>
 
         {/* Custom Action */}
         <div className="flex gap-2">

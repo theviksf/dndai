@@ -5,9 +5,9 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt } from '@/lib/game-state';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
-import CharacterStats from '@/components/character-stats';
+import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
-import InventoryQuestPanel from '@/components/inventory-quest-panel';
+import GameInfoTabs from '@/components/game-info-tabs';
 import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
 import { Settings, Save, Terminal } from 'lucide-react';
@@ -181,30 +181,35 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Character Stats Bar */}
+      <CharacterStatsBar 
+        character={gameState.character}
+        statusEffects={gameState.statusEffects}
+        location={gameState.location}
+      />
+
       {/* Main Content */}
       <div className="flex-1 max-w-[1920px] mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 h-full">
-          <CharacterStats 
-            character={gameState.character} 
-            statusEffects={gameState.statusEffects} 
-            location={gameState.location} 
-            spells={gameState.spells || []} 
-          />
-          <NarrativePanel 
-            gameState={gameState}
-            setGameState={setGameState}
-            config={config}
-            costTracker={costTracker}
-            setCostTracker={setCostTracker}
-            models={models || []}
-          />
-          <InventoryQuestPanel 
-            inventory={gameState.inventory} 
-            quests={gameState.quests} 
-            companions={gameState.companions || []} 
-            encounteredCharacters={gameState.encounteredCharacters || []} 
-            history={gameState.parsedRecaps || []} 
-          />
+          <div className="lg:col-span-8">
+            <NarrativePanel 
+              gameState={gameState}
+              setGameState={setGameState}
+              config={config}
+              costTracker={costTracker}
+              setCostTracker={setCostTracker}
+              models={models || []}
+            />
+          </div>
+          <div className="lg:col-span-4">
+            <GameInfoTabs 
+              inventory={gameState.inventory} 
+              quests={gameState.quests} 
+              companions={gameState.companions || []} 
+              encounteredCharacters={gameState.encounteredCharacters || []} 
+              history={gameState.parsedRecaps || []} 
+            />
+          </div>
         </div>
       </div>
 
