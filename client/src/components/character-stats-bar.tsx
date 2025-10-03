@@ -146,9 +146,10 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                     type="number"
                     min={0}
                     inputClassName="w-20 h-6 text-sm"
+                    displayAs={(val) => Number(val).toLocaleString()}
                   />
                 ) : (
-                  <span>{character.gold}</span>
+                  <span>{character.gold.toLocaleString()}</span>
                 )}
               </span>
             </div>
