@@ -1,7 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Backpack, ScrollText, Users, UserCircle, History, Sparkles } from 'lucide-react';
-import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell } from '@shared/schema';
+import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, GameStateData } from '@shared/schema';
+import { InlineEdit } from '@/components/ui/inline-edit';
 
 interface GameInfoTabsProps {
   inventory: InventoryItem[];
@@ -10,6 +11,7 @@ interface GameInfoTabsProps {
   companions: Companion[];
   encounteredCharacters: EncounteredCharacter[];
   history: string[];
+  onUpdate?: (updates: Partial<GameStateData>) => void;
 }
 
 export default function GameInfoTabs({
@@ -19,6 +21,7 @@ export default function GameInfoTabs({
   companions,
   encounteredCharacters,
   history,
+  onUpdate,
 }: GameInfoTabsProps) {
   return (
     <Tabs defaultValue="inventory" className="w-full h-full flex flex-col">
@@ -91,23 +94,99 @@ export default function GameInfoTabs({
             {spells.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No spells learned</p>
             ) : (
-              spells.map((spell) => (
+              spells.map((spell, index) => (
                 <div
                   key={spell.id}
                   className="border border-border rounded-lg p-3 bg-card hover:bg-accent/5 transition-colors"
                   data-testid={`spell-${spell.id}`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-2xl">{spell.icon}</div>
+                    <div className="text-2xl">
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={spell.icon}
+                          onSave={(value) => {
+                            const updated = [...spells];
+                            updated[index] = { ...spell, icon: String(value) };
+                            onUpdate({ spells: updated });
+                          }}
+                          className="text-2xl"
+                          inputClassName="w-12 h-8 text-2xl text-center"
+                        />
+                      ) : (
+                        <span>{spell.icon}</span>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-semibold text-sm">{spell.name}</h4>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                          Lv.{spell.level}
+                        <h4 className="font-semibold text-sm">
+                          {onUpdate ? (
+                            <InlineEdit
+                              value={spell.name}
+                              onSave={(value) => {
+                                const updated = [...spells];
+                                updated[index] = { ...spell, name: String(value) };
+                                onUpdate({ spells: updated });
+                              }}
+                              inputClassName="text-sm font-semibold"
+                            />
+                          ) : (
+                            <span>{spell.name}</span>
+                          )}
+                        </h4>
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1">
+                          Lv.
+                          {onUpdate ? (
+                            <InlineEdit
+                              value={spell.level}
+                              onSave={(value) => {
+                                const updated = [...spells];
+                                updated[index] = { ...spell, level: Number(value) };
+                                onUpdate({ spells: updated });
+                              }}
+                              type="number"
+                              min={0}
+                              max={9}
+                              inputClassName="w-10 h-5 text-xs"
+                            />
+                          ) : (
+                            <span>{spell.level}</span>
+                          )}
                         </span>
                       </div>
-                      <p className="text-xs text-accent mt-1">{spell.school}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{spell.description}</p>
+                      <p className="text-xs text-accent mt-1">
+                        {onUpdate ? (
+                          <InlineEdit
+                            value={spell.school}
+                            onSave={(value) => {
+                              const updated = [...spells];
+                              updated[index] = { ...spell, school: String(value) };
+                              onUpdate({ spells: updated });
+                            }}
+                            className="text-xs text-accent"
+                            inputClassName="h-5 text-xs"
+                          />
+                        ) : (
+                          <span>{spell.school}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {onUpdate ? (
+                          <InlineEdit
+                            value={spell.description}
+                            onSave={(value) => {
+                              const updated = [...spells];
+                              updated[index] = { ...spell, description: String(value) };
+                              onUpdate({ spells: updated });
+                            }}
+                            type="textarea"
+                            className="text-xs"
+                            inputClassName="text-xs"
+                          />
+                        ) : (
+                          <span>{spell.description}</span>
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -171,28 +250,140 @@ export default function GameInfoTabs({
             {companions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No companions yet</p>
             ) : (
-              companions.map((companion) => (
+              companions.map((companion, index) => (
                 <div
                   key={companion.id}
                   className="border-2 border-border rounded-lg p-4 bg-card space-y-2"
                   data-testid={`companion-${companion.id}`}
                 >
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-base">{companion.name}</h4>
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      Lv. {companion.level}
+                    <h4 className="font-semibold text-base">
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={companion.name}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, name: String(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          inputClassName="text-base font-semibold"
+                        />
+                      ) : (
+                        <span>{companion.name}</span>
+                      )}
+                    </h4>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded flex items-center gap-1">
+                      Lv. 
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={companion.level}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, level: Number(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          type="number"
+                          min={1}
+                          max={20}
+                          inputClassName="w-12 h-5 text-xs"
+                        />
+                      ) : (
+                        <span>{companion.level}</span>
+                      )}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {companion.race} {companion.class}, Age {companion.age}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
+                    {onUpdate ? (
+                      <>
+                        <InlineEdit
+                          value={companion.race}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, race: String(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          inputClassName="h-5 text-xs"
+                        />
+                        {' '}
+                        <InlineEdit
+                          value={companion.class}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, class: String(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          inputClassName="h-5 text-xs"
+                        />
+                        , Age{' '}
+                        <InlineEdit
+                          value={companion.age}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, age: String(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          inputClassName="h-5 text-xs w-16"
+                        />
+                      </>
+                    ) : (
+                      <span>{companion.race} {companion.class}, Age {companion.age}</span>
+                    )}
                   </p>
                   <div className="pt-2 space-y-2 border-t border-border">
-                    <p className="text-xs text-foreground leading-relaxed">{companion.appearance}</p>
-                    <p className="text-xs text-muted-foreground italic leading-relaxed">{companion.personality}</p>
+                    <p className="text-xs text-foreground leading-relaxed">
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={companion.appearance}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, appearance: String(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          type="textarea"
+                          className="text-xs"
+                          inputClassName="text-xs"
+                        />
+                      ) : (
+                        <span>{companion.appearance}</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground italic leading-relaxed">
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={companion.personality}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, personality: String(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          type="textarea"
+                          className="text-xs italic"
+                          inputClassName="text-xs"
+                        />
+                      ) : (
+                        <span>{companion.personality}</span>
+                      )}
+                    </p>
                   </div>
-                  {companion.relationship && (
+                  {(companion.relationship || onUpdate) && (
                     <div className="pt-2 border-t border-border">
-                      <p className="text-xs font-medium text-accent">Relationship: {companion.relationship}</p>
+                      <p className="text-xs font-medium text-accent flex items-center gap-1">
+                        Relationship: 
+                        {onUpdate ? (
+                          <InlineEdit
+                            value={companion.relationship || ''}
+                            onSave={(value) => {
+                              const updated = [...companions];
+                              updated[index] = { ...companion, relationship: String(value) };
+                              onUpdate({ companions: updated });
+                            }}
+                            className="font-normal"
+                            inputClassName="h-5 text-xs"
+                          />
+                        ) : (
+                          <span>{companion.relationship}</span>
+                        )}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -208,21 +399,80 @@ export default function GameInfoTabs({
             {encounteredCharacters.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No characters encountered</p>
             ) : (
-              encounteredCharacters.map((character) => (
+              encounteredCharacters.map((character, index) => (
                 <div
                   key={character.id}
                   className="border-2 border-border rounded-lg p-4 bg-card space-y-2"
                   data-testid={`encountered-${character.id}`}
                 >
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-base">{character.name}</h4>
+                    <h4 className="font-semibold text-base">
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={character.name}
+                          onSave={(value) => {
+                            const updated = [...encounteredCharacters];
+                            updated[index] = { ...character, name: String(value) };
+                            onUpdate({ encounteredCharacters: updated });
+                          }}
+                          inputClassName="text-base font-semibold"
+                        />
+                      ) : (
+                        <span>{character.name}</span>
+                      )}
+                    </h4>
                     <span className="text-xs bg-accent/10 text-accent px-2 py-1 rounded">
-                      {character.role}
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={character.role}
+                          onSave={(value) => {
+                            const updated = [...encounteredCharacters];
+                            updated[index] = { ...character, role: String(value) };
+                            onUpdate({ encounteredCharacters: updated });
+                          }}
+                          className="text-xs"
+                          inputClassName="h-5 text-xs"
+                        />
+                      ) : (
+                        <span>{character.role}</span>
+                      )}
                     </span>
                   </div>
                   <div className="pt-2 space-y-2 border-t border-border">
-                    <p className="text-xs text-foreground leading-relaxed">{character.appearance}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{character.description}</p>
+                    <p className="text-xs text-foreground leading-relaxed">
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={character.appearance}
+                          onSave={(value) => {
+                            const updated = [...encounteredCharacters];
+                            updated[index] = { ...character, appearance: String(value) };
+                            onUpdate({ encounteredCharacters: updated });
+                          }}
+                          type="textarea"
+                          className="text-xs"
+                          inputClassName="text-xs"
+                        />
+                      ) : (
+                        <span>{character.appearance}</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {onUpdate ? (
+                        <InlineEdit
+                          value={character.description}
+                          onSave={(value) => {
+                            const updated = [...encounteredCharacters];
+                            updated[index] = { ...character, description: String(value) };
+                            onUpdate({ encounteredCharacters: updated });
+                          }}
+                          type="textarea"
+                          className="text-xs"
+                          inputClassName="text-xs"
+                        />
+                      ) : (
+                        <span>{character.description}</span>
+                      )}
+                    </p>
                   </div>
                 </div>
               ))

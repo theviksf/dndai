@@ -119,6 +119,21 @@ export default function Home() {
     saveMutation.mutate();
   };
 
+  const updateGameState = (updates: Partial<GameStateData>) => {
+    setGameState(prev => ({
+      ...prev,
+      ...updates,
+      character: updates.character ? { ...prev.character, ...updates.character } : prev.character,
+    }));
+    
+    if (updates.character) {
+      localStorage.setItem('gameCharacter', JSON.stringify({
+        ...gameState.character,
+        ...updates.character,
+      }));
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
@@ -186,6 +201,7 @@ export default function Home() {
         character={gameState.character}
         statusEffects={gameState.statusEffects}
         location={gameState.location}
+        onUpdate={updateGameState}
       />
 
       {/* Main Content */}
@@ -209,6 +225,7 @@ export default function Home() {
               companions={gameState.companions || []} 
               encounteredCharacters={gameState.encounteredCharacters || []} 
               history={gameState.parsedRecaps || []} 
+              onUpdate={updateGameState}
             />
           </div>
         </div>
