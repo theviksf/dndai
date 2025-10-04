@@ -8,6 +8,8 @@ import { callLLM, callLLMStream } from '@/lib/openrouter';
 import { DM_SYSTEM_PROMPT, PARSER_SYSTEM_PROMPT } from '@/lib/game-state';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface NarrativePanelProps {
   gameState: GameStateData;
@@ -722,9 +724,9 @@ export default function NarrativePanel({
         >
           {gameState.narrativeHistory.length === 0 && !isStreaming ? (
             <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4 fade-in">
-              <p className="text-foreground leading-relaxed">
-                Your adventure begins here. What will you do?
-              </p>
+              <div className="text-foreground leading-relaxed prose prose-invert prose-sm max-w-none">
+                <p>Your adventure begins here. What will you do?</p>
+              </div>
             </div>
           ) : (
             <>
@@ -736,7 +738,11 @@ export default function NarrativePanel({
                 >
                   {message.type === 'dm' ? (
                     <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
-                      <p className="text-foreground leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                      <div className="text-foreground leading-relaxed prose prose-invert prose-sm max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-accent/20 border border-accent rounded-lg p-3 max-w-md">
@@ -756,10 +762,12 @@ export default function NarrativePanel({
               {isStreaming && (
                 <div className="fade-in" data-testid="message-dm-streaming">
                   <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
-                    <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                      {streamingContent || ''}
+                    <div className="text-foreground leading-relaxed prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {streamingContent || ''}
+                      </ReactMarkdown>
                       <span className="inline-block w-1 h-4 ml-1 bg-primary animate-pulse" />
-                    </p>
+                    </div>
                   </div>
                 </div>
               )}
