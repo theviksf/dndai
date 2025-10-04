@@ -80,7 +80,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 )}
                 {character.age && (
                   <>
-                    {', Age '}
+                    {' Age '}
                     {onUpdate ? (
                       <InlineEdit
                         value={character.age}
