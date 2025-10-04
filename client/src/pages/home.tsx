@@ -11,7 +11,8 @@ import GameInfoTabs from '@/components/game-info-tabs';
 import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Settings, Save, Terminal, Undo2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Settings, Save, Terminal, Undo2, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
@@ -57,6 +58,8 @@ export default function Home() {
   });
   const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
   const [turnSnapshots, setTurnSnapshots] = useState<TurnSnapshot[]>([]);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const fileInputRef = useState<HTMLInputElement | null>(null)[0];
 
   // Fetch OpenRouter models
   const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
@@ -239,6 +242,162 @@ export default function Home() {
     });
   };
 
+  const handleExport = (includeApiKey: boolean) => {
+    try {
+      // Deep clone all game data to prevent mutation leaks
+      const exportData = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        gameState: JSON.parse(JSON.stringify(gameState)),
+        config: includeApiKey ? JSON.parse(JSON.stringify(config)) : { ...JSON.parse(JSON.stringify(config)), openRouterApiKey: '' },
+        costTracker: JSON.parse(JSON.stringify(costTracker)),
+        turnSnapshots: JSON.parse(JSON.stringify(turnSnapshots)),
+      };
+
+      // Convert to JSON
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      // Generate filename: CharName-Level-Date-Time.ogl
+      const charName = gameState.character.name || 'Character';
+      const level = gameState.character.level || 1;
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+      const filename = `${charName}-L${level}-${dateStr}-${timeStr}.ogl`;
+      
+      // Trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Game Exported",
+        description: `Save file downloaded as ${filename}`,
+      });
+      
+      setShowExportDialog(false);
+    } catch (error: any) {
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to export game data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Helper function to migrate game state data with deep merging
+  const migrateGameState = (stateData: any): GameStateData => {
+    const defaultState = createDefaultGameState();
+    
+    return {
+      ...defaultState,
+      ...stateData,
+      // Deep merge character with defaults
+      character: {
+        ...defaultState.character,
+        ...stateData.character,
+        attributes: {
+          str: 10,
+          dex: 10,
+          con: 10,
+          int: 10,
+          wis: 10,
+          cha: 10,
+          ac: 10,
+          ...stateData.character?.attributes,
+        }
+      },
+      // Deep merge location with defaults
+      location: {
+        ...defaultState.location,
+        ...stateData.location,
+      },
+      // Ensure all arrays exist with defaults
+      previousLocations: stateData.previousLocations || [],
+      inventory: stateData.inventory || [],
+      quests: stateData.quests || [],
+      spells: stateData.spells || [],
+      companions: stateData.companions || [],
+      encounteredCharacters: stateData.encounteredCharacters || [],
+      businesses: stateData.businesses || [],
+      statusEffects: stateData.statusEffects || [],
+      narrativeHistory: stateData.narrativeHistory || [],
+      parsedRecaps: stateData.parsedRecaps || [],
+      debugLog: stateData.debugLog || [],
+      updatedTabs: Array.isArray(stateData.updatedTabs) ? stateData.updatedTabs : [],
+      // Explicitly exclude turnSnapshots field from imported state (managed separately)
+      turnSnapshots: [],
+    };
+  };
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.ogl,.json';
+    input.onchange = async (e: any) => {
+      try {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const text = await file.text();
+        const importData = JSON.parse(text);
+        
+        // Validate import data
+        if (!importData.gameState || !importData.config) {
+          throw new Error('Invalid save file format');
+        }
+        
+        // Migrate main game state
+        const migratedState = migrateGameState(importData.gameState);
+        
+        // Migrate config (parser prompt migration)
+        const migratedConfig = migrateParserPrompt(importData.config);
+        
+        // Migrate cost tracker
+        const migratedCostTracker = importData.costTracker 
+          ? migrateCostTracker(importData.costTracker)
+          : createDefaultCostTracker();
+        
+        // Migrate turn snapshots - migrate BOTH state and costTracker in each snapshot
+        const migratedSnapshots = (importData.turnSnapshots || []).map((snapshot: TurnSnapshot) => ({
+          ...snapshot,
+          state: migrateGameState(snapshot.state),
+          costTracker: migrateCostTracker(snapshot.costTracker),
+        }));
+        
+        // Restore all data with migrations applied
+        setGameState(migratedState);
+        setConfig(migratedConfig);
+        setCostTracker(migratedCostTracker);
+        setTurnSnapshots(migratedSnapshots);
+        
+        // Update localStorage with migrated data
+        localStorage.setItem('gameCharacter', JSON.stringify(migratedState.character));
+        localStorage.setItem('gameConfig', JSON.stringify(migratedConfig));
+        localStorage.setItem('isGameStarted', 'true');
+        setIsGameStarted(true);
+        
+        toast({
+          title: "Game Loaded",
+          description: `Successfully imported ${file.name}`,
+        });
+      } catch (error: any) {
+        toast({
+          title: "Import Failed",
+          description: error.message || "Failed to load save file",
+          variant: "destructive",
+        });
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
@@ -366,6 +525,26 @@ export default function Home() {
               </Button>
               
               <Button
+                onClick={() => setShowExportDialog(true)}
+                variant="outline"
+                className="bg-muted hover:bg-muted/80"
+                data-testid="button-export-game"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Export</span>
+              </Button>
+              
+              <Button
+                onClick={handleImport}
+                variant="outline"
+                className="bg-muted hover:bg-muted/80"
+                data-testid="button-import-game"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Import</span>
+              </Button>
+              
+              <Button
                 onClick={() => setIsDebugLogOpen(true)}
                 variant="outline"
                 className="bg-muted hover:bg-muted/80"
@@ -441,6 +620,33 @@ export default function Home() {
         isOpen={isDebugLogOpen}
         onClose={() => setIsDebugLogOpen(false)}
       />
+
+      {/* Export Dialog */}
+      <AlertDialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Export Game Save</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your game will be exported as a .ogl file containing all game data, including character stats, inventory, quests, companions, conversation history, and settings.
+              <br /><br />
+              Would you like to include your OpenRouter API key in the export?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => handleExport(false)}
+              data-testid="button-export-without-key"
+            >
+              Export Without API Key
+            </Button>
+            <AlertDialogAction onClick={() => handleExport(true)} data-testid="button-export-with-key">
+              Export With API Key
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
