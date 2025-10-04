@@ -570,6 +570,14 @@ export default function NarrativePanel({
           
           // Update location
           if (stateUpdates.location !== undefined) {
+            // Track old location before updating
+            if (stateUpdates.location.name && stateUpdates.location.name !== prev.location.name) {
+              const oldLocation = prev.location.name;
+              const prevLocations = prev.previousLocations || [];
+              if (oldLocation && !prevLocations.includes(oldLocation)) {
+                updated.previousLocations = [...prevLocations, oldLocation];
+              }
+            }
             updated.location = stateUpdates.location;
           }
           

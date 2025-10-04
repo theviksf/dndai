@@ -411,7 +411,7 @@ export default function GameInfoTabs({
                       <p className="text-xs text-muted-foreground mt-1">{quest.description}</p>
                       {quest.objectives.length > 0 && (
                         <ul className="mt-2 space-y-1">
-                          {quest.objectives.map((obj, idx) => (
+                          {quest.objectives.filter(obj => obj.text && obj.text.trim() !== '').map((obj, idx) => (
                             <li key={idx} className="text-xs flex items-center gap-2">
                               <input
                                 type="checkbox"

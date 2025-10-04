@@ -401,7 +401,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 max-w-[1920px] mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 h-full">
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-7">
             <NarrativePanel 
               gameState={gameState}
               setGameState={setGameState}
@@ -412,7 +412,7 @@ export default function Home() {
               createSnapshot={createSnapshot}
             />
           </div>
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-5">
             <GameInfoTabs 
               inventory={gameState.inventory} 
               quests={gameState.quests} 
