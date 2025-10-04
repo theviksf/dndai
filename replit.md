@@ -46,8 +46,14 @@ The system utilizes two distinct LLMs:
 
 ### Data Storage Solutions
 
-**Current**: In-memory storage using JavaScript Maps.
-**Planned**: PostgreSQL with Drizzle ORM for type-safe operations.
+**Session-Based Storage**: All game data is stored in browser localStorage with session-scoped keys. Each game has a unique session ID in the URL (e.g., `/?session=abc123`), allowing multiple independent games to coexist.
+- **Session ID**: 10-character unique identifier generated using nanoid
+- **Storage Keys**: All localStorage keys are prefixed with session ID (e.g., `gameCharacter_abc123`, `gameConfig_abc123`, `turnSnapshots_abc123`)
+- **Session Management**: Session ID is automatically created on first visit and persists in URL across all navigation
+- **Multi-Session Support**: Users can have multiple games by changing the session parameter in URL
+- **New Game Button**: Creates a fresh session with new ID, resetting to default settings and prompting for new character creation
+
+**Future**: PostgreSQL with Drizzle ORM for type-safe operations.
 **Schema Design**: `GameState` (character stats, inventory, spells, quests, companions, narrative, parsed recaps), `GameConfig` (LLM selections, API keys, custom prompts), `CostTracker`, `GameCharacter`, `Spell`, `Companion`, `EncounteredCharacter`.
 
 ## External Dependencies

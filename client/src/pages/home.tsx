@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateCostTracker } from '@/lib/game-state';
-import { ensureSessionId, getSessionStorageKey, generateSessionId, navigateToSession } from '@/lib/session';
+import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
@@ -20,14 +20,25 @@ export default function Home() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>(() => getSessionIdFromUrl() || '');
   
-  // Establish session ID from URL or create new one
-  const sessionId = ensureSessionId();
+  // Ensure session ID exists in URL
+  useEffect(() => {
+    const urlSessionId = getSessionIdFromUrl();
+    if (!urlSessionId) {
+      const newSessionId = generateSessionId();
+      setSessionIdInUrl(newSessionId);
+      setSessionId(newSessionId);
+    } else if (urlSessionId !== sessionId) {
+      setSessionId(urlSessionId);
+    }
+  }, []);
   
   const [gameState, setGameState] = useState<GameStateData>(() => {
     const defaultState = createDefaultGameState();
+    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
     // Load character from session-scoped localStorage if exists
-    const savedCharacter = localStorage.getItem(getSessionStorageKey('gameCharacter', sessionId));
+    const savedCharacter = localStorage.getItem(getSessionStorageKey('gameCharacter', initialSessionId));
     if (savedCharacter) {
       const loadedCharacter = JSON.parse(savedCharacter);
       // Ensure AC exists in attributes for old saves
@@ -52,18 +63,21 @@ export default function Home() {
     return defaultState;
   });
   const [config, setConfig] = useState<GameConfig>(() => {
+    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
     // Load config from session-scoped localStorage
-    const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', sessionId));
+    const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', initialSessionId));
     const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
     return migrateParserPrompt(loadedConfig);
   });
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
   const [isGameStarted, setIsGameStarted] = useState(() => {
-    return localStorage.getItem(getSessionStorageKey('isGameStarted', sessionId)) === 'true';
+    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
+    return localStorage.getItem(getSessionStorageKey('isGameStarted', initialSessionId)) === 'true';
   });
   const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
   const [turnSnapshots, setTurnSnapshots] = useState<TurnSnapshot[]>(() => {
-    const savedSnapshots = localStorage.getItem(getSessionStorageKey('turnSnapshots', sessionId));
+    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
+    const savedSnapshots = localStorage.getItem(getSessionStorageKey('turnSnapshots', initialSessionId));
     return savedSnapshots ? JSON.parse(savedSnapshots) : [];
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -165,9 +179,9 @@ export default function Home() {
   };
 
   const handleNewGame = () => {
-    // Generate new session ID and navigate to it
+    // Generate new session ID and navigate to it using SPA navigation
     const newSessionId = generateSessionId();
-    navigateToSession(newSessionId);
+    setLocation(buildSessionUrl('/', newSessionId));
   };
 
   const updateGameState = (updates: Partial<GameStateData>) => {

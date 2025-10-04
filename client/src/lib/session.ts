@@ -15,21 +15,8 @@ export function setSessionIdInUrl(sessionId: string): void {
   window.history.replaceState({}, '', url.toString());
 }
 
-export function navigateToSession(sessionId: string): void {
-  const url = new URL(window.location.href);
-  url.searchParams.set('session', sessionId);
-  window.location.href = url.toString();
-}
-
-export function ensureSessionId(): string {
-  let sessionId = getSessionIdFromUrl();
-  
-  if (!sessionId) {
-    sessionId = generateSessionId();
-    setSessionIdInUrl(sessionId);
-  }
-  
-  return sessionId;
+export function buildSessionUrl(path: string, sessionId: string): string {
+  return `${path}?session=${sessionId}`;
 }
 
 export function getSessionStorageKey(key: string, sessionId: string): string {
