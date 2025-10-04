@@ -29,10 +29,13 @@ const CLASSES = [
   { id: 'bard', name: 'Bard', icon: '🎵', description: 'Charismatic performer' },
 ];
 
+const SEX_OPTIONS = ['Male', 'Female', 'Non-binary', 'Other'];
+
 export default function CharacterCreationPage({ onComplete }: CharacterCreationPageProps) {
   const [, setLocation] = useLocation();
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
+  const [sex, setSex] = useState('');
   const [selectedRace, setSelectedRace] = useState('elf');
   const [selectedClass, setSelectedClass] = useState('');
   const [attributes, setAttributes] = useState({
@@ -92,6 +95,7 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
       race: RACES.find(r => r.id === selectedRace)?.name || '',
       class: CLASSES.find(c => c.id === selectedClass)?.name || '',
       age: age || 'Unknown',
+      sex: sex || 'Unknown',
       level: 1,
       xp: 0,
       nextLevelXp: 300,
@@ -160,6 +164,25 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
                 className="bg-input border-border"
                 data-testid="input-character-age"
               />
+            </div>
+
+            {/* Sex Selection */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-foreground">Sex (Optional)</label>
+              <div className="grid grid-cols-4 gap-2">
+                {SEX_OPTIONS.map(option => (
+                  <button
+                    key={option}
+                    onClick={() => setSex(option)}
+                    className={`bg-muted hover:bg-muted/80 border-2 rounded-md p-3 text-center transition-all ${
+                      sex === option ? 'border-primary glow-effect' : 'border-border'
+                    }`}
+                    data-testid={`button-sex-${option.toLowerCase()}`}
+                  >
+                    <div className="text-sm font-medium text-foreground">{option}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Race Selection */}

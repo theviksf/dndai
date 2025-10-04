@@ -21,7 +21,7 @@ FORMAT YOUR RESPONSES IN MARKDOWN:
 export const PARSER_SYSTEM_PROMPT = `You are a game state parser for a D&D adventure game. Your ONLY job is to extract structured data changes from the narrative.
 
 CRITICAL EXTRACTION RULES:
-1. Look for character stat changes: If narrative says "Level 5", extract level:5. If it says "Half-Elf", extract race:"Half-Elf"
+1. Look for character stat changes: If narrative says "Level 5", extract level:5. If it says "Half-Elf", extract race:"Half-Elf". If it says "age 25" or "25 years old", extract age:"25". If it says "man" or "male", extract sex:"Male". If it says "woman" or "female", extract sex:"Female".
 2. Look for ability score changes: If narrative says "+2 CHA" or "CHA 17", extract attributes.cha:17
 3. Look for XP thresholds: If narrative says "650/1800 XP" or "enough XP for level X", extract xp:650 AND nextLevelXp:1800
 4. Look for HP changes: If narrative says "33/33 HP", extract hp:33 AND maxHp:33
@@ -45,7 +45,7 @@ EXACT JSON FORMAT TO RETURN:
 {
   "stateUpdates": {
     // Only include fields that actually changed (omit fields with no changes)
-    // String fields: "name", "race", "class", "age" 
+    // String fields: "name", "race", "class", "age", "sex" 
     // Number fields: "level", "hp", "maxHp", "gold", "xp", "nextLevelXp"
     // Object field: "attributes" with properties: "str", "dex", "con", "int", "wis", "cha" (all numbers)
     // Object field: "location" with properties: "name" (string), "description" (string)
@@ -59,6 +59,7 @@ FIELD SPECIFICATIONS:
 - race: string (only if race changed, e.g. "Half-Elf", "Human", "Dwarf")
 - class: string (only if class changed, e.g. "Wizard", "Fighter")
 - age: string (MUST BE STRING, e.g. "25", "Ancient")
+- sex: string (only if sex changed, e.g. "Male", "Female", "Non-binary")
 - level: number (MUST BE NUMBER, e.g. 5, not "5")
 - hp: number (current hit points, MUST BE NUMBER)
 - maxHp: number (maximum hit points, MUST BE NUMBER)
@@ -72,8 +73,8 @@ FIELD SPECIFICATIONS:
 - inventory: array of objects, each with "id", "name", "description", "icon", "type", "quantity" (number), "equipped" (boolean), "magical" (boolean)
 - spells: array of objects, each with "id", "name", "level" (number), "school", "description", "icon"
 - quests: array of objects, each with "id", "title", "description", "type" ("main" or "side"), "icon", "completed" (boolean), "objectives" (array), "progress" (object with "current" and "total" numbers)
-- companions: array of objects, each with "id", "name", "race", "age", "class", "level" (number), "appearance", "personality", "criticalMemories", "feelingsTowardsPlayer", "relationship"
-- encounteredCharacters: array of objects, each with "id", "name", "age" (string), "role", "location" (where met/lives), "appearance", "description", "status" ("alive" or "dead")
+- companions: array of objects, each with "id", "name", "race", "age", "sex", "class", "level" (number), "appearance", "personality", "criticalMemories", "feelingsTowardsPlayer", "relationship"
+- encounteredCharacters: array of objects, each with "id", "name", "age" (string), "sex", "role", "location" (where met/lives), "appearance", "description", "status" ("alive" or "dead")
 - businesses: array of objects, each with "id", "name", "weeklyIncome" (number), "purchaseCost" (number), "manager" (string), "runningCost" (number), "description"
 - recap: string (ALWAYS REQUIRED - never omit this field)
 
@@ -116,16 +117,16 @@ YOUR RESPONSE (raw JSON only):
 }
 
 EXAMPLE 4 - Party and NPCs:
-Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. Lyra is a scarred veteran who fought in the war of the three kingdoms and deeply respects your leadership. You also meet Elder Morin, a 73-year-old village elder, at his home in Riverdale."
+Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. Lyra is a scarred veteran who fought in the war of the three kingdoms and deeply respects your leadership. You also meet Elder Morin, a 73-year-old male village elder, at his home in Riverdale."
 YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "companions": [
-      {"id": "lyra", "name": "Lyra", "race": "Human", "age": "28", "class": "Fighter", "level": 5, "appearance": "Fiery fighter with scarred knuckles and battle-worn armor", "personality": "Bold, determined, and fiercely protective of her allies", "criticalMemories": "Lost her entire squad in the war of the three kingdoms", "feelingsTowardsPlayer": "Deeply respects your leadership and sees you as the commander she wishes she had in the war", "relationship": "Loyal party member and trusted companion"},
-      {"id": "borin", "name": "Borin", "race": "Dwarf", "age": "156", "class": "Cleric", "level": 5, "appearance": "Stout dwarf with a braided beard and holy symbol", "personality": "Wise, calm, and devoted to his deity", "criticalMemories": "Witnessed the fall of his mountain temple to darkness", "feelingsTowardsPlayer": "Believes you are destined for greatness and guided by divine purpose", "relationship": "Spiritual guide and healer"}
+      {"id": "lyra", "name": "Lyra", "race": "Human", "age": "28", "sex": "Female", "class": "Fighter", "level": 5, "appearance": "Fiery fighter with scarred knuckles and battle-worn armor", "personality": "Bold, determined, and fiercely protective of her allies", "criticalMemories": "Lost her entire squad in the war of the three kingdoms", "feelingsTowardsPlayer": "Deeply respects your leadership and sees you as the commander she wishes she had in the war", "relationship": "Loyal party member and trusted companion"},
+      {"id": "borin", "name": "Borin", "race": "Dwarf", "age": "156", "sex": "Male", "class": "Cleric", "level": 5, "appearance": "Stout dwarf with a braided beard and holy symbol", "personality": "Wise, calm, and devoted to his deity", "criticalMemories": "Witnessed the fall of his mountain temple to darkness", "feelingsTowardsPlayer": "Believes you are destined for greatness and guided by divine purpose", "relationship": "Spiritual guide and healer"}
     ],
     "encounteredCharacters": [
-      {"id": "morin", "name": "Elder Morin", "age": "73", "role": "Village Elder", "location": "Riverdale", "appearance": "Elderly human with wise eyes and weathered face", "description": "Village elder who provides quests and local knowledge", "status": "alive"}
+      {"id": "morin", "name": "Elder Morin", "age": "73", "sex": "Male", "role": "Village Elder", "location": "Riverdale", "appearance": "Elderly human with wise eyes and weathered face", "description": "Village elder who provides quests and local knowledge", "status": "alive"}
     ]
   },
   "recap": "Lyra and Borin joined the party as companions, met Elder Morin in Riverdale"
@@ -165,6 +166,7 @@ export function createDefaultGameState(): GameStateData {
       race: '',
       class: '',
       age: '',
+      sex: '',
       level: 1,
       xp: 0,
       nextLevelXp: 300,

@@ -42,8 +42,10 @@ export default function Home() {
     if (savedCharacter) {
       const loadedCharacter = JSON.parse(savedCharacter);
       // Ensure AC exists in attributes for old saves
+      // Ensure sex exists for old saves
       defaultState.character = {
         ...loadedCharacter,
+        sex: loadedCharacter.sex || '',
         attributes: {
           str: 10,
           dex: 10,
@@ -55,6 +57,19 @@ export default function Home() {
           ...loadedCharacter.attributes,
         }
       };
+    }
+    // Migrate companions and NPCs to add sex field for old saves
+    if (defaultState.companions) {
+      defaultState.companions = defaultState.companions.map(c => ({
+        ...c,
+        sex: c.sex || ''
+      }));
+    }
+    if (defaultState.encounteredCharacters) {
+      defaultState.encounteredCharacters = defaultState.encounteredCharacters.map(c => ({
+        ...c,
+        sex: c.sex || ''
+      }));
     }
     // Migrate updatedTabs from Set (which becomes {}) to array
     if (defaultState.updatedTabs && !Array.isArray(defaultState.updatedTabs)) {
@@ -150,6 +165,7 @@ export default function Home() {
             ...prev,
             character: {
               ...loadedCharacter,
+              sex: loadedCharacter.sex || '',
               attributes: {
                 str: 10,
                 dex: 10,
@@ -162,6 +178,9 @@ export default function Home() {
               }
             },
             previousLocations: prev.previousLocations || [],
+            // Migrate companions and NPCs for old saves
+            companions: (prev.companions || []).map(c => ({ ...c, sex: c.sex || '' })),
+            encounteredCharacters: (prev.encounteredCharacters || []).map(c => ({ ...c, sex: c.sex || '' }))
           }));
         }
         if (gameStarted === 'true') {

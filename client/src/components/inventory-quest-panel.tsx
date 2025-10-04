@@ -210,7 +210,7 @@ export default function InventoryQuestPanel({ inventory, quests, companions = []
                 <div className="mb-2">
                   <div className="text-sm font-serif font-semibold text-primary">{companion.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {companion.race} {companion.class} • Level {companion.level} • Age {companion.age}
+                    {companion.race} {companion.class}{companion.sex ? ` ${companion.sex}` : ''} • Level {companion.level}{companion.age ? ` • Age ${companion.age}` : ''}
                   </div>
                 </div>
                 <div className="space-y-2 text-xs">
@@ -265,6 +265,13 @@ export default function InventoryQuestPanel({ inventory, quests, companions = []
                 <div className="mb-1">
                   <div className="text-sm font-serif font-semibold text-primary">{character.name}</div>
                   <div className="text-xs text-accent">{character.role}</div>
+                  {(character.sex || character.age) && (
+                    <div className="text-xs text-muted-foreground">
+                      {character.sex && <span>{character.sex}</span>}
+                      {character.sex && character.age && <span> • </span>}
+                      {character.age && <span>Age {character.age}</span>}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1 text-xs">
                   <div>

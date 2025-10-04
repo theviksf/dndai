@@ -78,12 +78,23 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 ) : (
                   <span>{character.class}</span>
                 )}
-                {character.age && (
+                {' '}
+                {onUpdate ? (
+                  <InlineEdit
+                    value={character.sex || ''}
+                    onSave={(value) => onUpdate({ character: { sex: String(value) } })}
+                    className="font-normal"
+                    inputClassName="h-6 text-xs"
+                  />
+                ) : character.sex ? (
+                  <span>{character.sex}</span>
+                ) : null}
+                {(onUpdate || character.age) && (
                   <>
-                    {' Age '}
+                    {' • Age '}
                     {onUpdate ? (
                       <InlineEdit
-                        value={character.age}
+                        value={character.age || ''}
                         onSave={(value) => onUpdate({ character: { age: String(value) } })}
                         className="font-normal"
                         inputClassName="h-6 text-xs w-16"

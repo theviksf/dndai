@@ -521,9 +521,19 @@ export default function GameInfoTabs({
                           }}
                           inputClassName="h-5 text-xs"
                         />
-                        , Age{' '}
+                        {' '}
                         <InlineEdit
-                          value={companion.age}
+                          value={companion.sex || ''}
+                          onSave={(value) => {
+                            const updated = [...companions];
+                            updated[index] = { ...companion, sex: String(value) };
+                            onUpdate({ companions: updated });
+                          }}
+                          inputClassName="h-5 text-xs"
+                        />
+                        {' • Age '}
+                        <InlineEdit
+                          value={companion.age || ''}
                           onSave={(value) => {
                             const updated = [...companions];
                             updated[index] = { ...companion, age: String(value) };
@@ -533,7 +543,7 @@ export default function GameInfoTabs({
                         />
                       </>
                     ) : (
-                      <span>{companion.race} {companion.class}, Age {companion.age}</span>
+                      <span>{companion.race} {companion.class}{companion.sex ? ` ${companion.sex}` : ''}{companion.age ? ` • Age ${companion.age}` : ''}</span>
                     )}
                   </p>
                   <div className="pt-2 space-y-2 border-t border-border">
@@ -692,6 +702,26 @@ export default function GameInfoTabs({
                       </AccordionTrigger>
                       <AccordionContent className="pb-3 pt-1">
                         <div className="space-y-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Sex:</span>
+                            {onUpdate ? (
+                              <InlineEdit
+                                value={character.sex || ''}
+                                onSave={(value) => {
+                                  const updated = [...encounteredCharacters];
+                                  const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
+                                  updated[origIndex] = { ...character, sex: String(value) };
+                                  onUpdate({ encounteredCharacters: updated });
+                                }}
+                                className="text-xs"
+                                inputClassName="h-6 text-xs w-24"
+                              />
+                            ) : character.sex ? (
+                              <span>{character.sex}</span>
+                            ) : (
+                              <span className="text-muted-foreground/50">Not specified</span>
+                            )}
+                          </div>
                           {(character.age || onUpdate) && (
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground">Age:</span>
