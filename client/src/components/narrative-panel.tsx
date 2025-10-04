@@ -350,12 +350,14 @@ export default function NarrativePanel({
         character: gameState.character,
         // Current game state
         location: gameState.location,
+        previousLocations: gameState.previousLocations || [],
         inventory: gameState.inventory,
         statusEffects: gameState.statusEffects,
         spells: gameState.spells || [],
         quests: gameState.quests,
         companions: gameState.companions || [],
         encounteredCharacters: gameState.encounteredCharacters || [],
+        businesses: gameState.businesses || [],
         // Historical context (condensed)
         parsedHistory: gameState.parsedRecaps.join('\n\n'),
         // Recent conversation (last 3 back-and-forth exchanges = 6 messages)
