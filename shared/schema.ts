@@ -192,6 +192,8 @@ export type CostTracker = {
     prompt: number;
     completion: number;
   };
+  primaryCost: number;
+  parserCost: number;
   lastTurnPrimaryTokens: {
     prompt: number;
     completion: number;

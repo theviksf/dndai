@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt } from '@/lib/game-state';
+import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateCostTracker } from '@/lib/game-state';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
@@ -213,8 +213,8 @@ export default function Home() {
       turnSnapshots: [],  // Will be managed by setTurnSnapshots below
     });
 
-    // Restore cost tracker
-    setCostTracker(latestSnapshot.costTracker);
+    // Restore cost tracker (with migration for backwards compatibility)
+    setCostTracker(migrateCostTracker(latestSnapshot.costTracker));
 
     // Update snapshots array
     setTurnSnapshots(remainingSnapshots);
@@ -271,8 +271,24 @@ export default function Home() {
                           <span className="text-muted-foreground">Output Tokens (Primary):</span>
                           <span className="font-mono text-foreground">{costTracker.lastTurnPrimaryTokens.completion.toLocaleString()}</span>
                         </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Cost:</span>
+                          <span className="font-mono text-foreground">${costTracker.lastTurnPrimaryCost.toFixed(4)}</span>
+                        </div>
+                        <div className="flex justify-between pt-1">
+                          <span className="text-muted-foreground">Input Tokens (Parser):</span>
+                          <span className="font-mono text-foreground">{costTracker.lastTurnParserTokens.prompt.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Output Tokens (Parser):</span>
+                          <span className="font-mono text-foreground">{costTracker.lastTurnParserTokens.completion.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Cost:</span>
+                          <span className="font-mono text-foreground">${costTracker.lastTurnParserCost.toFixed(4)}</span>
+                        </div>
                         <div className="flex justify-between pt-1 border-t border-border/50">
-                          <span className="text-muted-foreground font-semibold">Cost:</span>
+                          <span className="text-muted-foreground font-semibold">Cost Total:</span>
                           <span className="font-mono text-accent font-semibold">${costTracker.lastTurnCost.toFixed(4)}</span>
                         </div>
                       </div>
@@ -289,6 +305,22 @@ export default function Home() {
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Output Tokens (Primary):</span>
                           <span className="font-mono text-foreground">{costTracker.primaryTokens.completion.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Cost:</span>
+                          <span className="font-mono text-foreground">${costTracker.primaryCost.toFixed(4)}</span>
+                        </div>
+                        <div className="flex justify-between pt-1">
+                          <span className="text-muted-foreground">Input Tokens (Parser):</span>
+                          <span className="font-mono text-foreground">{costTracker.parserTokens.prompt.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Output Tokens (Parser):</span>
+                          <span className="font-mono text-foreground">{costTracker.parserTokens.completion.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Cost:</span>
+                          <span className="font-mono text-foreground">${costTracker.parserCost.toFixed(4)}</span>
                         </div>
                         <div className="flex justify-between pt-1 border-t border-border/50">
                           <span className="text-muted-foreground font-semibold">Cost Total:</span>

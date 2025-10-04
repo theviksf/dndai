@@ -247,6 +247,8 @@ export function createDefaultCostTracker(): CostTracker {
       prompt: 0,
       completion: 0,
     },
+    primaryCost: 0,
+    parserCost: 0,
     lastTurnPrimaryTokens: {
       prompt: 0,
       completion: 0,
@@ -258,6 +260,30 @@ export function createDefaultCostTracker(): CostTracker {
     lastTurnPrimaryCost: 0,
     lastTurnParserCost: 0,
     lastTurnCost: 0,
+  };
+}
+
+export function migrateCostTracker(tracker: any): CostTracker {
+  const defaults = createDefaultCostTracker();
+  return {
+    ...defaults,
+    ...tracker,
+    primaryTokens: {
+      ...defaults.primaryTokens,
+      ...tracker.primaryTokens,
+    },
+    parserTokens: {
+      ...defaults.parserTokens,
+      ...tracker.parserTokens,
+    },
+    lastTurnPrimaryTokens: {
+      ...defaults.lastTurnPrimaryTokens,
+      ...tracker.lastTurnPrimaryTokens,
+    },
+    lastTurnParserTokens: {
+      ...defaults.lastTurnParserTokens,
+      ...tracker.lastTurnParserTokens,
+    },
   };
 }
 
