@@ -684,6 +684,12 @@ export default function NarrativePanel({
             prompt: primaryResponse.usage.prompt_tokens,
             completion: primaryResponse.usage.completion_tokens,
           },
+          lastTurnParserTokens: {
+            prompt: parserResponse.usage.prompt_tokens,
+            completion: parserResponse.usage.completion_tokens,
+          },
+          lastTurnPrimaryCost: primaryCost,
+          lastTurnParserCost: parserCost,
           lastTurnCost: primaryCost + parserCost,
         }));
       }
