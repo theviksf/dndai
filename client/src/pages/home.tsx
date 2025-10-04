@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateCostTracker } from '@/lib/game-state';
+import { ensureSessionId, getSessionStorageKey, generateSessionId, navigateToSession } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
@@ -12,17 +13,21 @@ import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Settings, Save, Terminal, Undo2, Download, Upload } from 'lucide-react';
+import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
+  
+  // Establish session ID from URL or create new one
+  const sessionId = ensureSessionId();
+  
   const [gameState, setGameState] = useState<GameStateData>(() => {
     const defaultState = createDefaultGameState();
-    // Load character from localStorage if exists
-    const savedCharacter = localStorage.getItem('gameCharacter');
+    // Load character from session-scoped localStorage if exists
+    const savedCharacter = localStorage.getItem(getSessionStorageKey('gameCharacter', sessionId));
     if (savedCharacter) {
       const loadedCharacter = JSON.parse(savedCharacter);
       // Ensure AC exists in attributes for old saves
@@ -47,17 +52,20 @@ export default function Home() {
     return defaultState;
   });
   const [config, setConfig] = useState<GameConfig>(() => {
-    // Load config from localStorage
-    const savedConfig = localStorage.getItem('gameConfig');
+    // Load config from session-scoped localStorage
+    const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', sessionId));
     const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
     return migrateParserPrompt(loadedConfig);
   });
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
   const [isGameStarted, setIsGameStarted] = useState(() => {
-    return localStorage.getItem('isGameStarted') === 'true';
+    return localStorage.getItem(getSessionStorageKey('isGameStarted', sessionId)) === 'true';
   });
   const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
-  const [turnSnapshots, setTurnSnapshots] = useState<TurnSnapshot[]>([]);
+  const [turnSnapshots, setTurnSnapshots] = useState<TurnSnapshot[]>(() => {
+    const savedSnapshots = localStorage.getItem(getSessionStorageKey('turnSnapshots', sessionId));
+    return savedSnapshots ? JSON.parse(savedSnapshots) : [];
+  });
   const [showExportDialog, setShowExportDialog] = useState(false);
   const fileInputRef = useState<HTMLInputElement | null>(null)[0];
 
@@ -114,9 +122,9 @@ export default function Home() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        const savedConfig = localStorage.getItem('gameConfig');
-        const savedCharacter = localStorage.getItem('gameCharacter');
-        const gameStarted = localStorage.getItem('isGameStarted');
+        const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', sessionId));
+        const savedCharacter = localStorage.getItem(getSessionStorageKey('gameCharacter', sessionId));
+        const gameStarted = localStorage.getItem(getSessionStorageKey('isGameStarted', sessionId));
         
         if (savedConfig) {
           const loadedConfig = JSON.parse(savedConfig);
@@ -156,6 +164,12 @@ export default function Home() {
     saveMutation.mutate();
   };
 
+  const handleNewGame = () => {
+    // Generate new session ID and navigate to it
+    const newSessionId = generateSessionId();
+    navigateToSession(newSessionId);
+  };
+
   const updateGameState = (updates: Partial<GameStateData>) => {
     setGameState(prev => {
       const newState = {
@@ -181,7 +195,7 @@ export default function Home() {
     });
     
     if (updates.character) {
-      localStorage.setItem('gameCharacter', JSON.stringify({
+      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify({
         ...gameState.character,
         ...updates.character,
       }));
@@ -197,7 +211,11 @@ export default function Home() {
       costTracker: JSON.parse(JSON.stringify(costTracker)),
       timestamp: Date.now(),
     };
-    setTurnSnapshots(prev => [...prev, snapshot]);
+    setTurnSnapshots(prev => {
+      const newSnapshots = [...prev, snapshot];
+      localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(newSnapshots));
+      return newSnapshots;
+    });
   };
 
   const handleUndo = () => {
@@ -233,8 +251,9 @@ export default function Home() {
     // Update snapshots array
     setTurnSnapshots(remainingSnapshots);
 
-    // Update localStorage with restored character
-    localStorage.setItem('gameCharacter', JSON.stringify(restoredState.character));
+    // Update session-scoped localStorage with restored data
+    localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(restoredState.character));
+    localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(remainingSnapshots));
 
     toast({
       title: "Turn undone",
@@ -377,10 +396,11 @@ export default function Home() {
         setCostTracker(migratedCostTracker);
         setTurnSnapshots(migratedSnapshots);
         
-        // Update localStorage with migrated data
-        localStorage.setItem('gameCharacter', JSON.stringify(migratedState.character));
-        localStorage.setItem('gameConfig', JSON.stringify(migratedConfig));
-        localStorage.setItem('isGameStarted', 'true');
+        // Update session-scoped localStorage with migrated data
+        localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(migratedState.character));
+        localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(migratedConfig));
+        localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(migratedSnapshots));
+        localStorage.setItem(getSessionStorageKey('isGameStarted', sessionId), 'true');
         setIsGameStarted(true);
         
         toast({
@@ -525,6 +545,16 @@ export default function Home() {
               </Button>
               
               <Button
+                onClick={handleNewGame}
+                variant="outline"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                data-testid="button-new-game"
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">New Game</span>
+              </Button>
+              
+              <Button
                 onClick={() => setShowExportDialog(true)}
                 variant="outline"
                 className="bg-muted hover:bg-muted/80"
@@ -555,7 +585,7 @@ export default function Home() {
               </Button>
               
               <Button
-                onClick={() => setLocation('/settings')}
+                onClick={() => setLocation(`/settings?session=${sessionId}`)}
                 variant="outline"
                 className="bg-muted hover:bg-muted/80"
                 data-testid="button-settings"

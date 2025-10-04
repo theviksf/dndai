@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { GameStateData } from '@shared/schema';
 import { calculateModifier, formatModifier } from '@/lib/game-state';
+import { getSessionIdFromUrl } from '@/lib/session';
 import { Dices, ArrowLeft } from 'lucide-react';
 
 interface CharacterCreationPageProps {
@@ -97,11 +98,15 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
       hp: 10 + calculateModifier(attributes.con),
       maxHp: 10 + calculateModifier(attributes.con),
       gold: 50,
-      attributes,
+      attributes: {
+        ...attributes,
+        ac: 10 + calculateModifier(attributes.dex),
+      },
     };
     
     onComplete(character);
-    setLocation('/');
+    const sessionId = getSessionIdFromUrl();
+    setLocation(sessionId ? `/?session=${sessionId}` : '/');
   };
 
   return (
@@ -111,7 +116,10 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button
-              onClick={() => setLocation('/settings')}
+              onClick={() => {
+                const sessionId = getSessionIdFromUrl();
+                setLocation(sessionId ? `/settings?session=${sessionId}` : '/settings');
+              }}
               variant="ghost"
               className="text-primary hover:bg-primary/10"
               data-testid="button-back-to-settings"
