@@ -23,7 +23,7 @@ Preferred communication style: Simple, everyday language.
 - **Settings page** (`/settings`): LLM configuration interface with model selection, API key input, and custom prompt editing for both DM and Parser system prompts
 - **Character Creation page** (`/character-creation`): Multi-step character creation with race/class/age selection and attribute point-buy system
 - **CharacterStatsBar**: Expanded two-row stats bar for better information display. Row 1: character name/level/race/class, visual health bar with color coding (green>50%, yellow 25-50%, red<25%), gold, and location with description. Row 2: attributes with modifiers displayed below each value (+3, -1, etc.), and dedicated status effects section with icons and turn counts
-- **NarrativePanel**: Primary game interface displaying story progression with custom action text input only (quick action buttons removed for cleaner UX). Shows DM responses immediately, then parses in background
+- **NarrativePanel**: Primary game interface displaying story progression with custom action text input only (quick action buttons removed for cleaner UX). Shows DM responses immediately, then parses in background. **Supports Markdown rendering** with GitHub Flavored Markdown (GFM) - DM responses can use bold, italics, blockquotes, lists, headers, and code blocks for enhanced formatting
 - **GameInfoTabs**: Tabbed interface consolidating inventory, spells, quests, companions (Allies), encountered characters (NPCs), and history into a space-efficient panel with 6 tabs. Improved card layout with better spacing and visual separation
 
 **Path Aliases**: Uses TypeScript path mapping for clean imports (`@/` for client source, `@shared/` for shared types).
@@ -50,7 +50,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Dual-LLM Architecture
 
-**Primary LLM**: Generates rich, immersive narrative responses (200-400 words) with sensory details, NPC dialogue, and environmental descriptions. Receives a comprehensive context package including all character stats, game state, parsed history summaries, and the last 3 messages to create engaging story progression.
+**Primary LLM**: Generates rich, immersive narrative responses (200-400 words) with sensory details, NPC dialogue, and environmental descriptions. Receives a comprehensive context package including all character stats, game state, parsed history summaries, and the last 3 messages to create engaging story progression. **Formats responses in Markdown** with instructions to use bold for emphasis, italics for atmosphere, blockquotes for NPC dialogue, lists for choices, headers for scene changes, and code blocks for game mechanics.
 
 **Parser LLM**: Runs AFTER the narrative is displayed to the player. Extracts structured game state updates from narrative responses, including:
 - Character details (name, class, age, level changes)
@@ -177,6 +177,8 @@ This approach maintains narrative coherence while keeping context windows manage
 **Tailwind CSS**: Utility-first CSS framework with custom configuration for fantasy theme
 
 **Wouter**: Lightweight client-side routing alternative to React Router
+
+**React Markdown + Remark GFM**: Markdown rendering library for narrative text with GitHub Flavored Markdown support. Custom D&D-themed prose styling with gold headings, italic atmosphere, green blockquotes for NPC dialogue, and code blocks for game mechanics
 
 ### Development Tools
 
