@@ -247,6 +247,11 @@ export function createDefaultCostTracker(): CostTracker {
       prompt: 0,
       completion: 0,
     },
+    lastTurnPrimaryTokens: {
+      prompt: 0,
+      completion: 0,
+    },
+    lastTurnCost: 0,
   };
 }
 

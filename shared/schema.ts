@@ -192,6 +192,11 @@ export type CostTracker = {
     prompt: number;
     completion: number;
   };
+  lastTurnPrimaryTokens: {
+    prompt: number;
+    completion: number;
+  };
+  lastTurnCost: number;
 };
 
 // Database tables
