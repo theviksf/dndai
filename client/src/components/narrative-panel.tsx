@@ -494,7 +494,7 @@ export default function NarrativePanel({
       // Update game state (with or without parsed data)
       setGameState(prev => {
         const updated = { ...prev };
-        const updatedTabs = new Set<string>(prev.updatedTabs || []);
+        const updatedTabsSet = new Set<string>(prev.updatedTabs || []);
         
         if (!parsingFailed && parsedData) {
           const stateUpdates = parsedData.stateUpdates || {};
@@ -581,25 +581,25 @@ export default function NarrativePanel({
           // Update inventory
           if (stateUpdates.inventory !== undefined) {
             updated.inventory = stateUpdates.inventory;
-            updatedTabs.add('inventory');
+            updatedTabsSet.add('inventory');
           }
           
           // Update spells
           if (stateUpdates.spells !== undefined) {
             updated.spells = stateUpdates.spells;
-            updatedTabs.add('spells');
+            updatedTabsSet.add('spells');
           }
           
           // Update quests
           if (stateUpdates.quests !== undefined) {
             updated.quests = stateUpdates.quests;
-            updatedTabs.add('quests');
+            updatedTabsSet.add('quests');
           }
           
           // Update companions
           if (stateUpdates.companions !== undefined) {
             updated.companions = stateUpdates.companions;
-            updatedTabs.add('companions');
+            updatedTabsSet.add('companions');
           }
           
           // Update encountered characters - NEVER DELETE, only merge/add
@@ -620,7 +620,7 @@ export default function NarrativePanel({
               }
             });
             updated.encounteredCharacters = mergedNPCs;
-            updatedTabs.add('encounters');
+            updatedTabsSet.add('encounters');
           }
           
           // Update businesses - merge/add, never delete
@@ -641,23 +641,23 @@ export default function NarrativePanel({
               }
             });
             updated.businesses = mergedBusinesses;
-            updatedTabs.add('businesses');
+            updatedTabsSet.add('businesses');
           }
           
           // Track if location history was added
           if (stateUpdates.location && stateUpdates.location.name !== prev.location.name) {
-            updatedTabs.add('locations');
+            updatedTabsSet.add('locations');
           }
 
           // Store parsed recap for future context
           if (parsedData.recap) {
             updated.parsedRecaps = [...updated.parsedRecaps, parsedData.recap];
-            updatedTabs.add('history');
+            updatedTabsSet.add('history');
           }
         }
 
         updated.turnCount = prev.turnCount + 1;
-        updated.updatedTabs = updatedTabs;
+        updated.updatedTabs = Array.from(updatedTabsSet);
         
         // Auto-collect business income every 15 turns
         const lastIncome = prev.lastIncomeCollectedTurn || 0;

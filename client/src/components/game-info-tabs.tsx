@@ -18,7 +18,7 @@ interface GameInfoTabsProps {
   businesses: Business[];
   history: string[];
   previousLocations: string[];
-  updatedTabs?: Set<string>;
+  updatedTabs?: string[];
   onUpdate?: (updates: Partial<GameStateData>) => void;
   onTabChange?: (tabId: string) => void;
 }
@@ -67,7 +67,7 @@ export default function GameInfoTabs({
       return 0;
     });
 
-  const hasUpdate = (tabId: string) => updatedTabs?.has(tabId) || false;
+  const hasUpdate = (tabId: string) => updatedTabs?.includes(tabId) || false;
 
   const handleTabChange = (value: string) => {
     if (onTabChange) {

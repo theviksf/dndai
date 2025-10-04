@@ -158,7 +158,7 @@ export type GameStateData = {
   turnCount: number;
   turnSnapshots: TurnSnapshot[];
   debugLog?: DebugLogEntry[];
-  updatedTabs?: Set<string>;
+  updatedTabs?: string[];
   lastIncomeCollectedTurn?: number;
 };
 

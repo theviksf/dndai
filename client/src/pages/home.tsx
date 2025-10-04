@@ -39,6 +39,10 @@ export default function Home() {
         }
       };
     }
+    // Migrate updatedTabs from Set (which becomes {}) to array
+    if (defaultState.updatedTabs && !Array.isArray(defaultState.updatedTabs)) {
+      defaultState.updatedTabs = [];
+    }
     return defaultState;
   });
   const [config, setConfig] = useState<GameConfig>(() => {
@@ -208,10 +212,17 @@ export default function Home() {
     const remainingSnapshots = turnSnapshots.slice(0, -1);
 
     // Restore state from snapshot (add back turnSnapshots field)
-    setGameState({
+    const restoredState = {
       ...latestSnapshot.state,
       turnSnapshots: [],  // Will be managed by setTurnSnapshots below
-    });
+    };
+    
+    // Migrate updatedTabs from Set (which becomes {}) to array
+    if (restoredState.updatedTabs && !Array.isArray(restoredState.updatedTabs)) {
+      restoredState.updatedTabs = [];
+    }
+    
+    setGameState(restoredState);
 
     // Restore cost tracker (with migration for backwards compatibility)
     setCostTracker(migrateCostTracker(latestSnapshot.costTracker));
@@ -220,7 +231,7 @@ export default function Home() {
     setTurnSnapshots(remainingSnapshots);
 
     // Update localStorage with restored character
-    localStorage.setItem('gameCharacter', JSON.stringify(latestSnapshot.state.character));
+    localStorage.setItem('gameCharacter', JSON.stringify(restoredState.character));
 
     toast({
       title: "Turn undone",
@@ -413,11 +424,10 @@ export default function Home() {
               updatedTabs={gameState.updatedTabs}
               onUpdate={updateGameState}
               onTabChange={(tabId) => {
-                setGameState(prev => {
-                  const updatedTabs = new Set(prev.updatedTabs || []);
-                  updatedTabs.delete(tabId);
-                  return { ...prev, updatedTabs };
-                });
+                setGameState(prev => ({
+                  ...prev,
+                  updatedTabs: (prev.updatedTabs || []).filter(tab => tab !== tabId)
+                }));
               }}
             />
           </div>
