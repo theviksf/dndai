@@ -10,6 +10,7 @@ import NarrativePanel from '@/components/narrative-panel';
 import GameInfoTabs from '@/components/game-info-tabs';
 import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Settings, Save, Terminal, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -242,17 +243,62 @@ export default function Home() {
             
             <div className="flex items-center gap-3">
               {/* Cost Tracker */}
-              <div className="hidden md:flex items-center gap-2 bg-accent/10 border border-accent rounded-md px-4 py-2">
-                <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="text-sm">
-                  <span className="font-mono font-semibold text-accent">${costTracker.sessionCost.toFixed(4)}</span>
-                  <span className="text-muted-foreground text-xs ml-1">
-                    ({costTracker.turnCount} turns)
-                  </span>
-                </div>
-              </div>
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <div className="hidden md:flex items-center gap-2 bg-accent/10 border border-accent rounded-md px-4 py-2 cursor-pointer hover:bg-accent/20 transition-colors">
+                    <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-sm">
+                      <span className="font-mono font-semibold text-accent">${costTracker.sessionCost.toFixed(4)}</span>
+                      <span className="text-muted-foreground text-xs ml-1">
+                        ({costTracker.turnCount} turns)
+                      </span>
+                    </div>
+                  </div>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80 bg-card/95 backdrop-blur-sm" align="end">
+                  <div className="space-y-4">
+                    {/* This Turn */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-primary mb-2 border-b border-border pb-1">This Turn</h4>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Input Tokens (Primary):</span>
+                          <span className="font-mono text-foreground">{costTracker.lastTurnPrimaryTokens.prompt.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Output Tokens (Primary):</span>
+                          <span className="font-mono text-foreground">{costTracker.lastTurnPrimaryTokens.completion.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-border/50">
+                          <span className="text-muted-foreground font-semibold">Cost:</span>
+                          <span className="font-mono text-accent font-semibold">${costTracker.lastTurnCost.toFixed(4)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Total */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-primary mb-2 border-b border-border pb-1">Total (Session)</h4>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Input Tokens (Primary):</span>
+                          <span className="font-mono text-foreground">{costTracker.primaryTokens.prompt.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Output Tokens (Primary):</span>
+                          <span className="font-mono text-foreground">{costTracker.primaryTokens.completion.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-border/50">
+                          <span className="text-muted-foreground font-semibold">Cost Total:</span>
+                          <span className="font-mono text-accent font-semibold">${costTracker.sessionCost.toFixed(4)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
               
               {/* Game Actions */}
               <Button
