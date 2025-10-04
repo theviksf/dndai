@@ -79,56 +79,56 @@ export default function GameInfoTabs({
     <Tabs defaultValue="inventory" className="w-full h-full flex flex-col" onValueChange={handleTabChange}>
       <TabsList className="grid w-full grid-cols-8 bg-muted/50 border-b border-border">
         <TabsTrigger value="inventory" className="gap-1 text-xs relative" data-testid="tab-inventory">
-          <Backpack className="w-4 h-4" />
+          <Backpack className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">Inventory</span>
           {hasUpdate('inventory') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </TabsTrigger>
         <TabsTrigger value="spells" className="gap-1 text-xs relative" data-testid="tab-spells">
-          <Sparkles className="w-4 h-4" />
+          <Sparkles className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">Spells</span>
           {hasUpdate('spells') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </TabsTrigger>
         <TabsTrigger value="locations" className="gap-1 text-xs relative" data-testid="tab-locations">
-          <MapPin className="w-4 h-4" />
+          <MapPin className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">Locations</span>
           {hasUpdate('locations') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </TabsTrigger>
         <TabsTrigger value="businesses" className="gap-1 text-xs relative" data-testid="tab-businesses">
-          <Building2 className="w-4 h-4" />
+          <Building2 className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">Business</span>
           {hasUpdate('businesses') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </TabsTrigger>
         <TabsTrigger value="quests" className="gap-1 text-xs relative" data-testid="tab-quests">
-          <ScrollText className="w-4 h-4" />
+          <ScrollText className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">Quests</span>
           {hasUpdate('quests') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </TabsTrigger>
         <TabsTrigger value="companions" className="gap-1 text-xs relative" data-testid="tab-companions">
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">Party</span>
           {hasUpdate('companions') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </TabsTrigger>
         <TabsTrigger value="encounters" className="gap-1 text-xs relative" data-testid="tab-encounters">
-          <UserCircle className="w-4 h-4" />
+          <UserCircle className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">NPCs</span>
           {hasUpdate('encounters') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </TabsTrigger>
         <TabsTrigger value="history" className="gap-1 text-xs relative" data-testid="tab-history">
-          <History className="w-4 h-4" />
+          <History className="w-4 h-4 flex-shrink-0" />
           <span className="hidden lg:inline">History</span>
           {hasUpdate('history') && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
