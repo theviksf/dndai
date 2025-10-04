@@ -810,14 +810,14 @@ export default function NarrativePanel({
       <div className="bg-card border border-border rounded-lg p-3 flex items-center justify-between text-xs">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-accent rounded-full pulse-effect" />
+            <div className="w-2 h-2 bg-accent rounded-full" />
             <span className="text-muted-foreground">Primary:</span>
             <span className="font-mono text-foreground" data-testid="text-primary-model">
               {config.primaryLLM.split('/').pop()}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-accent rounded-full pulse-effect" />
+            <div className="w-2 h-2 bg-accent rounded-full" />
             <span className="text-muted-foreground">Parser:</span>
             <span className="font-mono text-foreground" data-testid="text-parser-model">
               {config.parserLLM.split('/').pop()}
