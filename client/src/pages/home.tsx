@@ -394,6 +394,7 @@ export default function Home() {
         character={gameState.character}
         statusEffects={gameState.statusEffects}
         location={gameState.location}
+        turnCount={gameState.turnCount}
         onUpdate={updateGameState}
       />
 

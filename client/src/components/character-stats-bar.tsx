@@ -1,4 +1,4 @@
-import { Heart, Coins, MapPin, Zap, Shield } from 'lucide-react';
+import { Heart, Coins, MapPin, Zap, Shield, Calendar } from 'lucide-react';
 import type { GameCharacter, StatusEffect, GameStateData } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 
@@ -6,6 +6,7 @@ interface CharacterStatsBarProps {
   character: GameCharacter;
   statusEffects: StatusEffect[];
   location: GameStateData['location'];
+  turnCount: number;
   onUpdate?: (updates: Partial<GameStateData>) => void;
 }
 
@@ -14,8 +15,11 @@ function getModifier(score: number): string {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
-export default function CharacterStatsBar({ character, statusEffects, location, onUpdate }: CharacterStatsBarProps) {
+export default function CharacterStatsBar({ character, statusEffects, location, turnCount, onUpdate }: CharacterStatsBarProps) {
   const hpPercentage = (character.hp / character.maxHp) * 100;
+  
+  const turnInWeek = (turnCount % 15) + 1;
+  const weekNumber = Math.floor(turnCount / 15) + 1;
   
   return (
     <div className="bg-card border-b-2 border-border parchment-texture">
@@ -359,6 +363,14 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 <span className="text-xs text-muted-foreground">No active effects</span>
               </div>
             )}
+          </div>
+
+          {/* Week Counter */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-md border border-primary/20">
+            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="text-xs font-medium text-primary" data-testid="text-week-counter">
+              {turnInWeek}/15 - Week {weekNumber}
+            </span>
           </div>
         </div>
       </div>
