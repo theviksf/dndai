@@ -19,7 +19,7 @@ Preferred communication style: Simple, everyday language.
 - **Home page**: Main game interface with expanded character stats, narrative panel, and tabbed info panel (inventory, spells, quests, companions, NPCs, history).
 - **Settings page**: LLM configuration, API key input, and custom prompt editing.
 - **Character Creation page**: Multi-step character generation.
-- **CharacterStatsBar**: Expanded two-row display for character information, including a visual health bar and status effects.
+- **CharacterStatsBar**: Expanded two-row display for character information, including a visual health bar, status effects, and week counter showing turn progress (X/15 - Week Y format) that increments each turn and rolls over every 15 turns.
 - **NarrativePanel**: Displays AI-generated story progress, supports Markdown rendering (GFM), and includes a custom action text input.
 - **GameInfoTabs**: Tabbed interface with 8 tabs (Inventory, Spells, Locations, Business, Quests, Party, NPCs, History). Features notification badges that pulse when parser updates a tab, clearing when opened. Spells tab includes search filtering, level filtering, and sorting by name/level/school with compact card layout. All tabs have consistent icons.
 **Routing Logic**: Smart navigation ensures a smooth user experience, preventing redirect loops and guiding users to character creation or settings when necessary.
