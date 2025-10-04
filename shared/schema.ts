@@ -196,6 +196,12 @@ export type CostTracker = {
     prompt: number;
     completion: number;
   };
+  lastTurnParserTokens: {
+    prompt: number;
+    completion: number;
+  };
+  lastTurnPrimaryCost: number;
+  lastTurnParserCost: number;
   lastTurnCost: number;
 };
 
