@@ -78,61 +78,77 @@ export default function GameInfoTabs({
   return (
     <Tabs defaultValue="inventory" className="w-full h-full flex flex-col" onValueChange={handleTabChange}>
       <TabsList className="grid w-full grid-cols-8 bg-muted/50 border-b border-border">
-        <TabsTrigger value="inventory" className="gap-1 text-xs relative" data-testid="tab-inventory">
-          <Backpack className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="inventory" className="gap-1 text-xs" data-testid="tab-inventory">
+          <div className="relative">
+            <Backpack className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('inventory') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">Inventory</span>
-          {hasUpdate('inventory') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
-        <TabsTrigger value="spells" className="gap-1 text-xs relative" data-testid="tab-spells">
-          <Sparkles className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="spells" className="gap-1 text-xs" data-testid="tab-spells">
+          <div className="relative">
+            <Sparkles className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('spells') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">Spells</span>
-          {hasUpdate('spells') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
-        <TabsTrigger value="locations" className="gap-1 text-xs relative" data-testid="tab-locations">
-          <MapPin className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="locations" className="gap-1 text-xs" data-testid="tab-locations">
+          <div className="relative">
+            <MapPin className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('locations') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">Locations</span>
-          {hasUpdate('locations') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
-        <TabsTrigger value="businesses" className="gap-1 text-xs relative" data-testid="tab-businesses">
-          <Building2 className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="businesses" className="gap-1 text-xs" data-testid="tab-businesses">
+          <div className="relative">
+            <Building2 className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('businesses') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">Business</span>
-          {hasUpdate('businesses') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
-        <TabsTrigger value="quests" className="gap-1 text-xs relative" data-testid="tab-quests">
-          <ScrollText className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="quests" className="gap-1 text-xs" data-testid="tab-quests">
+          <div className="relative">
+            <ScrollText className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('quests') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">Quests</span>
-          {hasUpdate('quests') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
-        <TabsTrigger value="companions" className="gap-1 text-xs relative" data-testid="tab-companions">
-          <Users className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="companions" className="gap-1 text-xs" data-testid="tab-companions">
+          <div className="relative">
+            <Users className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('companions') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">Party</span>
-          {hasUpdate('companions') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
-        <TabsTrigger value="encounters" className="gap-1 text-xs relative" data-testid="tab-encounters">
-          <UserCircle className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="encounters" className="gap-1 text-xs" data-testid="tab-encounters">
+          <div className="relative">
+            <UserCircle className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('encounters') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">NPCs</span>
-          {hasUpdate('encounters') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
-        <TabsTrigger value="history" className="gap-1 text-xs relative" data-testid="tab-history">
-          <History className="w-4 h-4 flex-shrink-0" />
+        <TabsTrigger value="history" className="gap-1 text-xs" data-testid="tab-history">
+          <div className="relative">
+            <History className="w-4 h-4 flex-shrink-0" />
+            {hasUpdate('history') && (
+              <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            )}
+          </div>
           <span className="hidden lg:inline">History</span>
-          {hasUpdate('history') && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-          )}
         </TabsTrigger>
       </TabsList>
 
