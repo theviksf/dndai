@@ -410,7 +410,15 @@ export default function Home() {
               businesses={gameState.businesses || []}
               history={gameState.parsedRecaps || []} 
               previousLocations={gameState.previousLocations || []}
+              updatedTabs={gameState.updatedTabs}
               onUpdate={updateGameState}
+              onTabChange={(tabId) => {
+                setGameState(prev => {
+                  const updatedTabs = new Set(prev.updatedTabs || []);
+                  updatedTabs.delete(tabId);
+                  return { ...prev, updatedTabs };
+                });
+              }}
             />
           </div>
         </div>

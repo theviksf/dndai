@@ -3,9 +3,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin, Building2 } from 'lucide-react';
 import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
+import { Badge } from '@/components/ui/badge';
 
 interface GameInfoTabsProps {
   inventory: InventoryItem[];
@@ -16,7 +18,9 @@ interface GameInfoTabsProps {
   businesses: Business[];
   history: string[];
   previousLocations: string[];
+  updatedTabs?: Set<string>;
   onUpdate?: (updates: Partial<GameStateData>) => void;
+  onTabChange?: (tabId: string) => void;
 }
 
 export default function GameInfoTabs({
@@ -28,9 +32,14 @@ export default function GameInfoTabs({
   businesses,
   history,
   previousLocations,
+  updatedTabs,
   onUpdate,
+  onTabChange,
 }: GameInfoTabsProps) {
   const [npcSortBy, setNpcSortBy] = useState<'name' | 'role' | 'location'>('name');
+  const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
+  const [spellFilter, setSpellFilter] = useState<string>('');
+  const [spellLevelFilter, setSpellLevelFilter] = useState<string>('all');
 
   const sortedNPCs = [...encounteredCharacters].sort((a, b) => {
     if (npcSortBy === 'name') return a.name.localeCompare(b.name);
@@ -39,40 +48,91 @@ export default function GameInfoTabs({
     return 0;
   });
 
+  const filteredAndSortedSpells = [...spells]
+    .filter(spell => {
+      const matchesText = spellFilter === '' || 
+        spell.name.toLowerCase().includes(spellFilter.toLowerCase()) ||
+        spell.school.toLowerCase().includes(spellFilter.toLowerCase()) ||
+        spell.description.toLowerCase().includes(spellFilter.toLowerCase());
+      
+      const matchesLevel = spellLevelFilter === 'all' || 
+        spell.level.toString() === spellLevelFilter;
+      
+      return matchesText && matchesLevel;
+    })
+    .sort((a, b) => {
+      if (spellSortBy === 'name') return a.name.localeCompare(b.name);
+      if (spellSortBy === 'level') return a.level - b.level;
+      if (spellSortBy === 'school') return a.school.localeCompare(b.school);
+      return 0;
+    });
+
+  const hasUpdate = (tabId: string) => updatedTabs?.has(tabId) || false;
+
+  const handleTabChange = (value: string) => {
+    if (onTabChange) {
+      onTabChange(value);
+    }
+  };
+
   return (
-    <Tabs defaultValue="inventory" className="w-full h-full flex flex-col">
+    <Tabs defaultValue="inventory" className="w-full h-full flex flex-col" onValueChange={handleTabChange}>
       <TabsList className="grid w-full grid-cols-8 bg-muted/50 border-b border-border">
-        <TabsTrigger value="inventory" className="gap-1 text-xs" data-testid="tab-inventory">
+        <TabsTrigger value="inventory" className="gap-1 text-xs relative" data-testid="tab-inventory">
           <Backpack className="w-4 h-4" />
           <span className="hidden lg:inline">Inventory</span>
+          {hasUpdate('inventory') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
-        <TabsTrigger value="spells" className="gap-1 text-xs" data-testid="tab-spells">
+        <TabsTrigger value="spells" className="gap-1 text-xs relative" data-testid="tab-spells">
           <Sparkles className="w-4 h-4" />
           <span className="hidden lg:inline">Spells</span>
+          {hasUpdate('spells') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
-        <TabsTrigger value="locations" className="gap-1 text-xs" data-testid="tab-locations">
+        <TabsTrigger value="locations" className="gap-1 text-xs relative" data-testid="tab-locations">
           <MapPin className="w-4 h-4" />
           <span className="hidden lg:inline">Locations</span>
+          {hasUpdate('locations') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
-        <TabsTrigger value="businesses" className="gap-1 text-xs" data-testid="tab-businesses">
+        <TabsTrigger value="businesses" className="gap-1 text-xs relative" data-testid="tab-businesses">
           <Building2 className="w-4 h-4" />
           <span className="hidden lg:inline">Business</span>
+          {hasUpdate('businesses') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
-        <TabsTrigger value="quests" className="gap-1 text-xs" data-testid="tab-quests">
+        <TabsTrigger value="quests" className="gap-1 text-xs relative" data-testid="tab-quests">
           <ScrollText className="w-4 h-4" />
           <span className="hidden lg:inline">Quests</span>
+          {hasUpdate('quests') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
-        <TabsTrigger value="companions" className="gap-1 text-xs" data-testid="tab-companions">
+        <TabsTrigger value="companions" className="gap-1 text-xs relative" data-testid="tab-companions">
           <Users className="w-4 h-4" />
           <span className="hidden lg:inline">Party</span>
+          {hasUpdate('companions') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
-        <TabsTrigger value="encounters" className="gap-1 text-xs" data-testid="tab-encounters">
+        <TabsTrigger value="encounters" className="gap-1 text-xs relative" data-testid="tab-encounters">
           <UserCircle className="w-4 h-4" />
           <span className="hidden lg:inline">NPCs</span>
+          {hasUpdate('encounters') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
-        <TabsTrigger value="history" className="gap-1 text-xs" data-testid="tab-history">
+        <TabsTrigger value="history" className="gap-1 text-xs relative" data-testid="tab-history">
           <History className="w-4 h-4" />
           <span className="hidden lg:inline">History</span>
+          {hasUpdate('history') && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+          )}
         </TabsTrigger>
       </TabsList>
 
@@ -113,104 +173,128 @@ export default function GameInfoTabs({
       </TabsContent>
 
       <TabsContent value="spells" className="flex-1 mt-0 border-none p-0">
-        <ScrollArea className="h-[calc(100vh-280px)]">
-          <div className="p-4 space-y-3">
-            {spells.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No spells learned</p>
+        <div className="p-3 border-b border-border bg-muted/30 space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search spells..."
+              value={spellFilter}
+              onChange={(e) => setSpellFilter(e.target.value)}
+              className="flex-1 h-8 text-xs"
+              data-testid="input-spell-search"
+            />
+            <Select value={spellLevelFilter} onValueChange={setSpellLevelFilter}>
+              <SelectTrigger className="w-24 h-8 text-xs" data-testid="select-spell-level">
+                <SelectValue placeholder="Level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="0">Cantrip</SelectItem>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(level => (
+                  <SelectItem key={level} value={level.toString()}>Lv {level}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Select value={spellSortBy} onValueChange={(value: any) => setSpellSortBy(value)}>
+            <SelectTrigger className="w-full h-8 text-xs" data-testid="select-spell-sort">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="level">Level</SelectItem>
+              <SelectItem value="school">School</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <ScrollArea className="h-[calc(100vh-360px)]">
+          <div className="p-3 space-y-2">
+            {filteredAndSortedSpells.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {spells.length === 0 ? 'No spells learned' : 'No spells match your filters'}
+              </p>
             ) : (
-              spells.map((spell, index) => (
+              filteredAndSortedSpells.map((spell, index) => (
                 <div
                   key={spell.id}
-                  className="border border-border rounded-lg p-3 bg-card hover:bg-accent/5 transition-colors"
+                  className="border border-border rounded p-2 bg-card hover:bg-accent/5 transition-colors"
                   data-testid={`spell-${spell.id}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg flex-shrink-0">
                       {onUpdate ? (
                         <InlineEdit
                           value={spell.icon}
                           onSave={(value) => {
-                            const updated = [...spells];
-                            updated[index] = { ...spell, icon: String(value) };
-                            onUpdate({ spells: updated });
+                            const updated = [...filteredAndSortedSpells];
+                            const originalIndex = spells.findIndex(s => s.id === spell.id);
+                            const updatedSpells = [...spells];
+                            updatedSpells[originalIndex] = { ...spell, icon: String(value) };
+                            onUpdate({ spells: updatedSpells });
                           }}
-                          className="text-2xl"
-                          inputClassName="w-12 h-8 text-2xl text-center"
+                          className="text-lg"
+                          inputClassName="w-10 h-7 text-lg text-center"
                         />
                       ) : (
-                        <span>{spell.icon}</span>
+                        spell.icon
                       )}
-                    </div>
+                    </span>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-semibold text-sm">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-xs">
                           {onUpdate ? (
                             <InlineEdit
                               value={spell.name}
                               onSave={(value) => {
-                                const updated = [...spells];
-                                updated[index] = { ...spell, name: String(value) };
-                                onUpdate({ spells: updated });
+                                const originalIndex = spells.findIndex(s => s.id === spell.id);
+                                const updatedSpells = [...spells];
+                                updatedSpells[originalIndex] = { ...spell, name: String(value) };
+                                onUpdate({ spells: updatedSpells });
                               }}
-                              inputClassName="text-sm font-semibold"
+                              inputClassName="text-xs font-semibold"
                             />
                           ) : (
-                            <span>{spell.name}</span>
-                          )}
-                        </h4>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1">
-                          Lv.
-                          {onUpdate ? (
-                            <InlineEdit
-                              value={spell.level}
-                              onSave={(value) => {
-                                const updated = [...spells];
-                                updated[index] = { ...spell, level: Number(value) };
-                                onUpdate({ spells: updated });
-                              }}
-                              type="number"
-                              min={0}
-                              max={9}
-                              inputClassName="w-10 h-5 text-xs"
-                            />
-                          ) : (
-                            <span>{spell.level}</span>
+                            spell.name
                           )}
                         </span>
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                          {spell.level === 0 ? 'C' : `L${spell.level}`}
+                        </span>
                       </div>
-                      <p className="text-xs text-accent mt-1">
+                      <div className="text-[10px] text-accent mt-0.5">
                         {onUpdate ? (
                           <InlineEdit
                             value={spell.school}
                             onSave={(value) => {
-                              const updated = [...spells];
-                              updated[index] = { ...spell, school: String(value) };
-                              onUpdate({ spells: updated });
+                              const originalIndex = spells.findIndex(s => s.id === spell.id);
+                              const updatedSpells = [...spells];
+                              updatedSpells[originalIndex] = { ...spell, school: String(value) };
+                              onUpdate({ spells: updatedSpells });
                             }}
-                            className="text-xs text-accent"
-                            inputClassName="h-5 text-xs"
+                            className="text-[10px] text-accent"
+                            inputClassName="h-5 text-[10px]"
                           />
                         ) : (
-                          <span>{spell.school}</span>
+                          spell.school
                         )}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">
                         {onUpdate ? (
                           <InlineEdit
                             value={spell.description}
                             onSave={(value) => {
-                              const updated = [...spells];
-                              updated[index] = { ...spell, description: String(value) };
-                              onUpdate({ spells: updated });
+                              const originalIndex = spells.findIndex(s => s.id === spell.id);
+                              const updatedSpells = [...spells];
+                              updatedSpells[originalIndex] = { ...spell, description: String(value) };
+                              onUpdate({ spells: updatedSpells });
                             }}
                             type="textarea"
-                            className="text-xs"
-                            inputClassName="text-xs"
+                            className="text-[10px]"
+                            inputClassName="text-[10px]"
                           />
                         ) : (
-                          <span>{spell.description}</span>
+                          spell.description
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>

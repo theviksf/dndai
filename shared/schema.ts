@@ -158,6 +158,8 @@ export type GameStateData = {
   turnCount: number;
   turnSnapshots: TurnSnapshot[];
   debugLog?: DebugLogEntry[];
+  updatedTabs?: Set<string>;
+  lastIncomeCollectedTurn?: number;
 };
 
 export type GameConfig = {
