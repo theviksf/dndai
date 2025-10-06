@@ -72,6 +72,7 @@ export type Companion = {
   criticalMemories: string;
   feelingsTowardsPlayer: string;
   relationship: string;
+  imageUrl?: string;
 };
 
 export type EncounteredCharacter = {
@@ -84,6 +85,7 @@ export type EncounteredCharacter = {
   appearance: string;
   description: string;
   status: 'alive' | 'dead';
+  imageUrl?: string;
 };
 
 export type Business = {
@@ -134,6 +136,7 @@ export type GameCharacter = {
   maxHp: number;
   gold: number;
   attributes: Attribute;
+  imageUrl?: string;
 };
 
 export type TurnSnapshot = {
@@ -142,13 +145,24 @@ export type TurnSnapshot = {
   timestamp: number;
 };
 
+export type Location = {
+  name: string;
+  description: string;
+  imageUrl?: string;
+};
+
+export type PreviousLocation = {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl?: string;
+  lastVisited: number;
+};
+
 export type GameStateData = {
   character: GameCharacter;
-  location: {
-    name: string;
-    description: string;
-  };
-  previousLocations: string[];
+  location: Location;
+  previousLocations: PreviousLocation[];
   inventory: InventoryItem[];
   spells: Spell[];
   statusEffects: StatusEffect[];
@@ -174,6 +188,9 @@ export type GameConfig = {
   openRouterApiKey: string;
   dmSystemPrompt: string;
   parserSystemPrompt: string;
+  characterImagePrompt: string;
+  locationImagePrompt: string;
+  autoGenerateImages: boolean;
 };
 
 export type OpenRouterModel = {
@@ -210,6 +227,8 @@ export type CostTracker = {
   lastTurnPrimaryCost: number;
   lastTurnParserCost: number;
   lastTurnCost: number;
+  imageCost: number;
+  lastTurnImageCost: number;
 };
 
 // Database tables

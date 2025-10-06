@@ -303,6 +303,40 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   data-testid="textarea-parser-prompt"
                 />
               </div>
+
+              {/* Character Image Prompt */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <label className="block text-sm font-semibold text-foreground">
+                  Character Image Prompt <span className="text-primary">(Image Generation)</span>
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  JSON template for character images. Use placeholders: [age], [sex], [race], [class], [name]
+                </p>
+                <Textarea
+                  value={localConfig.characterImagePrompt}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, characterImagePrompt: e.target.value }))}
+                  rows={10}
+                  className="font-mono text-xs bg-input border-border"
+                  data-testid="textarea-character-image-prompt"
+                />
+              </div>
+
+              {/* Location Image Prompt */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <label className="block text-sm font-semibold text-foreground">
+                  Location Image Prompt <span className="text-primary">(Image Generation)</span>
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  JSON template for location images. Use placeholders: [location_name], [location_description]
+                </p>
+                <Textarea
+                  value={localConfig.locationImagePrompt}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, locationImagePrompt: e.target.value }))}
+                  rows={10}
+                  className="font-mono text-xs bg-input border-border"
+                  data-testid="textarea-location-image-prompt"
+                />
+              </div>
             </TabsContent>
 
             {/* Game Settings Tab */}
@@ -354,6 +388,18 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   checked={localConfig.autoSave} 
                   onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoSave: checked }))}
                   data-testid="switch-autosave"
+                />
+              </div>
+
+              <div className="flex items-center justify-between bg-muted/30 border border-border rounded-md p-4">
+                <div>
+                  <div className="text-sm font-medium text-foreground">Auto-generate Images</div>
+                  <div className="text-xs text-muted-foreground">Automatically create images for characters and locations using AI</div>
+                </div>
+                <Switch 
+                  checked={localConfig.autoGenerateImages} 
+                  onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoGenerateImages: checked }))}
+                  data-testid="switch-auto-generate-images"
                 />
               </div>
             </TabsContent>

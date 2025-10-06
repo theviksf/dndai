@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateCostTracker } from '@/lib/game-state';
+import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateConfig, migrateCostTracker } from '@/lib/game-state';
 import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
 import CharacterStatsBar from '@/components/character-stats-bar';
@@ -75,6 +75,18 @@ export default function Home() {
     if (defaultState.updatedTabs && !Array.isArray(defaultState.updatedTabs)) {
       defaultState.updatedTabs = [];
     }
+    // Migrate previousLocations from string[] to PreviousLocation[]
+    if (defaultState.previousLocations && defaultState.previousLocations.length > 0) {
+      const firstLoc = defaultState.previousLocations[0];
+      if (typeof firstLoc === 'string') {
+        defaultState.previousLocations = (defaultState.previousLocations as any).map((locName: string, index: number) => ({
+          id: `loc-migrated-${index}`,
+          name: locName,
+          description: '',
+          lastVisited: Date.now() - (index * 60000), // Stagger times by 1 minute each
+        }));
+      }
+    }
     return defaultState;
   });
   const [config, setConfig] = useState<GameConfig>(() => {
@@ -82,7 +94,8 @@ export default function Home() {
     // Load config from session-scoped localStorage
     const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', initialSessionId));
     const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
-    return migrateParserPrompt(loadedConfig);
+    const migratedConfig = migrateConfig(loadedConfig);
+    return migrateParserPrompt(migratedConfig);
   });
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
   const [isGameStarted, setIsGameStarted] = useState(() => {
@@ -213,10 +226,24 @@ export default function Home() {
       
       // Track location changes - add old location to previousLocations if location changed
       if (updates.location && updates.location.name && updates.location.name !== prev.location.name) {
-        const oldLocation = prev.location.name;
+        const oldLocationName = prev.location.name;
+        const oldLocationDesc = prev.location.description;
         const prevLocations = prev.previousLocations || [];
-        if (oldLocation && !prevLocations.includes(oldLocation)) {
-          newState.previousLocations = [...prevLocations, oldLocation];
+        
+        // Check if location already exists by name
+        const existingLoc = prevLocations.find((loc: any) => 
+          typeof loc === 'string' ? loc === oldLocationName : loc.name === oldLocationName
+        );
+        
+        if (oldLocationName && !existingLoc) {
+          const newPrevLocation = {
+            id: `loc-${Date.now()}`,
+            name: oldLocationName,
+            description: oldLocationDesc || '',
+            imageUrl: prev.location.imageUrl,
+            lastVisited: Date.now(),
+          };
+          newState.previousLocations = [...prevLocations, newPrevLocation];
         } else {
           newState.previousLocations = prevLocations;
         }

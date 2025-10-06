@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin, Building2 } from 'lucide-react';
-import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData } from '@shared/schema';
+import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData, PreviousLocation } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Badge } from '@/components/ui/badge';
 
@@ -17,7 +17,7 @@ interface GameInfoTabsProps {
   encounteredCharacters: EncounteredCharacter[];
   businesses: Business[];
   history: string[];
-  previousLocations: string[];
+  previousLocations: PreviousLocation[];
   updatedTabs?: string[];
   onUpdate?: (updates: Partial<GameStateData>) => void;
   onTabChange?: (tabId: string) => void;
@@ -327,16 +327,19 @@ export default function GameInfoTabs({
               <p className="text-sm text-muted-foreground text-center py-8">No previous locations</p>
             ) : (
               <div className="space-y-2">
-                {previousLocations.map((location, index) => (
+                {previousLocations.map((location) => (
                   <div
-                    key={index}
+                    key={location.id}
                     className="border border-border rounded-lg p-3 bg-card"
-                    data-testid={`location-${index}`}
+                    data-testid={`location-${location.id}`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-1">
                       <MapPin className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium">{location}</span>
+                      <span className="text-sm font-medium">{location.name}</span>
                     </div>
+                    {location.description && (
+                      <p className="text-xs text-muted-foreground ml-6">{location.description}</p>
+                    )}
                   </div>
                 ))}
               </div>

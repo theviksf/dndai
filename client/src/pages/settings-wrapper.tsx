@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultConfig, migrateParserPrompt } from '@/lib/game-state';
+import { createDefaultConfig, migrateParserPrompt, migrateConfig } from '@/lib/game-state';
 import { getSessionIdFromUrl, getSessionStorageKey, generateSessionId, setSessionIdInUrl, buildSessionUrl } from '@/lib/session';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import SettingsPage from '@/pages/settings';
@@ -31,7 +31,8 @@ export default function SettingsWrapper() {
     // Try to load config from session-scoped localStorage
     const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', initialSessionId));
     const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
-    return migrateParserPrompt(loadedConfig);
+    const migratedConfig = migrateConfig(loadedConfig);
+    return migrateParserPrompt(migratedConfig);
   });
 
   // Fetch OpenRouter models
