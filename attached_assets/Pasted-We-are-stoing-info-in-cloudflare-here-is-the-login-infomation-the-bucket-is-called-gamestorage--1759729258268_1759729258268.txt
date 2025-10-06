@@ -1,0 +1,53 @@
+We are stoing info in cloudflare - here is the login infomation - the bucket is called gamestorage
+
+Create Account API Token
+Game Access was successfully created
+Summary:
+Permissions:
+Allows the ability to read, write, and list objects in specific buckets.
+
+Buckets:
+All R2 buckets on this account
+Use this token for authenticating against the Cloudflare API:
+Token value
+Mhq6ikALESU8mXqzybcu1Dqv7AZRfNj09_Y0PiSC
+Click to copy
+
+Use the following credentials for S3 clients:
+Access Key ID
+5dbe6c640e0ec329f19b61a9a11efec9
+Click to copy
+
+Secret Access Key
+735099f9d928234f2d26fe376c0263fe54ee241068af4b74c6d27647af6da6dd
+Click to copy
+
+Use jurisdiction-specific endpoints for S3 clients:
+DefaultEuropean Union (EU)
+https://58d726918b1787a5829f15c3ac0ec272.r2.cloudflarestorage.com
+Click to copy
+For security reasons, these token values will not be shown again. Learn more about API token generation
+file name format - NA - where the info isn't avaliable
+Character
+char_[age]-[sex]-[race]-[job]-[mood]-[extraDetails]_[sessionId]_[timestamp].jpg
+Field	Example	Required	Why it helps
+type	character or location	✅	High-level grouping for queries
+age	32M or 32F	✅	Adds demographic clarity for characters
+race/species	elf, human, orc, robot, etc.	✅ for characters	For fantasy/sci-fi sorting and visuals
+job/role	ranger, merchant, sailor, king, innkeeper	✅	Essential for NPC indexing
+mood/appearance	angry, happy, wounded, mysterious, etc.	optional	Adds expressiveness for retrieval
+extraDetails	hooded, in-armor, at-desk, sunset, etc.	optional	Context or pose descriptor
+sessionId	sessionA47	✅	To connect to game state
+timestamp	20251005T2210	✅	Guarantees uniqueness and sortability
+
+
+Loc_[environment]-[timeOfDay]-[weather]-[region]-[vibe]-[details]_[sessionId]_[timestamp].jpg
+Field	Example	Required	Why it helps
+environment	forest, city, dungeon, desert, castle, inn, cave, etc.	✅	Core setting category
+timeOfDay	day, night, sunset, dawn	✅	Lighting control for consistency
+weather	clear, rainy, foggy, stormy, snowy	optional	Visual realism / mood
+region	northrealm, kingsport, undercrypt, etc.	optional	In-world localization
+vibe	haunted, peaceful, royal, bustling, mysterious	✅	Helps generate proper tone
+details	abandonedshrine, market-square, bridge-over-river	optional	Descriptive anchor for prompt recall
+sessionId	A47	✅	Links to gameplay context
+timestamp	20251005T2210	✅	Sortable + unique
