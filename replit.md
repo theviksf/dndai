@@ -31,6 +31,7 @@ Preferred communication style: Simple, everyday language.
 **API Key Management**: Uses a fallback chain for OpenRouter API keys: explicit user-provided key → OPENROUTER_API_KEY environment variable → OPEN_ROUTER_DEVKEY secret. This allows the application to function without requiring users to provide their own API keys.
 **Session Management**: Currently in-memory, with plans for PostgreSQL persistence using an abstracted `IStorage` interface.
 **Development Setup**: Vite middleware for HMR, separate production build for client and server.
+**Prompt Management System**: Default prompts are stored as text files in `/prompts/` folder (primary.txt, parser.txt, image-character.txt, image-location.txt). The `/api/prompts/defaults` endpoint serves these defaults, enabling users to customize prompts per session while retaining the ability to reset to defaults via UI buttons in settings.
 
 ### Dual-LLM Architecture
 
@@ -43,7 +44,7 @@ The system utilizes two distinct LLMs:
 **Error Handling & Resilience**: Robust JSON parsing handles malformed LLM responses using multiple strategies (code fences, direct parse, balanced-brace scanning). It supports both flat and nested JSON structures, performs type coercion, and uses defensive defaults for UI components. If parsing fails, the game gracefully degrades, continuing with narrative-only updates and logging errors.
 **Context Management**: The Primary LLM receives a condensed context package, including all parsed history recaps, recent messages, complete character stats, and current game state, to maintain coherence and reduce token costs.
 **Rationale**: This architecture optimizes cost-per-turn by using powerful models for creative tasks and efficient models for structured data extraction, while enhancing UX through immediate narrative display.
-**System Prompts**: Both DM and Parser prompts are customizable in settings, guiding their respective behaviors.
+**System Prompts**: Both DM and Parser prompts are customizable in settings, with default prompts stored in `/prompts/` folder. Users can modify prompts per session and reset to defaults via "Reset to Default" buttons in the settings UI. The system includes prompts for narrative generation, state parsing, character image generation, and location image generation.
 
 ### Data Storage Solutions
 
