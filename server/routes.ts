@@ -152,7 +152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Image generation endpoint
   app.post('/api/generate-image', async (req, res) => {
     try {
-      const { entityType, entityData, promptTemplate, apiKey } = req.body;
+      const { entityType, entity, promptTemplate, apiKey } = req.body;
+      const entityData = entity;
       
       const key = apiKey || OPENROUTER_API_KEY;
       
