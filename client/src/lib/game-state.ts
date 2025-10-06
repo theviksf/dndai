@@ -1,9 +1,5 @@
 import type { GameStateData, GameConfig, GameCharacter, CostTracker, NarrativeMessage } from '@shared/schema';
 
-export const CHARACTER_IMAGE_PROMPT = `Create a detailed fantasy character portrait showing {name}, a {race} {class}. {appearance}. The character should be depicted in a heroic pose with appropriate gear and clothing for their class. High quality, D&D art style, fantasy illustration, detailed facial features, atmospheric lighting.`;
-
-export const LOCATION_IMAGE_PROMPT = `Create a fantasy landscape showing {name}. {description}. Atmospheric, detailed environment, D&D setting, epic scale, vivid colors, professional fantasy art style.`;
-
 export const DM_SYSTEM_PROMPT = `You are an experienced Dungeon Master running a Dungeons & Dragons adventure. Your role is to:
 
 1. Create immersive, engaging narratives that respond to player actions
@@ -217,8 +213,6 @@ export function createDefaultConfig(): GameConfig {
     openRouterApiKey: '',
     dmSystemPrompt: DM_SYSTEM_PROMPT,
     parserSystemPrompt: PARSER_SYSTEM_PROMPT,
-    characterImagePrompt: CHARACTER_IMAGE_PROMPT,
-    locationImagePrompt: LOCATION_IMAGE_PROMPT,
   };
 }
 

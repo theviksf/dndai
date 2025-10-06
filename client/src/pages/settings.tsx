@@ -303,42 +303,6 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   data-testid="textarea-parser-prompt"
                 />
               </div>
-
-              {/* Character Image Prompt */}
-              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-                <label className="block text-sm font-semibold text-foreground">
-                  Character Image Prompt <span className="text-primary">(Image Generation)</span>
-                </label>
-                <Textarea
-                  value={localConfig.characterImagePrompt}
-                  onChange={(e) => setLocalConfig(prev => ({ ...prev, characterImagePrompt: e.target.value }))}
-                  rows={6}
-                  className="font-mono text-xs bg-input border-border"
-                  data-testid="textarea-character-image-prompt"
-                  placeholder="Create a detailed fantasy character portrait showing {name}, a {race} {class}. {appearance}. High quality, D&D art style."
-                />
-                <p className="text-xs text-muted-foreground">
-                  Template variables: {'{name}'}, {'{race}'}, {'{class}'}, {'{age}'}, {'{sex}'}, {'{appearance}'}
-                </p>
-              </div>
-
-              {/* Location Image Prompt */}
-              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-                <label className="block text-sm font-semibold text-foreground">
-                  Location Image Prompt <span className="text-primary">(Image Generation)</span>
-                </label>
-                <Textarea
-                  value={localConfig.locationImagePrompt}
-                  onChange={(e) => setLocalConfig(prev => ({ ...prev, locationImagePrompt: e.target.value }))}
-                  rows={6}
-                  className="font-mono text-xs bg-input border-border"
-                  data-testid="textarea-location-image-prompt"
-                  placeholder="Create a fantasy landscape showing {name}. {description}. Atmospheric, detailed environment, D&D setting."
-                />
-                <p className="text-xs text-muted-foreground">
-                  Template variables: {'{name}'}, {'{description}'}
-                </p>
-              </div>
             </TabsContent>
 
             {/* Game Settings Tab */}
