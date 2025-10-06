@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertGameStateSchema } from "@shared/schema";
 import { uploadImageToR2, generateCharacterFilename, generateLocationFilename, type CharacterImageMetadata, type LocationImageMetadata } from "./r2-storage";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || "";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   

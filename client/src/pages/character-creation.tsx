@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { GameStateData } from '@shared/schema';
 import { calculateModifier, formatModifier } from '@/lib/game-state';
 import { getSessionIdFromUrl } from '@/lib/session';
-import { Dices, ArrowLeft } from 'lucide-react';
+import { Dices, ArrowLeft, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CharacterCreationPageProps {
   onComplete: (character: GameStateData['character']) => void;
@@ -47,6 +48,8 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
     cha: 10,
   });
   const [pointsRemaining, setPointsRemaining] = useState(27);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleAttributeChange = (attr: keyof typeof attributes, delta: number) => {
     const current = attributes[attr];
@@ -113,6 +116,71 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
     setLocation(sessionId ? `/?session=${sessionId}` : '/');
   };
 
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      // Validate that the file contains a character object
+      if (!data.name || !data.race || !data.class) {
+        toast({
+          title: "Invalid character file",
+          description: "The file must contain a valid character with name, race, and class.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Ensure all required fields are present with defaults
+      const character: GameStateData['character'] = {
+        name: data.name,
+        race: data.race,
+        class: data.class,
+        age: data.age || 'Unknown',
+        sex: data.sex || 'Unknown',
+        level: data.level || 1,
+        xp: data.xp || 0,
+        nextLevelXp: data.nextLevelXp || 300,
+        hp: data.hp || 10,
+        maxHp: data.maxHp || 10,
+        gold: data.gold || 50,
+        attributes: {
+          str: data.attributes?.str || 10,
+          dex: data.attributes?.dex || 10,
+          con: data.attributes?.con || 10,
+          int: data.attributes?.int || 10,
+          wis: data.attributes?.wis || 10,
+          cha: data.attributes?.cha || 10,
+          ac: data.attributes?.ac || 10,
+        },
+        imageUrl: data.imageUrl,
+      };
+
+      toast({
+        title: "Character imported!",
+        description: `Successfully imported ${character.name}.`,
+      });
+
+      onComplete(character);
+      const sessionId = getSessionIdFromUrl();
+      setLocation(sessionId ? `/?session=${sessionId}` : '/');
+    } catch (error) {
+      toast({
+        title: "Import failed",
+        description: "Could not parse the character file. Make sure it's a valid JSON file.",
+        variant: "destructive",
+      });
+    }
+
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -140,6 +208,41 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-card border-2 border-border ornate-border parchment-texture rounded-lg p-8">
           <p className="text-center text-muted-foreground mb-8">Begin your adventure by crafting your hero</p>
+
+          {/* File Import Option */}
+          <div className="mb-8 p-4 border-2 border-dashed border-border rounded-lg bg-muted/20">
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-sm text-muted-foreground text-center">
+                Already have a character? Import from a file
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileImport}
+                className="hidden"
+                data-testid="input-character-file"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary/10"
+                data-testid="button-import-character"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import Character
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative mb-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or create new character</span>
+            </div>
+          </div>
 
           <div className="space-y-6">
             {/* Character Name */}
