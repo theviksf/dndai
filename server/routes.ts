@@ -168,7 +168,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('[IMAGE GEN] Error: No API key provided');
         return res.status(400).json({ 
           error: 'API key required',
-          filledPrompt: promptTemplate
+          filledPrompt: promptTemplate || 'No template provided'
+        });
+      }
+      
+      if (!promptTemplate) {
+        console.error('[IMAGE GEN] Error: No prompt template provided');
+        return res.status(400).json({ 
+          error: 'Prompt template required',
+          filledPrompt: 'No template provided'
         });
       }
       
