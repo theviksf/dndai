@@ -245,44 +245,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Extract image URL from response
-      // Gemini image models return content with type 'output_image'
+      // Gemini image models can return images in multiple formats
       let imageUrl = null;
-      const content = data.choices[0].message.content;
+      const message = data.choices[0].message;
       
-      // Check if content is an array (for image models)
-      if (Array.isArray(content)) {
-        // Look for Gemini's output_image type or standard image_url type
-        const imageContent = content.find((item: any) => 
-          item.type === 'output_image' || item.type === 'image_url'
-        );
-        if (imageContent) {
-          // Handle multiple formats:
-          // 1. URL in image_url.url (OpenRouter standard)
-          // 2. Direct url property
-          // 3. Base64 in image_base64 (Gemini preview model)
-          if (imageContent.image_url?.url) {
-            imageUrl = imageContent.image_url.url;
-          } else if (imageContent.url) {
-            imageUrl = imageContent.url;
-          } else if (imageContent.image_base64) {
-            // Convert base64 to data URL
-            imageUrl = `data:image/png;base64,${imageContent.image_base64}`;
-          }
+      // First check if there's a separate images array (Gemini 2.5 flash preview format)
+      if (message.images && Array.isArray(message.images) && message.images.length > 0) {
+        const firstImage = message.images[0];
+        if (firstImage.image_url?.url) {
+          imageUrl = firstImage.image_url.url;
+        } else if (firstImage.url) {
+          imageUrl = firstImage.url;
         }
-      } else if (typeof content === 'string') {
-        // Some models may return a URL directly in text or base64
-        const urlMatch = content.match(/https?:\/\/[^\s]+/);
-        if (urlMatch) {
-          imageUrl = urlMatch[0];
-        } else if (content.startsWith('data:image')) {
-          // Handle base64 image data
-          imageUrl = content;
+      }
+      
+      // If no image found in images array, check content (older format)
+      if (!imageUrl) {
+        const content = message.content;
+        
+        // Check if content is an array (for image models)
+        if (Array.isArray(content)) {
+          // Look for Gemini's output_image type or standard image_url type
+          const imageContent = content.find((item: any) => 
+            item.type === 'output_image' || item.type === 'image_url'
+          );
+          if (imageContent) {
+            // Handle multiple formats:
+            // 1. URL in image_url.url (OpenRouter standard)
+            // 2. Direct url property
+            // 3. Base64 in image_base64 (Gemini preview model)
+            if (imageContent.image_url?.url) {
+              imageUrl = imageContent.image_url.url;
+            } else if (imageContent.url) {
+              imageUrl = imageContent.url;
+            } else if (imageContent.image_base64) {
+              // Convert base64 to data URL
+              imageUrl = `data:image/png;base64,${imageContent.image_base64}`;
+            }
+          }
+        } else if (typeof content === 'string') {
+          // Some models may return a URL directly in text or base64
+          const urlMatch = content.match(/https?:\/\/[^\s]+/);
+          if (urlMatch) {
+            imageUrl = urlMatch[0];
+          } else if (content.startsWith('data:image')) {
+            // Handle base64 image data
+            imageUrl = content;
+          }
         }
       }
       
       // Log if no image URL was found for debugging
       if (!imageUrl) {
-        console.error('[IMAGE GEN] Failed to extract image URL from response:', JSON.stringify(content, null, 2));
+        console.error('[IMAGE GEN] Failed to extract image URL from response:', JSON.stringify(message, null, 2));
       } else {
         console.log('[IMAGE GEN] Successfully extracted image URL:', imageUrl.substring(0, 100) + '...');
       }
