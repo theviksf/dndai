@@ -85,6 +85,7 @@ export type EncounteredCharacter = {
   appearance: string;
   description: string;
   status: 'alive' | 'dead';
+  relationship: number;
   imageUrl?: string;
 };
 

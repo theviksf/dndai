@@ -26,6 +26,17 @@ interface GameInfoTabsProps {
   onRefreshImage?: (entityType: 'companion' | 'npc' | 'location', entityId?: string) => Promise<void>;
 }
 
+function getRelationshipLabel(score: number): { label: string; color: string; description: string } {
+  if (score <= -3) return { label: 'Hostile', color: 'bg-red-500/20 text-red-700 dark:text-red-400', description: 'Actively hates or seeks to harm you' };
+  if (score === -2) return { label: 'Unfriendly', color: 'bg-orange-500/20 text-orange-700 dark:text-orange-400', description: 'Dislikes you, distrustful' };
+  if (score === -1) return { label: 'Cold', color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400', description: 'Slightly negative, indifferent but irritable' };
+  if (score === 0) return { label: 'Neutral', color: 'bg-gray-500/20 text-gray-700 dark:text-gray-400', description: 'No particular feelings either way' };
+  if (score === 1) return { label: 'Warm', color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400', description: 'Generally positive or mildly interested' };
+  if (score === 2) return { label: 'Friendly', color: 'bg-green-500/20 text-green-700 dark:text-green-400', description: 'Likes you, emotionally invested' };
+  if (score >= 3) return { label: 'Devoted', color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400', description: 'Deeply loyal, affection or admiration' };
+  return { label: 'Neutral', color: 'bg-gray-500/20 text-gray-700 dark:text-gray-400', description: 'No particular feelings either way' };
+}
+
 export default function GameInfoTabs({
   inventory,
   quests,
@@ -836,6 +847,31 @@ export default function GameInfoTabs({
                               data-testid={`status-${character.id}`}
                             >
                               {character.status || 'alive'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Relationship:</span>
+                            {onUpdate ? (
+                              <InlineEdit
+                                value={String(character.relationship ?? 0)}
+                                onSave={(value) => {
+                                  const updated = [...encounteredCharacters];
+                                  const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
+                                  const numValue = parseInt(String(value)) || 0;
+                                  const clampedValue = Math.max(-3, Math.min(3, numValue));
+                                  updated[origIndex] = { ...character, relationship: clampedValue };
+                                  onUpdate({ encounteredCharacters: updated });
+                                }}
+                                className="text-xs"
+                                inputClassName="h-6 text-xs w-16"
+                              />
+                            ) : null}
+                            <span 
+                              className={`px-2 py-0.5 rounded text-xs font-medium ${getRelationshipLabel(character.relationship ?? 0).color}`}
+                              title={getRelationshipLabel(character.relationship ?? 0).description}
+                              data-testid={`relationship-${character.id}`}
+                            >
+                              {getRelationshipLabel(character.relationship ?? 0).label} ({character.relationship ?? 0})
                             </span>
                           </div>
                           <div className="pt-2 border-t border-border">
