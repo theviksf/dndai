@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import { RECOMMENDED_CONFIGS, estimateTurnCost } from '@/lib/openrouter';
 import { getSessionIdFromUrl } from '@/lib/session';
-import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText, RefreshCw, ArrowLeft, RotateCcw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface SettingsPageProps {
   config: GameConfig;
@@ -22,10 +23,50 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
   const [, setLocation] = useLocation();
   const [localConfig, setLocalConfig] = useState<GameConfig>(config);
   const [estimatedCost, setEstimatedCost] = useState(0);
+  const { toast } = useToast();
   
   useEffect(() => {
     setLocalConfig(config);
   }, [config]);
+
+  const loadDefaultPrompts = async () => {
+    try {
+      const response = await fetch('/api/prompts/defaults');
+      if (!response.ok) throw new Error('Failed to load defaults');
+      const defaults = await response.json();
+      return defaults;
+    } catch (error) {
+      toast({
+        title: "Error loading defaults",
+        description: "Could not load default prompts from server.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation') => {
+    const defaults = await loadDefaultPrompts();
+    if (!defaults) return;
+
+    const fieldMap = {
+      primary: 'dmSystemPrompt',
+      parser: 'parserSystemPrompt',
+      imageCharacter: 'characterImagePrompt',
+      imageLocation: 'locationImagePrompt',
+    };
+
+    const field = fieldMap[promptType] as keyof GameConfig;
+    setLocalConfig(prev => ({
+      ...prev,
+      [field]: defaults[promptType],
+    }));
+
+    toast({
+      title: "Prompt reset",
+      description: "The prompt has been reset to its default value.",
+    });
+  };
 
   useEffect(() => {
     if (models.length > 0) {
@@ -278,9 +319,21 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             <TabsContent value="prompts" className="space-y-4">
               {/* DM Prompt */}
               <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-                <label className="block text-sm font-semibold text-foreground">
-                  Dungeon Master Prompt <span className="text-primary">(Narrative Generation)</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Dungeon Master Prompt <span className="text-primary">(Narrative Generation)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('primary')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-dm-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
                 <Textarea
                   value={localConfig.dmSystemPrompt}
                   onChange={(e) => setLocalConfig(prev => ({ ...prev, dmSystemPrompt: e.target.value }))}
@@ -292,9 +345,21 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
 
               {/* Parser Prompt */}
               <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-                <label className="block text-sm font-semibold text-foreground">
-                  Parser Prompt <span className="text-primary">(State Extraction)</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Parser Prompt <span className="text-primary">(State Extraction)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('parser')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-parser-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
                 <Textarea
                   value={localConfig.parserSystemPrompt}
                   onChange={(e) => setLocalConfig(prev => ({ ...prev, parserSystemPrompt: e.target.value }))}
@@ -306,9 +371,21 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
 
               {/* Character Image Prompt */}
               <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-                <label className="block text-sm font-semibold text-foreground">
-                  Character Image Prompt <span className="text-primary">(Image Generation)</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Character Image Prompt <span className="text-primary">(Image Generation)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('imageCharacter')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-character-image-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground mb-2">
                   JSON template for character images. Use placeholders: [age], [sex], [race], [class], [name]
                 </p>
@@ -323,9 +400,21 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
 
               {/* Location Image Prompt */}
               <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
-                <label className="block text-sm font-semibold text-foreground">
-                  Location Image Prompt <span className="text-primary">(Image Generation)</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Location Image Prompt <span className="text-primary">(Image Generation)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('imageLocation')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-location-image-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground mb-2">
                   JSON template for location images. Use placeholders: [location_name], [location_description]
                 </p>

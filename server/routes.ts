@@ -3,11 +3,36 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertGameStateSchema } from "@shared/schema";
 import { uploadImageToR2, generateCharacterFilename, generateLocationFilename, type CharacterImageMetadata, type LocationImageMetadata } from "./r2-storage";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || "";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Get default prompts from files
+  app.get('/api/prompts/defaults', async (req, res) => {
+    try {
+      const promptsDir = join(process.cwd(), 'prompts');
+      
+      const [primary, parser, imageCharacter, imageLocation] = await Promise.all([
+        readFile(join(promptsDir, 'primary.txt'), 'utf-8'),
+        readFile(join(promptsDir, 'parser.txt'), 'utf-8'),
+        readFile(join(promptsDir, 'image-character.txt'), 'utf-8'),
+        readFile(join(promptsDir, 'image-location.txt'), 'utf-8'),
+      ]);
+      
+      res.json({
+        primary,
+        parser,
+        imageCharacter,
+        imageLocation,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: `Failed to load default prompts: ${error.message}` });
+    }
+  });
+
   // OpenRouter models endpoint
   app.post('/api/models', async (req, res) => {
     try {
