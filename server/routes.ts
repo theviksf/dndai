@@ -324,7 +324,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             weather: entityData.weather,
             region: entityData.region || entityData.name,
             vibe: entityData.vibe || entityData.atmosphere || 'neutral',
-            details: entityData.details || entityData.landmarks,
             sessionId: sessionId || 'default',
           };
           filename = generateLocationFilename(locationMetadata);
@@ -336,7 +335,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             race: entityData.race || 'NA',
             job: entityData.class || entityData.job || entityData.role || 'NA',
             mood: entityData.mood || entityData.expression,
-            extraDetails: entityData.appearance || entityData.personality,
             sessionId: sessionId || 'default',
           };
           filename = generateCharacterFilename(characterMetadata);

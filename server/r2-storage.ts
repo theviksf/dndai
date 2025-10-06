@@ -4,6 +4,7 @@ const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 const R2_ENDPOINT = process.env.R2_ENDPOINT;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
 
 // Initialize S3 client for Cloudflare R2
 const s3Client = new S3Client({
@@ -96,9 +97,16 @@ export async function uploadImageToR2(
 
   await s3Client.send(command);
 
-  // Construct public URL (R2 public URL format)
-  // You may need to configure a custom domain or public bucket URL in Cloudflare
-  const publicUrl = `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${filename}`;
+  // Construct public URL using R2_PUBLIC_URL (r2.dev or custom domain)
+  // R2_PUBLIC_URL should be the base URL of your public bucket
+  // Examples:
+  // - https://BUCKET-NAME.ACCOUNT-ID.r2.dev
+  // - https://cdn.yourdomain.com
+  if (!R2_PUBLIC_URL) {
+    throw new Error('R2_PUBLIC_URL environment variable is not set. Please configure your R2 public URL in Replit Secrets.');
+  }
+  
+  const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
   
   return publicUrl;
 }
