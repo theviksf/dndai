@@ -288,6 +288,7 @@ export default function Home() {
         entityType,
         entity,
         config,
+        sessionId,
       });
 
       // Update game state with result and debug log
@@ -846,6 +847,7 @@ export default function Home() {
               setCostTracker={setCostTracker}
               models={models || []}
               createSnapshot={createSnapshot}
+              sessionId={sessionId}
             />
           </div>
           <div className="lg:col-span-5">

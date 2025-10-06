@@ -20,6 +20,7 @@ interface NarrativePanelProps {
   setCostTracker: (tracker: CostTracker | ((prev: CostTracker) => CostTracker)) => void;
   models: OpenRouterModel[];
   createSnapshot: () => void;
+  sessionId: string;
 }
 
 // Robust JSON parsing helper
@@ -302,7 +303,8 @@ export default function NarrativePanel({
   costTracker, 
   setCostTracker,
   models,
-  createSnapshot 
+  createSnapshot,
+  sessionId 
 }: NarrativePanelProps) {
   const [actionInput, setActionInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -814,6 +816,7 @@ export default function NarrativePanel({
                 entityType,
                 entity,
                 config,
+                sessionId,
               });
               return { entityType, id, result };
             })

@@ -5,6 +5,7 @@ export interface ImageGenerationOptions {
   entityType: 'character' | 'companion' | 'npc' | 'location';
   entity: GameCharacter | Companion | EncounteredCharacter | Location;
   config: GameConfig;
+  sessionId: string;
 }
 
 export interface ImageGenerationResult {
@@ -21,7 +22,8 @@ export interface ImageGenerationResult {
 export async function generateEntityImage({ 
   entityType, 
   entity, 
-  config 
+  config,
+  sessionId 
 }: ImageGenerationOptions): Promise<ImageGenerationResult> {
   const timestamp = Date.now();
   const id = `image-${timestamp}`;
@@ -42,6 +44,7 @@ export async function generateEntityImage({
       entity,
       entityType,
       apiKey: config.openRouterApiKey,
+      sessionId,
     });
 
     if (!response.ok) {
