@@ -390,6 +390,22 @@ export default function Home() {
       delete stateWithoutImages.location.imageUrl;
     }
     
+    // Limit debug log to last 30 entries and remove base64 images from image logs
+    if (stateWithoutImages.debugLog && Array.isArray(stateWithoutImages.debugLog)) {
+      stateWithoutImages.debugLog = stateWithoutImages.debugLog
+        .slice(-30)
+        .map((log: any) => {
+          // For image logs, remove the base64 data from imageUrl to save space
+          if (log.type === 'image' && log.imageUrl?.startsWith('data:image')) {
+            return {
+              ...log,
+              imageUrl: '[base64 image removed from snapshot]'
+            };
+          }
+          return log;
+        });
+    }
+    
     const snapshot: TurnSnapshot = {
       state: stateWithoutImages,
       costTracker: JSON.parse(JSON.stringify(costTracker)),
@@ -397,9 +413,29 @@ export default function Home() {
     };
     
     setTurnSnapshots(prev => {
-      // Keep only the last 20 snapshots to prevent unbounded growth
-      const newSnapshots = [...prev, snapshot].slice(-20);
-      localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(newSnapshots));
+      // Keep only the last 10 snapshots to prevent unbounded growth
+      const newSnapshots = [...prev, snapshot].slice(-10);
+      
+      try {
+        localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(newSnapshots));
+      } catch (e: any) {
+        if (e.name === 'QuotaExceededError') {
+          console.warn('localStorage quota exceeded, clearing old snapshots');
+          // If quota exceeded, keep only the last 3 snapshots and try again
+          const minimalSnapshots = newSnapshots.slice(-3);
+          try {
+            localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(minimalSnapshots));
+            return minimalSnapshots;
+          } catch (e2) {
+            // If still failing, clear all snapshots and continue without undo
+            console.error('Failed to save snapshots even after cleanup, disabling undo');
+            localStorage.removeItem(getSessionStorageKey('turnSnapshots', sessionId));
+            return [];
+          }
+        }
+        console.error('Error saving snapshots:', e);
+      }
+      
       return newSnapshots;
     });
   };
