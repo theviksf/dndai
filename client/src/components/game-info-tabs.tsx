@@ -5,9 +5,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin, Building2 } from 'lucide-react';
-import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData, PreviousLocation } from '@shared/schema';
+import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData, PreviousLocation, Location } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Badge } from '@/components/ui/badge';
+import { EntityImageCard } from '@/components/entity-image-card';
+import { EntityDetailSheet } from '@/components/entity-detail-sheet';
 
 interface GameInfoTabsProps {
   inventory: InventoryItem[];
@@ -40,6 +42,15 @@ export default function GameInfoTabs({
   const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
   const [spellFilter, setSpellFilter] = useState<string>('');
   const [spellLevelFilter, setSpellLevelFilter] = useState<string>('all');
+  const [detailEntity, setDetailEntity] = useState<Companion | EncounteredCharacter | Location | null>(null);
+  const [detailEntityType, setDetailEntityType] = useState<'companion' | 'npc' | 'location'>('companion');
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+
+  const openDetailSheet = (entity: Companion | EncounteredCharacter | Location, type: 'companion' | 'npc' | 'location') => {
+    setDetailEntity(entity);
+    setDetailEntityType(type);
+    setDetailSheetOpen(true);
+  };
 
   const sortedNPCs = [...encounteredCharacters].sort((a, b) => {
     if (npcSortBy === 'name') return a.name.localeCompare(b.name);
@@ -330,16 +341,30 @@ export default function GameInfoTabs({
                 {previousLocations.map((location) => (
                   <div
                     key={location.id}
-                    className="border border-border rounded-lg p-3 bg-card"
+                    className="border border-border rounded-lg p-3 bg-card cursor-pointer hover:bg-accent/5 transition-colors"
                     data-testid={`location-${location.id}`}
+                    onClick={() => openDetailSheet(location, 'location')}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium">{location.name}</span>
+                    <div className="flex items-start gap-3">
+                      <EntityImageCard
+                        imageUrl={location.imageUrl}
+                        entityType="location"
+                        onClick={(e) => {
+                          e?.stopPropagation();
+                          openDetailSheet(location, 'location');
+                        }}
+                        className="w-16 h-16 flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <MapPin className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium">{location.name}</span>
+                        </div>
+                        {location.description && (
+                          <p className="text-xs text-muted-foreground">{location.description}</p>
+                        )}
+                      </div>
                     </div>
-                    {location.description && (
-                      <p className="text-xs text-muted-foreground ml-6">{location.description}</p>
-                    )}
                   </div>
                 ))}
               </div>
@@ -466,6 +491,14 @@ export default function GameInfoTabs({
                   className="border-2 border-border rounded-lg p-4 bg-card space-y-2"
                   data-testid={`companion-${companion.id}`}
                 >
+                  <div className="flex items-start gap-3">
+                    <EntityImageCard
+                      imageUrl={companion.imageUrl}
+                      entityType="companion"
+                      onClick={() => openDetailSheet(companion, 'companion')}
+                      className="w-20 h-20 flex-shrink-0"
+                    />
+                    <div className="flex-1 space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-base">
                       {onUpdate ? (
@@ -651,6 +684,8 @@ export default function GameInfoTabs({
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
               ))
             )}
           </div>
@@ -689,16 +724,27 @@ export default function GameInfoTabs({
                     >
                       <AccordionTrigger className="hover:no-underline py-3">
                         <div className="flex items-center justify-between w-full pr-2">
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="font-semibold text-sm">{character.name}</span>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{character.role}</span>
-                              {character.location && (
-                                <>
-                                  <span>•</span>
-                                  <span>{character.location}</span>
-                                </>
-                              )}
+                          <div className="flex items-center gap-3 flex-1">
+                            <EntityImageCard
+                              imageUrl={character.imageUrl}
+                              entityType="npc"
+                              onClick={(e) => {
+                                e?.stopPropagation();
+                                openDetailSheet(character, 'npc');
+                              }}
+                              className="w-12 h-12 flex-shrink-0"
+                            />
+                            <div className="flex flex-col items-start gap-1">
+                              <span className="font-semibold text-sm">{character.name}</span>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{character.role}</span>
+                                {character.location && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{character.location}</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -850,6 +896,14 @@ export default function GameInfoTabs({
           </div>
         </ScrollArea>
       </TabsContent>
+      
+      {/* Entity Detail Sheet */}
+      <EntityDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        entity={detailEntity}
+        entityType={detailEntityType}
+      />
     </Tabs>
   );
 }

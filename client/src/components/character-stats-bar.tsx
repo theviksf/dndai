@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Heart, Coins, MapPin, Zap, Shield, Calendar } from 'lucide-react';
 import type { GameCharacter, StatusEffect, GameStateData } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
+import { EntityImageCard } from '@/components/entity-image-card';
+import { EntityDetailSheet } from '@/components/entity-detail-sheet';
 
 interface CharacterStatsBarProps {
   character: GameCharacter;
@@ -16,6 +19,7 @@ function getModifier(score: number): string {
 }
 
 export default function CharacterStatsBar({ character, statusEffects, location, turnCount, onUpdate }: CharacterStatsBarProps) {
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const hpPercentage = (character.hp / character.maxHp) * 100;
   
   const turnInWeek = (turnCount % 15) + 1;
@@ -26,13 +30,21 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
       <div className="max-w-[1920px] mx-auto px-4 py-3">
         {/* Row 1: Character Info, HP Bar, Gold, Location */}
         <div className="flex flex-wrap items-center gap-4 mb-3">
+          {/* Character Portrait */}
+          <EntityImageCard
+            imageUrl={character.imageUrl}
+            entityType="character"
+            onClick={() => setDetailSheetOpen(true)}
+            className="w-16 h-16 flex-shrink-0"
+          />
+          
           {/* Character Name & Level */}
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
               {onUpdate ? (
                 <InlineEdit
                   value={character.name}
-                  onSave={(value) => onUpdate({ character: { name: String(value) } })}
+                  onSave={(value) => onUpdate({ character: { name: String(value) } as any })}
                   className="text-lg font-bold text-primary"
                   inputClassName="text-lg font-bold"
                 />
@@ -46,7 +58,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 {onUpdate ? (
                   <InlineEdit
                     value={character.level}
-                    onSave={(value) => onUpdate({ character: { level: Number(value) } })}
+                    onSave={(value) => onUpdate({ character: { level: Number(value) } as any })}
                     type="number"
                     min={1}
                     max={20}
@@ -60,7 +72,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 {onUpdate ? (
                   <InlineEdit
                     value={character.race}
-                    onSave={(value) => onUpdate({ character: { race: String(value) } })}
+                    onSave={(value) => onUpdate({ character: { race: String(value) } as any })}
                     className="font-normal"
                     inputClassName="h-6 text-xs"
                   />
@@ -71,7 +83,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 {onUpdate ? (
                   <InlineEdit
                     value={character.class}
-                    onSave={(value) => onUpdate({ character: { class: String(value) } })}
+                    onSave={(value) => onUpdate({ character: { class: String(value) } as any })}
                     className="font-normal"
                     inputClassName="h-6 text-xs"
                   />
@@ -82,7 +94,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 {onUpdate ? (
                   <InlineEdit
                     value={character.sex || ''}
-                    onSave={(value) => onUpdate({ character: { sex: String(value) } })}
+                    onSave={(value) => onUpdate({ character: { sex: String(value) } as any })}
                     className="font-normal"
                     inputClassName="h-6 text-xs"
                   />
@@ -95,7 +107,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                     {onUpdate ? (
                       <InlineEdit
                         value={character.age || ''}
-                        onSave={(value) => onUpdate({ character: { age: String(value) } })}
+                        onSave={(value) => onUpdate({ character: { age: String(value) } as any })}
                         className="font-normal"
                         inputClassName="h-6 text-xs w-16"
                       />
@@ -120,7 +132,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   <>
                     <InlineEdit
                       value={character.hp}
-                      onSave={(value) => onUpdate({ character: { hp: Number(value) } })}
+                      onSave={(value) => onUpdate({ character: { hp: Number(value) } as any })}
                       type="number"
                       min={0}
                       max={character.maxHp}
@@ -129,7 +141,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                     /
                     <InlineEdit
                       value={character.maxHp}
-                      onSave={(value) => onUpdate({ character: { maxHp: Number(value) } })}
+                      onSave={(value) => onUpdate({ character: { maxHp: Number(value) } as any })}
                       type="number"
                       min={1}
                       inputClassName="w-12 h-6 text-xs"
@@ -157,7 +169,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 {onUpdate ? (
                   <InlineEdit
                     value={character.gold}
-                    onSave={(value) => onUpdate({ character: { gold: Number(value) } })}
+                    onSave={(value) => onUpdate({ character: { gold: Number(value) } as any })}
                     type="number"
                     min={0}
                     inputClassName="w-20 h-6 text-sm"
@@ -179,7 +191,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 {onUpdate ? (
                   <InlineEdit
                     value={location?.name || 'Unknown'}
-                    onSave={(value) => onUpdate({ location: { ...location, name: String(value) } })}
+                    onSave={(value) => onUpdate({ location: { name: String(value) } as any })}
                     inputClassName="h-6 text-sm"
                   />
                 ) : (
@@ -190,7 +202,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 <span className="text-xs text-muted-foreground truncate">
                   <InlineEdit
                     value={location?.description || ''}
-                    onSave={(value) => onUpdate({ location: { ...location, description: String(value) } })}
+                    onSave={(value) => onUpdate({ location: { description: String(value) } as any })}
                     type="textarea"
                     className="text-xs"
                     inputClassName="h-12 text-xs"
@@ -217,7 +229,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   {onUpdate ? (
                     <InlineEdit
                       value={character.attributes.str}
-                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, str: Number(value) } } })}
+                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, str: Number(value) } } as any })}
                       type="number"
                       min={1}
                       max={30}
@@ -235,7 +247,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   {onUpdate ? (
                     <InlineEdit
                       value={character.attributes.dex}
-                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, dex: Number(value) } } })}
+                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, dex: Number(value) } } as any })}
                       type="number"
                       min={1}
                       max={30}
@@ -253,7 +265,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   {onUpdate ? (
                     <InlineEdit
                       value={character.attributes.con}
-                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, con: Number(value) } } })}
+                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, con: Number(value) } } as any })}
                       type="number"
                       min={1}
                       max={30}
@@ -271,7 +283,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   {onUpdate ? (
                     <InlineEdit
                       value={character.attributes.int}
-                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, int: Number(value) } } })}
+                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, int: Number(value) } } as any })}
                       type="number"
                       min={1}
                       max={30}
@@ -289,7 +301,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   {onUpdate ? (
                     <InlineEdit
                       value={character.attributes.wis}
-                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, wis: Number(value) } } })}
+                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, wis: Number(value) } } as any })}
                       type="number"
                       min={1}
                       max={30}
@@ -307,7 +319,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   {onUpdate ? (
                     <InlineEdit
                       value={character.attributes.cha}
-                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, cha: Number(value) } } })}
+                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, cha: Number(value) } } as any })}
                       type="number"
                       min={1}
                       max={30}
@@ -331,7 +343,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 {onUpdate ? (
                   <InlineEdit
                     value={character.attributes.ac}
-                    onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, ac: Number(value) } } })}
+                    onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, ac: Number(value) } } as any })}
                     type="number"
                     min={1}
                     max={30}
@@ -385,6 +397,14 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
           </div>
         </div>
       </div>
+      
+      {/* Character Detail Sheet */}
+      <EntityDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        entity={character}
+        entityType="character"
+      />
     </div>
   );
 }
