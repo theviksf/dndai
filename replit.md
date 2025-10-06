@@ -18,16 +18,17 @@ Preferred communication style: Simple, everyday language.
 **Component Structure**:
 - **Home page**: Main game interface with expanded character stats, narrative panel, and tabbed info panel (inventory, spells, quests, companions, NPCs, history).
 - **Settings page**: LLM configuration, API key input, and custom prompt editing.
-- **Character Creation page**: Multi-step character generation.
+- **Character Creation page**: Multi-step character generation with optional file import feature allowing users to skip manual creation by uploading a JSON character file.
 - **CharacterStatsBar**: Expanded two-row display for character information, including a visual health bar, status effects, and week counter showing turn progress (X/15 - Week Y format) that increments each turn and rolls over every 15 turns.
 - **NarrativePanel**: Displays AI-generated story progress, supports Markdown rendering (GFM), and includes a custom action text input.
-- **GameInfoTabs**: Tabbed interface with 8 tabs (Inventory, Spells, Locations, Business, Quests, Party, NPCs, History). Features notification badges that pulse when parser updates a tab, clearing when opened. Spells tab includes search filtering, level filtering, and sorting by name/level/school with compact card layout. All tabs have consistent icons.
+- **GameInfoTabs**: Tabbed interface with 8 tabs (Inventory, Spells, Locations, Business, Quests, Party, NPCs, History). Features notification badges that pulse when parser updates a tab, clearing when opened. Spells tab includes search filtering, level filtering, and sorting by name/level/school with compact card layout. NPCs tab displays sex/gender and relationship status (-3 to +3 scale) with color-coded badges. All tabs have consistent icons.
 **Routing Logic**: Smart navigation ensures a smooth user experience, preventing redirect loops and guiding users to character creation or settings when necessary.
 
 ### Backend Architecture
 
 **Server Framework**: Express.js on Node.js with TypeScript (ESM modules).
 **API Design**: RESTful endpoints proxying requests to OpenRouter's API, including model fetching, chat completions, and streaming chat completions via Server-Sent Events (SSE).
+**API Key Management**: Uses a fallback chain for OpenRouter API keys: explicit user-provided key → OPENROUTER_API_KEY environment variable → OPEN_ROUTER_DEVKEY secret. This allows the application to function without requiring users to provide their own API keys.
 **Session Management**: Currently in-memory, with plans for PostgreSQL persistence using an abstracted `IStorage` interface.
 **Development Setup**: Vite middleware for HMR, separate production build for client and server.
 
