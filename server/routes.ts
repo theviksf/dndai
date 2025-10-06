@@ -16,10 +16,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const promptsDir = join(process.cwd(), 'prompts');
       
       const [primary, parser, imageCharacter, imageLocation] = await Promise.all([
-        readFile(join(promptsDir, 'primary.txt'), 'utf-8'),
-        readFile(join(promptsDir, 'parser.txt'), 'utf-8'),
-        readFile(join(promptsDir, 'image-character.txt'), 'utf-8'),
-        readFile(join(promptsDir, 'image-location.txt'), 'utf-8'),
+        readFile(join(promptsDir, 'primary.md'), 'utf-8'),
+        readFile(join(promptsDir, 'parser.md'), 'utf-8'),
+        readFile(join(promptsDir, 'image-character.md'), 'utf-8'),
+        readFile(join(promptsDir, 'image-location.md'), 'utf-8'),
       ]);
       
       res.json({
