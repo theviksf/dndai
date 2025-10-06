@@ -149,6 +149,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image generation endpoint
+  app.post('/api/llm/generate-image', async (req, res) => {
+    const { prompt, apiKey } = req.body;
+    
+    try {
+      const key = apiKey || OPENROUTER_API_KEY;
+      
+      if (!key) {
+        return res.status(400).json({ error: 'API key required' });
+      }
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt required' });
+      }
+      
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'HTTP-Referer': req.headers.referer || 'http://localhost:5000',
+          'X-Title': 'D&D Adventure Game',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash-image-preview',
+          messages: [
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+      
+      const data = await response.json();
+      
+      // Extract image URL from response
+      // Gemini image models return the image URL in the content
+      const content = data.choices[0].message.content;
+      
+      // The response might contain markdown with image URL or direct URL
+      let imageUrl = '';
+      
+      // Try to extract image URL from markdown format ![alt](url)
+      const markdownMatch = content.match(/!\[.*?\]\((.*?)\)/);
+      if (markdownMatch) {
+        imageUrl = markdownMatch[1];
+      } else if (content.startsWith('http')) {
+        // Direct URL
+        imageUrl = content.trim();
+      } else {
+        // Try to find any URL in the content
+        const urlMatch = content.match(/(https?:\/\/[^\s]+)/);
+        if (urlMatch) {
+          imageUrl = urlMatch[1];
+        }
+      }
+      
+      res.json({
+        imageUrl,
+        usage: data.usage,
+        model: data.model,
+        rawContent: content
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Game state endpoints
   app.get('/api/game/:id', async (req, res) => {
     try {

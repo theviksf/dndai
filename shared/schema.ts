@@ -72,6 +72,7 @@ export type Companion = {
   criticalMemories: string;
   feelingsTowardsPlayer: string;
   relationship: string;
+  imageUrl?: string;
 };
 
 export type EncounteredCharacter = {
@@ -84,6 +85,7 @@ export type EncounteredCharacter = {
   appearance: string;
   description: string;
   status: 'alive' | 'dead';
+  imageUrl?: string;
 };
 
 export type Business = {
@@ -134,6 +136,7 @@ export type GameCharacter = {
   maxHp: number;
   gold: number;
   attributes: Attribute;
+  imageUrl?: string;
 };
 
 export type TurnSnapshot = {
@@ -147,6 +150,7 @@ export type GameStateData = {
   location: {
     name: string;
     description: string;
+    imageUrl?: string;
   };
   previousLocations: string[];
   inventory: InventoryItem[];
@@ -174,6 +178,8 @@ export type GameConfig = {
   openRouterApiKey: string;
   dmSystemPrompt: string;
   parserSystemPrompt: string;
+  characterImagePrompt: string;
+  locationImagePrompt: string;
 };
 
 export type OpenRouterModel = {
