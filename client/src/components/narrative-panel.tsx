@@ -808,7 +808,7 @@ export default function NarrativePanel({
 
         // Generate images in the background
         if (imagesToGenerate.length > 0) {
-          Promise.all(
+          Promise.allSettled(
             imagesToGenerate.map(async ({ entityType, entity, id }) => {
               const result = await generateEntityImage({
                 entityType,
@@ -817,15 +817,44 @@ export default function NarrativePanel({
               });
               return { entityType, id, result };
             })
-          ).then(results => {
-            // Calculate total image generation cost
+          ).then(settledResults => {
+            // Calculate total image generation cost and collect debug logs
             let totalImageCost = 0;
+            const imageDebugLogs: any[] = [];
             
             // Update game state with generated images
             setGameState(prev => {
               const updated = { ...prev };
               
-              results.forEach(({ entityType, id, result }) => {
+              settledResults.forEach((settledResult, index) => {
+                if (settledResult.status === 'rejected') {
+                  console.error('Image generation rejected:', settledResult.reason);
+                  // Create a fallback debug entry for the rejected promise
+                  const rejectedEntity = imagesToGenerate[index];
+                  imageDebugLogs.push({
+                    id: `image-rejected-${Date.now()}-${index}`,
+                    timestamp: Date.now(),
+                    type: 'image' as const,
+                    prompt: 'Promise rejected before image generation could complete',
+                    response: JSON.stringify({ 
+                      error: settledResult.reason?.message || String(settledResult.reason),
+                      stack: settledResult.reason?.stack 
+                    }, null, 2),
+                    model: 'google/gemini-2.5-flash-image-preview',
+                    entityType: rejectedEntity.entityType,
+                    imageUrl: null,
+                    error: settledResult.reason?.message || 'Promise rejected',
+                  });
+                  return;
+                }
+                
+                const { entityType, id, result } = settledResult.value;
+                
+                // Collect debug log entry (even for failed image generations)
+                if (result.debugLogEntry) {
+                  imageDebugLogs.push(result.debugLogEntry);
+                }
+                
                 if (!result.imageUrl) return;
 
                 // Calculate cost for this image generation
@@ -854,6 +883,11 @@ export default function NarrativePanel({
                   updated.location = { ...updated.location, imageUrl: result.imageUrl || undefined };
                 }
               });
+              
+              // Add image debug logs to debugLog
+              if (imageDebugLogs.length > 0) {
+                updated.debugLog = [...(updated.debugLog || []), ...imageDebugLogs];
+              }
 
               return updated;
             });
@@ -867,8 +901,6 @@ export default function NarrativePanel({
                 sessionCost: prev.sessionCost + totalImageCost,
               }));
             }
-          }).catch(err => {
-            console.error('Background image generation failed:', err);
           });
         }
 

@@ -113,7 +113,7 @@ export type NarrativeMessage = {
 export type DebugLogEntry = {
   id: string;
   timestamp: number;
-  type: 'primary' | 'parser';
+  type: 'primary' | 'parser' | 'image';
   prompt: string;
   response: string;
   model: string;
@@ -121,6 +121,9 @@ export type DebugLogEntry = {
     prompt: number;
     completion: number;
   };
+  entityType?: string;
+  imageUrl?: string | null;
+  error?: string;
 };
 
 export type GameCharacter = {

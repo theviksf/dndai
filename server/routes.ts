@@ -157,8 +157,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const key = apiKey || OPENROUTER_API_KEY;
       
+      console.log('[IMAGE GEN] Request:', {
+        entityType,
+        entityName: entityData?.name,
+        hasApiKey: !!key,
+        promptTemplateLength: promptTemplate?.length
+      });
+      
       if (!key) {
-        return res.status(400).json({ error: 'API key required' });
+        console.error('[IMAGE GEN] Error: No API key provided');
+        return res.status(400).json({ 
+          error: 'API key required',
+          filledPrompt: promptTemplate
+        });
       }
       
       // Fill in template placeholders
@@ -180,6 +191,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/\[location_description\]/g, entityData.description || 'a mysterious place')
           .replace(/\[notable landmarks or characteristics\]/g, entityData.landmarks || 'unique features');
       }
+      
+      console.log('[IMAGE GEN] Filled prompt:', filledPrompt.substring(0, 200) + '...');
       
       // Call OpenRouter with Gemini image model
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -205,10 +218,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`);
+        console.error('[IMAGE GEN] OpenRouter API error:', errorData);
+        return res.status(response.status).json({
+          error: `OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`,
+          filledPrompt,
+          rawResponse: JSON.stringify(errorData, null, 2)
+        });
       }
       
       const data = await response.json();
+      console.log('[IMAGE GEN] OpenRouter response:', {
+        model: data.model,
+        hasChoices: !!data.choices,
+        choicesLength: data.choices?.length,
+        messageContentType: typeof data.choices?.[0]?.message?.content,
+        isContentArray: Array.isArray(data.choices?.[0]?.message?.content),
+        usage: data.usage
+      });
       
       // Extract image URL from response
       // Gemini image models return content with type 'output_image'
@@ -248,16 +274,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log if no image URL was found for debugging
       if (!imageUrl) {
-        console.error('Failed to extract image URL from response:', JSON.stringify(content, null, 2));
+        console.error('[IMAGE GEN] Failed to extract image URL from response:', JSON.stringify(content, null, 2));
+      } else {
+        console.log('[IMAGE GEN] Successfully extracted image URL:', imageUrl.substring(0, 100) + '...');
       }
       
       res.json({
         imageUrl,
         usage: data.usage,
-        model: data.model
+        model: data.model,
+        filledPrompt,
+        rawResponse: JSON.stringify(data, null, 2)
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error('[IMAGE GEN] Error:', error.message);
+      res.status(500).json({ 
+        error: error.message,
+        filledPrompt: req.body.promptTemplate || 'Template not available',
+        rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+      });
     }
   });
 

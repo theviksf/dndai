@@ -290,10 +290,11 @@ export default function Home() {
         config,
       });
 
-      if (result.imageUrl) {
-        setGameState(prev => {
-          const updated = { ...prev };
-          
+      // Update game state with result and debug log
+      setGameState(prev => {
+        const updated = { ...prev };
+        
+        if (result.imageUrl) {
           if (entityType === 'character') {
             updated.character = { ...updated.character, imageUrl: result.imageUrl || undefined };
           } else if (entityType === 'companion') {
@@ -307,10 +308,17 @@ export default function Home() {
           } else if (entityType === 'location') {
             updated.location = { ...updated.location, imageUrl: result.imageUrl || undefined };
           }
-          
-          return updated;
-        });
+        }
+        
+        // Add debug log entry (even if image generation failed)
+        if (result.debugLogEntry) {
+          updated.debugLog = [...(updated.debugLog || []), result.debugLogEntry];
+        }
+        
+        return updated;
+      });
 
+      if (result.imageUrl) {
         // Update cost tracker if usage data is available
         if (result.usage) {
           const imageModel = models?.find(m => m.id === 'google/gemini-2.5-flash-image-preview');
@@ -330,6 +338,12 @@ export default function Home() {
         toast({
           title: 'Image Generated',
           description: 'New image has been generated successfully.',
+        });
+      } else {
+        toast({
+          title: 'Image Generation Failed',
+          description: 'Could not generate image. Check debug logs for details.',
+          variant: 'destructive',
         });
       }
     } catch (error: any) {
