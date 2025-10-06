@@ -34,17 +34,24 @@ export interface LocationImageMetadata {
 }
 
 /**
+ * Sanitize a string for use in filenames by replacing spaces and special characters with underscores
+ */
+function sanitizeForFilename(str: string): string {
+  return str.replace(/[^a-zA-Z0-9-]/g, '_');
+}
+
+/**
  * Generate filename for character images
  * Format: char_[age]-[sex]-[race]-[job]-[mood]_[sessionId]_[timestamp].jpg
  */
 export function generateCharacterFilename(metadata: CharacterImageMetadata): string {
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
   const parts = [
-    metadata.age || 'NA',
-    metadata.sex || 'NA',
-    metadata.race || 'NA',
-    metadata.job || 'NA',
-    metadata.mood || 'NA',
+    sanitizeForFilename(metadata.age || 'NA'),
+    sanitizeForFilename(metadata.sex || 'NA'),
+    sanitizeForFilename(metadata.race || 'NA'),
+    sanitizeForFilename(metadata.job || 'NA'),
+    sanitizeForFilename(metadata.mood || 'NA'),
   ];
   
   const filename = `char_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
@@ -58,11 +65,11 @@ export function generateCharacterFilename(metadata: CharacterImageMetadata): str
 export function generateLocationFilename(metadata: LocationImageMetadata): string {
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
   const parts = [
-    metadata.environment || 'NA',
-    metadata.timeOfDay || 'NA',
-    metadata.weather || 'NA',
-    metadata.region || 'NA',
-    metadata.vibe || 'NA',
+    sanitizeForFilename(metadata.environment || 'NA'),
+    sanitizeForFilename(metadata.timeOfDay || 'NA'),
+    sanitizeForFilename(metadata.weather || 'NA'),
+    sanitizeForFilename(metadata.region || 'NA'),
+    sanitizeForFilename(metadata.vibe || 'NA'),
   ];
   
   const filename = `loc_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
