@@ -65,11 +65,10 @@ export default function SettingsWrapper() {
     }
   }, [isNewSession, defaultPrompts]);
 
-  // Fetch OpenRouter models
+  // Fetch OpenRouter models (always enabled - backend will use fallback key if needed)
   const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
     queryKey: ['/api/models', config.openRouterApiKey],
     queryFn: () => fetchOpenRouterModels(config.openRouterApiKey),
-    enabled: !!config.openRouterApiKey,
   });
 
   const handleConfigSave = (newConfig: GameConfig) => {

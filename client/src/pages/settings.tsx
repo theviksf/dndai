@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import { RECOMMENDED_CONFIGS, estimateTurnCost } from '@/lib/openrouter';
 import { getSessionIdFromUrl } from '@/lib/session';
-import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText, RefreshCw, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText, RefreshCw, ArrowLeft, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SettingsPageProps {
@@ -23,6 +23,10 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
   const [, setLocation] = useLocation();
   const [localConfig, setLocalConfig] = useState<GameConfig>(config);
   const [estimatedCost, setEstimatedCost] = useState(0);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [useDevKey, setUseDevKey] = useState(!config.openRouterApiKey);
+  const [modelSortBy, setModelSortBy] = useState<'date' | 'name'>('date');
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
   const { toast } = useToast();
   
   useEffect(() => {
@@ -149,29 +153,66 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             {/* API Key Tab */}
             <TabsContent value="api-key" className="space-y-4">
               <div className="bg-muted/30 border border-border rounded-md p-6 space-y-4">
-                <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-foreground">
-                    OpenRouter API Key <span className="text-destructive">*</span>
+                <div className="flex items-center justify-between mb-4">
+                  <label
+                    htmlFor="use-dev-key"
+                    className="text-sm font-medium leading-none"
+                  >
+                    Use default dev key (no personal API key needed)
                   </label>
-                  <Input
-                    type="password"
-                    value={localConfig.openRouterApiKey}
-                    onChange={(e) => setLocalConfig(prev => ({ ...prev, openRouterApiKey: e.target.value }))}
-                    placeholder="sk-or-v1-..."
-                    className="font-mono text-sm bg-input border-border"
-                    data-testid="input-api-key"
+                  <Switch
+                    id="use-dev-key"
+                    checked={useDevKey}
+                    onCheckedChange={(checked) => {
+                      setUseDevKey(checked);
+                      if (checked) {
+                        setLocalConfig(prev => ({ ...prev, openRouterApiKey: '' }));
+                      }
+                    }}
+                    data-testid="switch-use-dev-key"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a>
-                  </p>
                 </div>
+
+                {!useDevKey && (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-foreground">
+                      OpenRouter API Key <span className="text-destructive">*</span>
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showApiKey ? "text" : "password"}
+                        value={localConfig.openRouterApiKey}
+                        onChange={(e) => setLocalConfig(prev => ({ ...prev, openRouterApiKey: e.target.value }))}
+                        placeholder="sk-or-v1-..."
+                        className="font-mono text-sm bg-input border-border pr-10"
+                        data-testid="input-api-key"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        data-testid="button-toggle-api-key-visibility"
+                      >
+                        {showApiKey ? (
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a>
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <Button 
                     onClick={handleSaveApiKey}
                     className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                     data-testid="button-save-api-key"
-                    disabled={!localConfig.openRouterApiKey}
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Save & Load Models
@@ -180,7 +221,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
 
                 <div className="bg-accent/10 border border-accent rounded-md p-4 mt-4">
                   <p className="text-sm text-foreground">
-                    <strong>Important:</strong> After entering your API key, click "Save & Load Models" to fetch available models from OpenRouter.
+                    <strong>Important:</strong> After configuring your API key settings, click "Save & Load Models" to fetch available models from OpenRouter.
                   </p>
                 </div>
               </div>
@@ -190,11 +231,10 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             <TabsContent value="models" className="space-y-4">
               {models.length === 0 ? (
                 <div className="bg-muted/30 border border-border rounded-md p-6 text-center space-y-4">
-                  <p className="text-muted-foreground">No models loaded. Please enter your API key in the API Key tab first.</p>
+                  <p className="text-muted-foreground">No models loaded. Click "Save & Load Models" to fetch available models.</p>
                   <Button 
                     onClick={onRefreshModels}
                     variant="outline"
-                    disabled={!localConfig.openRouterApiKey}
                     data-testid="button-refresh-models"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
@@ -203,6 +243,31 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                 </div>
               ) : (
                 <>
+                  {/* Model Search and Sort */}
+                  <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          placeholder="Search models by name..."
+                          value={modelSearchQuery}
+                          onChange={(e) => setModelSearchQuery(e.target.value)}
+                          className="bg-input border-border"
+                          data-testid="input-search-models"
+                        />
+                      </div>
+                      <Select value={modelSortBy} onValueChange={(value: 'date' | 'name') => setModelSortBy(value)}>
+                        <SelectTrigger className="w-[180px] bg-input border-border" data-testid="select-sort-models">
+                          <SelectValue placeholder="Sort by..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="date">Sort by Date (Newest)</SelectItem>
+                          <SelectItem value="name">Sort Alphabetically</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   {/* Primary LLM */}
                   <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
                     <label className="block text-sm font-semibold text-foreground">
@@ -216,11 +281,19 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {models.map(model => (
-                          <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                            {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
-                          </SelectItem>
-                        ))}
+                        {(() => {
+                          let filteredModels = models.filter(model => 
+                            model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                          );
+                          if (modelSortBy === 'name') {
+                            filteredModels = [...filteredModels].sort((a, b) => a.name.localeCompare(b.name));
+                          }
+                          return filteredModels.map(model => (
+                            <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                            </SelectItem>
+                          ));
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>
@@ -238,11 +311,19 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {models.map(model => (
-                          <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                            {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
-                          </SelectItem>
-                        ))}
+                        {(() => {
+                          let filteredModels = models.filter(model => 
+                            model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                          );
+                          if (modelSortBy === 'name') {
+                            filteredModels = [...filteredModels].sort((a, b) => a.name.localeCompare(b.name));
+                          }
+                          return filteredModels.map(model => (
+                            <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                            </SelectItem>
+                          ));
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>

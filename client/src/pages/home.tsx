@@ -142,11 +142,10 @@ export default function Home() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const fileInputRef = useState<HTMLInputElement | null>(null)[0];
 
-  // Fetch OpenRouter models
+  // Fetch OpenRouter models (always enabled - backend will use fallback key if needed)
   const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
     queryKey: ['/api/models', config.openRouterApiKey],
     queryFn: () => fetchOpenRouterModels(config.openRouterApiKey),
-    enabled: !!config.openRouterApiKey,
   });
 
   // Save game mutation

@@ -237,8 +237,8 @@ export const DEFAULT_LOCATION_IMAGE_PROMPT = JSON.stringify({
 
 export function createDefaultConfig(): GameConfig {
   return {
-    primaryLLM: 'anthropic/claude-3-opus',
-    parserLLM: 'anthropic/claude-3-haiku',
+    primaryLLM: 'deepseek/deepseek-chat-v3.1',
+    parserLLM: 'deepseek/deepseek-chat-v3.1',
     difficulty: 'normal',
     narrativeStyle: 'balanced',
     autoSave: true,
