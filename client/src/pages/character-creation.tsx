@@ -122,10 +122,20 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
 
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
+      const importData = JSON.parse(text);
 
-      // Validate that the file contains a character object
-      if (!data.name || !data.race || !data.class) {
+      // Check if this is a .ogl save game file (has gameState wrapper)
+      let characterData;
+      if (importData.gameState && importData.gameState.character) {
+        // Extract character from .ogl save game format
+        characterData = importData.gameState.character;
+      } else {
+        // Direct character object (for backward compatibility)
+        characterData = importData;
+      }
+
+      // Validate that we have a character object
+      if (!characterData.name || !characterData.race || !characterData.class) {
         toast({
           title: "Invalid character file",
           description: "The file must contain a valid character with name, race, and class.",
@@ -136,27 +146,27 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
 
       // Ensure all required fields are present with defaults
       const character: GameStateData['character'] = {
-        name: data.name,
-        race: data.race,
-        class: data.class,
-        age: data.age ?? 'Unknown',
-        sex: data.sex ?? 'Unknown',
-        level: data.level ?? 1,
-        xp: data.xp ?? 0,
-        nextLevelXp: data.nextLevelXp ?? 300,
-        hp: data.hp ?? 10,
-        maxHp: data.maxHp ?? 10,
-        gold: data.gold ?? 50,
+        name: characterData.name,
+        race: characterData.race,
+        class: characterData.class,
+        age: characterData.age ?? 'Unknown',
+        sex: characterData.sex ?? 'Unknown',
+        level: characterData.level ?? 1,
+        xp: characterData.xp ?? 0,
+        nextLevelXp: characterData.nextLevelXp ?? 300,
+        hp: characterData.hp ?? 10,
+        maxHp: characterData.maxHp ?? 10,
+        gold: characterData.gold ?? 50,
         attributes: {
-          str: data.attributes?.str ?? 10,
-          dex: data.attributes?.dex ?? 10,
-          con: data.attributes?.con ?? 10,
-          int: data.attributes?.int ?? 10,
-          wis: data.attributes?.wis ?? 10,
-          cha: data.attributes?.cha ?? 10,
-          ac: data.attributes?.ac ?? 10,
+          str: characterData.attributes?.str ?? 10,
+          dex: characterData.attributes?.dex ?? 10,
+          con: characterData.attributes?.con ?? 10,
+          int: characterData.attributes?.int ?? 10,
+          wis: characterData.attributes?.wis ?? 10,
+          cha: characterData.attributes?.cha ?? 10,
+          ac: characterData.attributes?.ac ?? 10,
         },
-        imageUrl: data.imageUrl,
+        imageUrl: characterData.imageUrl,
       };
 
       toast({
@@ -170,7 +180,7 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
     } catch (error) {
       toast({
         title: "Import failed",
-        description: "Could not parse the character file. Make sure it's a valid JSON file.",
+        description: "Could not parse the file. Make sure it's a valid .ogl save game or character file.",
         variant: "destructive",
       });
     }
@@ -218,7 +228,7 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json"
+                accept=".ogl,.json"
                 onChange={handleFileImport}
                 className="hidden"
                 data-testid="input-character-file"
