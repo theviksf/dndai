@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertGameStateSchema } from "@shared/schema";
+import { uploadImageToR2, generateCharacterFilename, generateLocationFilename, type CharacterImageMetadata, type LocationImageMetadata } from "./r2-storage";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
@@ -152,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Image generation endpoint
   app.post('/api/generate-image', async (req, res) => {
     try {
-      const { entityType, entity, promptTemplate, apiKey } = req.body;
+      const { entityType, entity, promptTemplate, apiKey, sessionId } = req.body;
       const entityData = entity;
       
       const key = apiKey || OPENROUTER_API_KEY;
@@ -298,12 +299,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log if no image URL was found for debugging
       if (!imageUrl) {
         console.error('[IMAGE GEN] Failed to extract image URL from response:', JSON.stringify(message, null, 2));
-      } else {
-        console.log('[IMAGE GEN] Successfully extracted image URL:', imageUrl.substring(0, 100) + '...');
+        res.json({
+          imageUrl: null,
+          usage: data.usage,
+          model: data.model,
+          filledPrompt,
+          rawResponse: JSON.stringify(data, null, 2)
+        });
+        return;
+      }
+      
+      console.log('[IMAGE GEN] Successfully extracted image URL:', imageUrl.substring(0, 100) + '...');
+      
+      // Upload image to Cloudflare R2
+      let r2ImageUrl = null;
+      try {
+        // Generate filename based on entity type
+        let filename: string;
+        
+        if (entityType === 'location') {
+          const locationMetadata: LocationImageMetadata = {
+            environment: entityData.environment || entityData.type || 'unknown',
+            timeOfDay: entityData.timeOfDay || 'day',
+            weather: entityData.weather,
+            region: entityData.region || entityData.name,
+            vibe: entityData.vibe || entityData.atmosphere || 'neutral',
+            details: entityData.details || entityData.landmarks,
+            sessionId: sessionId || 'default',
+          };
+          filename = generateLocationFilename(locationMetadata);
+        } else {
+          // Character, companion, or NPC
+          const characterMetadata: CharacterImageMetadata = {
+            age: entityData.age?.toString() || 'NA',
+            sex: entityData.sex || entityData.gender || 'NA',
+            race: entityData.race || 'NA',
+            job: entityData.class || entityData.job || entityData.role || 'NA',
+            mood: entityData.mood || entityData.expression,
+            extraDetails: entityData.appearance || entityData.personality,
+            sessionId: sessionId || 'default',
+          };
+          filename = generateCharacterFilename(characterMetadata);
+        }
+        
+        console.log('[R2 UPLOAD] Uploading image with filename:', filename);
+        r2ImageUrl = await uploadImageToR2(imageUrl, filename);
+        console.log('[R2 UPLOAD] Successfully uploaded to R2:', r2ImageUrl);
+      } catch (uploadError: any) {
+        console.error('[R2 UPLOAD] Failed to upload to R2:', uploadError.message);
+        // Fall back to original base64 URL if R2 upload fails
+        r2ImageUrl = imageUrl;
       }
       
       res.json({
-        imageUrl,
+        imageUrl: r2ImageUrl,
         usage: data.usage,
         model: data.model,
         filledPrompt,
