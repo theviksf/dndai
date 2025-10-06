@@ -21,7 +21,9 @@ function getModifier(score: number): string {
 
 export default function CharacterStatsBar({ character, statusEffects, location, turnCount, onUpdate, onRefreshImage }: CharacterStatsBarProps) {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  const [locationDetailSheetOpen, setLocationDetailSheetOpen] = useState(false);
   const [isRefreshingImage, setIsRefreshingImage] = useState(false);
+  const [isRefreshingLocationImage, setIsRefreshingLocationImage] = useState(false);
   const hpPercentage = (character.hp / character.maxHp) * 100;
   
   const turnInWeek = (turnCount % 15) + 1;
@@ -34,6 +36,16 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
       await onRefreshImage('character');
     } finally {
       setIsRefreshingImage(false);
+    }
+  };
+
+  const handleRefreshLocationImage = async () => {
+    if (!onRefreshImage) return;
+    setIsRefreshingLocationImage(true);
+    try {
+      await onRefreshImage('location');
+    } finally {
+      setIsRefreshingLocationImage(false);
     }
   };
   
@@ -196,8 +208,13 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
 
           {/* Location */}
           <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-md border border-primary/20 flex-1 min-w-[200px]">
-            <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-            <div className="flex flex-col min-w-0">
+            <EntityImageCard
+              imageUrl={location?.imageUrl}
+              entityType="location"
+              onClick={() => setLocationDetailSheetOpen(true)}
+              className="w-12 h-12 flex-shrink-0"
+            />
+            <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs text-muted-foreground">Location</span>
               <span className="text-sm font-medium truncate" data-testid="text-location">
                 {onUpdate ? (
@@ -419,6 +436,18 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
         onRefresh={onRefreshImage ? handleRefreshImage : undefined}
         isRefreshing={isRefreshingImage}
       />
+
+      {/* Location Detail Sheet */}
+      {location && (
+        <EntityDetailSheet
+          open={locationDetailSheetOpen}
+          onOpenChange={setLocationDetailSheetOpen}
+          entity={location}
+          entityType="location"
+          onRefresh={onRefreshImage ? handleRefreshLocationImage : undefined}
+          isRefreshing={isRefreshingLocationImage}
+        />
+      )}
     </div>
   );
 }
