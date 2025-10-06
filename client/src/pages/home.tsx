@@ -359,13 +359,46 @@ export default function Home() {
     // Deep copy of game state to ensure nested objects are captured
     // Exclude turnSnapshots from the snapshot to avoid circular reference
     const { turnSnapshots: _, ...stateToSave } = gameState;
+    
+    // Create a copy without images to save localStorage space
+    // (base64 images can be 100KB+ each and quickly exceed quota)
+    const stateWithoutImages = JSON.parse(JSON.stringify(stateToSave));
+    
+    // Remove imageUrl from character
+    if (stateWithoutImages.character?.imageUrl) {
+      delete stateWithoutImages.character.imageUrl;
+    }
+    
+    // Remove imageUrl from companions
+    if (stateWithoutImages.companions) {
+      stateWithoutImages.companions = stateWithoutImages.companions.map((c: any) => {
+        const { imageUrl, ...rest } = c;
+        return rest;
+      });
+    }
+    
+    // Remove imageUrl from NPCs
+    if (stateWithoutImages.encounteredCharacters) {
+      stateWithoutImages.encounteredCharacters = stateWithoutImages.encounteredCharacters.map((npc: any) => {
+        const { imageUrl, ...rest } = npc;
+        return rest;
+      });
+    }
+    
+    // Remove imageUrl from location
+    if (stateWithoutImages.location?.imageUrl) {
+      delete stateWithoutImages.location.imageUrl;
+    }
+    
     const snapshot: TurnSnapshot = {
-      state: JSON.parse(JSON.stringify(stateToSave)),
+      state: stateWithoutImages,
       costTracker: JSON.parse(JSON.stringify(costTracker)),
       timestamp: Date.now(),
     };
+    
     setTurnSnapshots(prev => {
-      const newSnapshots = [...prev, snapshot];
+      // Keep only the last 20 snapshots to prevent unbounded growth
+      const newSnapshots = [...prev, snapshot].slice(-20);
       localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(newSnapshots));
       return newSnapshots;
     });
