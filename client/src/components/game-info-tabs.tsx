@@ -371,15 +371,14 @@ export default function GameInfoTabs({
                     onClick={() => openDetailSheet(location, 'location')}
                   >
                     <div className="flex items-start gap-3">
-                      <EntityImageCard
-                        imageUrl={location.imageUrl}
-                        entityType="location"
-                        onClick={(e) => {
-                          e?.stopPropagation();
-                          openDetailSheet(location, 'location');
-                        }}
-                        className="w-16 h-16 flex-shrink-0"
-                      />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <EntityImageCard
+                          imageUrl={location.imageUrl}
+                          entityType="location"
+                          onClick={() => openDetailSheet(location, 'location')}
+                          className="w-16 h-16 flex-shrink-0"
+                        />
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <MapPin className="w-4 h-4 text-primary" />
@@ -750,15 +749,14 @@ export default function GameInfoTabs({
                       <AccordionTrigger className="hover:no-underline py-3">
                         <div className="flex items-center justify-between w-full pr-2">
                           <div className="flex items-center gap-3 flex-1">
-                            <EntityImageCard
-                              imageUrl={character.imageUrl}
-                              entityType="npc"
-                              onClick={(e) => {
-                                e?.stopPropagation();
-                                openDetailSheet(character, 'npc');
-                              }}
-                              className="w-12 h-12 flex-shrink-0"
-                            />
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <EntityImageCard
+                                imageUrl={character.imageUrl}
+                                entityType="npc"
+                                onClick={() => openDetailSheet(character, 'npc')}
+                                className="w-12 h-12 flex-shrink-0"
+                              />
+                            </div>
                             <div className="flex flex-col items-start gap-1">
                               <span className="font-semibold text-sm">{character.name}</span>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
