@@ -53,6 +53,17 @@ The system utilizes two distinct LLMs:
 - **Multi-Session Support**: Users can have multiple games by changing the session parameter in URL
 - **New Game Button**: Creates a fresh session with new ID, resetting to default settings and prompting for new character creation
 
+**Image Storage (Cloudflare R2)**: AI-generated images are stored in Cloudflare R2 cloud storage to prevent localStorage quota issues.
+- **Storage Service**: Uses AWS S3-compatible API via @aws-sdk/client-s3
+- **Filename Convention**: Structured filenames for easy identification and session tracking
+  - Characters: `char_[age]-[sex]-[race]-[job]-[mood]_[sessionId]_[timestamp].jpg`
+  - Companions: `comp_[age]-[sex]-[race]-[job]-[mood]_[sessionId]_[timestamp].jpg`
+  - NPCs: `npc_[age]-[sex]-[race]-[job]-[mood]_[sessionId]_[timestamp].jpg`
+  - Locations: `loc_[environment]-[timeOfDay]-[weather]-[region]-[vibe]_[sessionId]_[timestamp].jpg`
+- **Upload Flow**: Base64 image from LLM → Backend converts to Buffer → Upload to R2 → Return public URL
+- **Configuration**: R2 credentials stored in Replit secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT, R2_BUCKET_NAME)
+- **Rationale**: Eliminates localStorage quota errors caused by large base64 images, enables persistent image storage across sessions
+
 **Future**: PostgreSQL with Drizzle ORM for type-safe operations.
 **Schema Design**: `GameState` (character stats, inventory, spells, quests, companions, narrative, parsed recaps), `GameConfig` (LLM selections, API keys, custom prompts), `CostTracker`, `GameCharacter`, `Spell`, `Companion`, `EncounteredCharacter`.
 
@@ -61,6 +72,7 @@ The system utilizes two distinct LLMs:
 ### Third-Party Services
 
 **OpenRouter**: Unified API gateway for various LLM providers (Anthropic Claude, OpenAI GPT, Google Gemini). Used for authentication via API keys and accessing chat completion endpoints. The application tracks token usage and provides cost estimates.
+**Cloudflare R2**: Object storage service for AI-generated images. Uses S3-compatible API for uploading and hosting images with structured filenames.
 **Neon Database**: Serverless PostgreSQL used for database connections.
 
 ### UI Component Libraries

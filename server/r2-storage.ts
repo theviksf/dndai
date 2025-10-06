@@ -21,7 +21,6 @@ export interface CharacterImageMetadata {
   race: string;
   job: string;
   mood?: string;
-  extraDetails?: string;
   sessionId: string;
 }
 
@@ -31,13 +30,12 @@ export interface LocationImageMetadata {
   weather?: string;
   region?: string;
   vibe: string;
-  details?: string;
   sessionId: string;
 }
 
 /**
  * Generate filename for character images
- * Format: char_[age]-[sex]-[race]-[job]-[mood]-[extraDetails]_[sessionId]_[timestamp].jpg
+ * Format: char_[age]-[sex]-[race]-[job]-[mood]_[sessionId]_[timestamp].jpg
  */
 export function generateCharacterFilename(metadata: CharacterImageMetadata): string {
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
@@ -47,7 +45,6 @@ export function generateCharacterFilename(metadata: CharacterImageMetadata): str
     metadata.race || 'NA',
     metadata.job || 'NA',
     metadata.mood || 'NA',
-    metadata.extraDetails || 'NA',
   ];
   
   const filename = `char_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
@@ -56,7 +53,7 @@ export function generateCharacterFilename(metadata: CharacterImageMetadata): str
 
 /**
  * Generate filename for location images
- * Format: Loc_[environment]-[timeOfDay]-[weather]-[region]-[vibe]-[details]_[sessionId]_[timestamp].jpg
+ * Format: loc_[environment]-[timeOfDay]-[weather]-[region]-[vibe]_[sessionId]_[timestamp].jpg
  */
 export function generateLocationFilename(metadata: LocationImageMetadata): string {
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
@@ -66,10 +63,9 @@ export function generateLocationFilename(metadata: LocationImageMetadata): strin
     metadata.weather || 'NA',
     metadata.region || 'NA',
     metadata.vibe || 'NA',
-    metadata.details || 'NA',
   ];
   
-  const filename = `Loc_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
+  const filename = `loc_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
   return filename;
 }
 
