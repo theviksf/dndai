@@ -10,6 +10,7 @@ import SettingsPage from '@/pages/settings';
 export default function SettingsWrapper() {
   const [, setLocation] = useLocation();
   const [sessionId, setSessionId] = useState<string>(() => getSessionIdFromUrl() || '');
+  const [isNewSession, setIsNewSession] = useState(false);
   
   // Ensure session ID exists - create one if missing
   useEffect(() => {
@@ -30,10 +31,39 @@ export default function SettingsWrapper() {
     }
     // Try to load config from session-scoped localStorage
     const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', initialSessionId));
-    const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
+    if (!savedConfig) {
+      setIsNewSession(true);
+      return createDefaultConfig();
+    }
+    const loadedConfig = JSON.parse(savedConfig);
     const migratedConfig = migrateConfig(loadedConfig);
     return migrateParserPrompt(migratedConfig);
   });
+
+  // Fetch default prompts from .md files for new sessions
+  const { data: defaultPrompts } = useQuery({
+    queryKey: ['/api/prompts/defaults'],
+    queryFn: async () => {
+      const response = await fetch('/api/prompts/defaults');
+      if (!response.ok) throw new Error('Failed to fetch default prompts');
+      return response.json();
+    },
+    enabled: isNewSession,
+  });
+
+  // Update config with prompts from .md files when they're loaded for new sessions
+  useEffect(() => {
+    if (isNewSession && defaultPrompts) {
+      setConfig(prev => ({
+        ...prev,
+        dmSystemPrompt: defaultPrompts.primary,
+        parserSystemPrompt: defaultPrompts.parser,
+        characterImagePrompt: defaultPrompts.imageCharacter,
+        locationImagePrompt: defaultPrompts.imageLocation,
+      }));
+      setIsNewSession(false);
+    }
+  }, [isNewSession, defaultPrompts]);
 
   // Fetch OpenRouter models
   const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({

@@ -22,6 +22,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>(() => getSessionIdFromUrl() || '');
+  const [isNewSession, setIsNewSession] = useState(false);
   
   // Ensure session ID exists in URL
   useEffect(() => {
@@ -94,11 +95,40 @@ export default function Home() {
     const initialSessionId = getSessionIdFromUrl() || generateSessionId();
     // Load config from session-scoped localStorage
     const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', initialSessionId));
-    const loadedConfig = savedConfig ? JSON.parse(savedConfig) : createDefaultConfig();
+    if (!savedConfig) {
+      setIsNewSession(true);
+      return createDefaultConfig();
+    }
+    const loadedConfig = JSON.parse(savedConfig);
     const migratedConfig = migrateConfig(loadedConfig);
     return migrateParserPrompt(migratedConfig);
   });
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker());
+
+  // Fetch default prompts from .md files for new sessions
+  const { data: defaultPrompts } = useQuery({
+    queryKey: ['/api/prompts/defaults'],
+    queryFn: async () => {
+      const response = await fetch('/api/prompts/defaults');
+      if (!response.ok) throw new Error('Failed to fetch default prompts');
+      return response.json();
+    },
+    enabled: isNewSession,
+  });
+
+  // Update config with prompts from .md files when they're loaded for new sessions
+  useEffect(() => {
+    if (isNewSession && defaultPrompts) {
+      setConfig(prev => ({
+        ...prev,
+        dmSystemPrompt: defaultPrompts.primary,
+        parserSystemPrompt: defaultPrompts.parser,
+        characterImagePrompt: defaultPrompts.imageCharacter,
+        locationImagePrompt: defaultPrompts.imageLocation,
+      }));
+      setIsNewSession(false);
+    }
+  }, [isNewSession, defaultPrompts]);
   const [isGameStarted, setIsGameStarted] = useState(() => {
     const initialSessionId = getSessionIdFromUrl() || generateSessionId();
     return localStorage.getItem(getSessionStorageKey('isGameStarted', initialSessionId)) === 'true';
