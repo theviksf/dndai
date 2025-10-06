@@ -10,6 +10,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
 
 interface NarrativePanelProps {
   gameState: GameStateData;
@@ -574,10 +575,18 @@ export default function NarrativePanel({
           if (stateUpdates.location !== undefined) {
             // Track old location before updating
             if (stateUpdates.location.name && stateUpdates.location.name !== prev.location.name) {
-              const oldLocation = prev.location.name;
+              const oldLocationName = prev.location.name;
               const prevLocations = prev.previousLocations || [];
-              if (oldLocation && !prevLocations.includes(oldLocation)) {
-                updated.previousLocations = [...prevLocations, oldLocation];
+              const locationExists = prevLocations.some(loc => loc.name === oldLocationName);
+              if (oldLocationName && !locationExists) {
+                const oldLocationObject = {
+                  id: `loc-${Date.now()}`,
+                  name: oldLocationName,
+                  description: prev.location.description || '',
+                  imageUrl: prev.location.imageUrl,
+                  lastVisited: Date.now(),
+                };
+                updated.previousLocations = [...prevLocations, oldLocationObject];
               }
             }
             updated.location = stateUpdates.location;
@@ -747,6 +756,124 @@ export default function NarrativePanel({
       setActionInput('');
       setIsParsing(false);
       setStreamingContent('');
+
+      // Auto-generate images for new entities (async, non-blocking)
+      setGameState(currentState => {
+        // Track entities needing images
+        const imagesToGenerate: Array<{
+          entityType: 'character' | 'companion' | 'npc' | 'location';
+          entity: any;
+          id: string;
+        }> = [];
+
+        // Check character
+        if (needsImageGeneration(currentState.character)) {
+          imagesToGenerate.push({
+            entityType: 'character',
+            entity: currentState.character,
+            id: 'character',
+          });
+        }
+
+        // Check companions
+        currentState.companions?.forEach(companion => {
+          if (needsImageGeneration(companion)) {
+            imagesToGenerate.push({
+              entityType: 'companion',
+              entity: companion,
+              id: companion.id,
+            });
+          }
+        });
+
+        // Check NPCs
+        currentState.encounteredCharacters?.forEach(npc => {
+          if (needsImageGeneration(npc)) {
+            imagesToGenerate.push({
+              entityType: 'npc',
+              entity: npc,
+              id: npc.id,
+            });
+          }
+        });
+
+        // Check location
+        if (needsImageGeneration(currentState.location)) {
+          imagesToGenerate.push({
+            entityType: 'location',
+            entity: currentState.location,
+            id: 'current',
+          });
+        }
+
+        // Generate images in the background
+        if (imagesToGenerate.length > 0) {
+          Promise.all(
+            imagesToGenerate.map(async ({ entityType, entity, id }) => {
+              const result = await generateEntityImage({
+                entityType,
+                entity,
+                config,
+              });
+              return { entityType, id, result };
+            })
+          ).then(results => {
+            // Calculate total image generation cost
+            let totalImageCost = 0;
+            
+            // Update game state with generated images
+            setGameState(prev => {
+              const updated = { ...prev };
+              
+              results.forEach(({ entityType, id, result }) => {
+                if (!result.imageUrl) return;
+
+                // Calculate cost for this image generation
+                if (result.usage) {
+                  // Find the image model pricing (google/gemini-2.5-flash-image-preview)
+                  const imageModel = models.find(m => m.id === 'google/gemini-2.5-flash-image-preview');
+                  if (imageModel) {
+                    const imageCost = 
+                      (result.usage.prompt_tokens * parseFloat(imageModel.pricing.prompt)) +
+                      (result.usage.completion_tokens * parseFloat(imageModel.pricing.completion));
+                    totalImageCost += imageCost;
+                  }
+                }
+
+                if (entityType === 'character') {
+                  updated.character = { ...updated.character, imageUrl: result.imageUrl || undefined };
+                } else if (entityType === 'companion') {
+                  updated.companions = updated.companions?.map(c =>
+                    c.id === id ? { ...c, imageUrl: result.imageUrl || undefined } : c
+                  );
+                } else if (entityType === 'npc') {
+                  updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
+                    npc.id === id ? { ...npc, imageUrl: result.imageUrl || undefined } : npc
+                  );
+                } else if (entityType === 'location') {
+                  updated.location = { ...updated.location, imageUrl: result.imageUrl || undefined };
+                }
+              });
+
+              return updated;
+            });
+
+            // Update cost tracker with image generation costs
+            if (totalImageCost > 0) {
+              setCostTracker(prev => ({
+                ...prev,
+                imageCost: prev.imageCost + totalImageCost,
+                lastTurnImageCost: (prev.lastTurnImageCost || 0) + totalImageCost,
+                sessionCost: prev.sessionCost + totalImageCost,
+              }));
+            }
+          }).catch(err => {
+            console.error('Background image generation failed:', err);
+          });
+        }
+
+        return currentState;
+      });
     } catch (error: any) {
       toast({
         title: 'Error',

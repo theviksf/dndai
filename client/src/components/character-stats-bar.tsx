@@ -11,6 +11,7 @@ interface CharacterStatsBarProps {
   location: GameStateData['location'];
   turnCount: number;
   onUpdate?: (updates: Partial<GameStateData>) => void;
+  onRefreshImage?: (entityType: 'character' | 'location', entityId?: string) => Promise<void>;
 }
 
 function getModifier(score: number): string {
@@ -18,12 +19,23 @@ function getModifier(score: number): string {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
-export default function CharacterStatsBar({ character, statusEffects, location, turnCount, onUpdate }: CharacterStatsBarProps) {
+export default function CharacterStatsBar({ character, statusEffects, location, turnCount, onUpdate, onRefreshImage }: CharacterStatsBarProps) {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  const [isRefreshingImage, setIsRefreshingImage] = useState(false);
   const hpPercentage = (character.hp / character.maxHp) * 100;
   
   const turnInWeek = (turnCount % 15) + 1;
   const weekNumber = Math.floor(turnCount / 15) + 1;
+
+  const handleRefreshImage = async () => {
+    if (!onRefreshImage) return;
+    setIsRefreshingImage(true);
+    try {
+      await onRefreshImage('character');
+    } finally {
+      setIsRefreshingImage(false);
+    }
+  };
   
   return (
     <div className="bg-card border-b-2 border-border parchment-texture">
@@ -404,6 +416,8 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
         onOpenChange={setDetailSheetOpen}
         entity={character}
         entityType="character"
+        onRefresh={onRefreshImage ? handleRefreshImage : undefined}
+        isRefreshing={isRefreshingImage}
       />
     </div>
   );

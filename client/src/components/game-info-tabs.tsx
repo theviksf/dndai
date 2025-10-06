@@ -23,6 +23,7 @@ interface GameInfoTabsProps {
   updatedTabs?: string[];
   onUpdate?: (updates: Partial<GameStateData>) => void;
   onTabChange?: (tabId: string) => void;
+  onRefreshImage?: (entityType: 'companion' | 'npc' | 'location', entityId?: string) => Promise<void>;
 }
 
 export default function GameInfoTabs({
@@ -37,6 +38,7 @@ export default function GameInfoTabs({
   updatedTabs,
   onUpdate,
   onTabChange,
+  onRefreshImage,
 }: GameInfoTabsProps) {
   const [npcSortBy, setNpcSortBy] = useState<'name' | 'role' | 'location'>('name');
   const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
@@ -45,11 +47,23 @@ export default function GameInfoTabs({
   const [detailEntity, setDetailEntity] = useState<Companion | EncounteredCharacter | Location | null>(null);
   const [detailEntityType, setDetailEntityType] = useState<'companion' | 'npc' | 'location'>('companion');
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  const [isRefreshingImage, setIsRefreshingImage] = useState(false);
 
   const openDetailSheet = (entity: Companion | EncounteredCharacter | Location, type: 'companion' | 'npc' | 'location') => {
     setDetailEntity(entity);
     setDetailEntityType(type);
     setDetailSheetOpen(true);
+  };
+
+  const handleRefreshImage = async () => {
+    if (!onRefreshImage || !detailEntity) return;
+    setIsRefreshingImage(true);
+    try {
+      const entityId = 'id' in detailEntity ? detailEntity.id : undefined;
+      await onRefreshImage(detailEntityType, entityId);
+    } finally {
+      setIsRefreshingImage(false);
+    }
   };
 
   const sortedNPCs = [...encounteredCharacters].sort((a, b) => {
@@ -903,6 +917,8 @@ export default function GameInfoTabs({
         onOpenChange={setDetailSheetOpen}
         entity={detailEntity}
         entityType={detailEntityType}
+        onRefresh={onRefreshImage ? handleRefreshImage : undefined}
+        isRefreshing={isRefreshingImage}
       />
     </Tabs>
   );

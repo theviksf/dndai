@@ -15,6 +15,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateEntityImage } from '@/lib/image-generation';
 
 export default function Home() {
   const { toast } = useToast();
@@ -259,6 +260,84 @@ export default function Home() {
         ...gameState.character,
         ...updates.character,
       }));
+    }
+  };
+
+  const refreshEntityImage = async (
+    entityType: 'character' | 'companion' | 'npc' | 'location',
+    entityId?: string
+  ) => {
+    try {
+      let entity: any;
+      
+      if (entityType === 'character') {
+        entity = gameState.character;
+      } else if (entityType === 'companion') {
+        entity = gameState.companions?.find(c => c.id === entityId);
+      } else if (entityType === 'npc') {
+        entity = gameState.encounteredCharacters?.find(npc => npc.id === entityId);
+      } else if (entityType === 'location') {
+        entity = gameState.location;
+      }
+
+      if (!entity) {
+        throw new Error('Entity not found');
+      }
+
+      const result = await generateEntityImage({
+        entityType,
+        entity,
+        config,
+      });
+
+      if (result.imageUrl) {
+        setGameState(prev => {
+          const updated = { ...prev };
+          
+          if (entityType === 'character') {
+            updated.character = { ...updated.character, imageUrl: result.imageUrl || undefined };
+          } else if (entityType === 'companion') {
+            updated.companions = updated.companions?.map(c =>
+              c.id === entityId ? { ...c, imageUrl: result.imageUrl || undefined } : c
+            );
+          } else if (entityType === 'npc') {
+            updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
+              npc.id === entityId ? { ...npc, imageUrl: result.imageUrl || undefined } : npc
+            );
+          } else if (entityType === 'location') {
+            updated.location = { ...updated.location, imageUrl: result.imageUrl || undefined };
+          }
+          
+          return updated;
+        });
+
+        // Update cost tracker if usage data is available
+        if (result.usage) {
+          const imageModel = models?.find(m => m.id === 'google/gemini-2.5-flash-image-preview');
+          if (imageModel) {
+            const imageCost = 
+              (result.usage.prompt_tokens * parseFloat(imageModel.pricing.prompt)) +
+              (result.usage.completion_tokens * parseFloat(imageModel.pricing.completion));
+            
+            setCostTracker(prev => ({
+              ...prev,
+              imageCost: prev.imageCost + imageCost,
+              sessionCost: prev.sessionCost + imageCost,
+            }));
+          }
+        }
+
+        toast({
+          title: 'Image Generated',
+          description: 'New image has been generated successfully.',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Image Generation Failed',
+        description: error.message || 'Failed to generate image',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -572,6 +651,10 @@ export default function Home() {
                           <span className="text-muted-foreground">Cost:</span>
                           <span className="font-mono text-foreground">${costTracker.parserCost.toFixed(4)}</span>
                         </div>
+                        <div className="flex justify-between pt-1">
+                          <span className="text-muted-foreground">Image Generation:</span>
+                          <span className="font-mono text-foreground">${(costTracker.imageCost || 0).toFixed(4)}</span>
+                        </div>
                         <div className="flex justify-between pt-1 border-t border-border/50">
                           <span className="text-muted-foreground font-semibold">Cost Total:</span>
                           <span className="font-mono text-accent font-semibold">${costTracker.sessionCost.toFixed(4)}</span>
@@ -665,6 +748,7 @@ export default function Home() {
         location={gameState.location}
         turnCount={gameState.turnCount}
         onUpdate={updateGameState}
+        onRefreshImage={refreshEntityImage}
       />
 
       {/* Main Content */}
@@ -699,6 +783,7 @@ export default function Home() {
                   updatedTabs: (prev.updatedTabs || []).filter(tab => tab !== tabId)
                 }));
               }}
+              onRefreshImage={refreshEntityImage}
             />
           </div>
         </div>
