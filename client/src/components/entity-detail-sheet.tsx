@@ -6,6 +6,18 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, Business } from '@shared/schema';
 
+// Helper function to get relationship display info
+function getRelationshipDisplay(score: number): { label: string; textColor: string; description: string } {
+  if (score === 0) return { label: 'Neutral', textColor: 'text-gray-500 dark:text-gray-400', description: 'No particular feelings either way' };
+  if (score === -1) return { label: 'Cold', textColor: 'text-red-400 dark:text-red-400', description: 'Slightly negative, indifferent but irritable' };
+  if (score === -2) return { label: 'Unfriendly', textColor: 'text-red-500 dark:text-red-500', description: 'Dislikes you, distrustful' };
+  if (score <= -3) return { label: 'Hostile', textColor: 'text-red-600 dark:text-red-600', description: 'Actively hates or seeks to harm you' };
+  if (score === 1) return { label: 'Warm', textColor: 'text-green-400 dark:text-green-400', description: 'Generally positive or mildly interested' };
+  if (score === 2) return { label: 'Friendly', textColor: 'text-green-500 dark:text-green-500', description: 'Likes you, emotionally invested' };
+  if (score >= 3) return { label: 'Devoted', textColor: 'text-green-600 dark:text-green-600', description: 'Deeply loyal, affection or admiration' };
+  return { label: 'Neutral', textColor: 'text-gray-500 dark:text-gray-400', description: 'No particular feelings either way' };
+}
+
 interface EntityDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -529,9 +541,20 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm"
               />
             ) : (
-              <span className={`ml-2 font-medium ${char.status === 'alive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {char.status || 'alive'}
-              </span>
+              <Badge 
+                variant={char.status === 'alive' ? 'default' : 'destructive'}
+                className={`ml-2 ${
+                  char.status === 'alive'
+                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600' 
+                    : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
+                } text-white font-semibold px-2 py-0.5 text-xs flex items-center gap-1`}
+              >
+                {char.status === 'alive' ? (
+                  <><Heart className="w-3 h-3" /> Alive</>
+                ) : (
+                  <><Skull className="w-3 h-3" /> Dead</>
+                )}
+              </Badge>
             )}
           </div>
         )}
@@ -550,16 +573,14 @@ export function EntityDetailSheet({
             ) : (
               (() => {
                 const rel = typeof char.relationship === 'number' ? char.relationship : 0;
+                const relDisplay = getRelationshipDisplay(rel);
                 return (
-                  <span className={`ml-2 font-medium ${
-                    rel > 0 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : rel < 0 
-                      ? 'text-red-600 dark:text-red-400' 
-                      : 'text-muted-foreground'
-                  }`}>
-                    {rel}
-                  </span>
+                  <Badge 
+                    variant="outline"
+                    className={`ml-2 ${relDisplay.textColor} border-current font-semibold px-2 py-0.5 text-xs`}
+                  >
+                    {relDisplay.label}
+                  </Badge>
                 );
               })()
             )}
