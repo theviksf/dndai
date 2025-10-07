@@ -28,6 +28,7 @@ export type InventoryItem = {
   icon: string;
   type: 'weapon' | 'consumable' | 'quest' | 'misc';
   quantity: number;
+  price?: number;
   equipped?: boolean;
   magical?: boolean;
   stats?: string;
@@ -97,6 +98,7 @@ export type Business = {
   manager: string;
   runningCost: number;
   description: string;
+  imageUrl?: string;
 };
 
 export type NarrativeMessage = {
