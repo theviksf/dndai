@@ -17,12 +17,12 @@ Preferred communication style: Simple, everyday language.
 **State Management**: React hooks for local state, TanStack Query for server state and API caching.
 **Component Structure**:
 - **Home page**: Main game interface with expanded character stats, narrative panel, and tabbed info panel (inventory, spells, quests, companions, NPCs, history).
-- **Settings page**: LLM configuration, API key input, and custom prompt editing.
+- **Settings page**: LLM configuration (Primary, Parser, Backstory), API key input, custom prompt editing (DM, Parser, Character Image, Location Image, Backstory), and game settings (auto-save, auto-generate images, auto-generate backstories).
 - **Character Creation page**: Multi-step character generation with optional file import feature allowing users to skip manual creation by uploading a .ogl save game file (character is extracted from the save).
 - **CharacterStatsBar**: Expanded two-row display for character information, including a visual health bar, status effects, and week counter showing turn progress (X/15 - Week Y format) that increments each turn and rolls over every 15 turns.
 - **NarrativePanel**: Displays AI-generated story progress, supports Markdown rendering (GFM), and includes a custom action text input.
 - **GameInfoTabs**: Tabbed interface with 8 tabs (Inventory, Spells, Locations, Business, Quests, Party, NPCs, History). Features notification badges that pulse when parser updates a tab, clearing when opened. Spells tab includes search filtering, level filtering, and sorting by name/level/school with compact card layout. NPCs tab displays sex/gender and relationship status (-3 to +3 scale) with color-coded text. All tabs have consistent icons.
-- **EntityDetailSheet**: Modern sidebar/sheet that opens when clicking on entity images. Features wider layout (sm:max-w-3xl), full-width images with hover scaling, and prominent NPC status badges. Status indicators use green badge with Heart icon for alive NPCs and red badge with Skull icon for dead NPCs. All entities support in-place editing with comprehensive field updates.
+- **EntityDetailSheet**: Modern sidebar/sheet that opens when clicking on entity images. Features wider layout (sm:max-w-3xl), full-width images with hover scaling, and prominent NPC status badges. Status indicators use green badge with Heart icon for alive NPCs and red badge with Skull icon for dead NPCs. All entities support in-place editing with comprehensive field updates. Displays backstories for NPCs, companions, quests, and locations when available.
 **Routing Logic**: Smart navigation ensures a smooth user experience, preventing redirect loops and guiding users to character creation or settings when necessary.
 
 ### Backend Architecture
@@ -32,24 +32,26 @@ Preferred communication style: Simple, everyday language.
 **API Key Management**: Uses a fallback chain for OpenRouter API keys: explicit user-provided key → OPENROUTER_API_KEY environment variable → OPEN_ROUTER_DEVKEY secret. This allows the application to function without requiring users to provide their own API keys.
 **Session Management**: Currently in-memory, with plans for PostgreSQL persistence using an abstracted `IStorage` interface.
 **Development Setup**: Vite middleware for HMR, separate production build for client and server.
-**Prompt Management System**: Default prompts are stored as markdown files in `/prompts/` folder (primary.md, parser.md, image-character.md, image-location.md). The `/api/prompts/defaults` endpoint serves these defaults, enabling users to customize prompts per session while retaining the ability to reset to defaults via UI buttons in settings.
+**Prompt Management System**: Default prompts are stored as markdown files in `/prompts/` folder (primary.md, parser.md, image-character.md, image-location.md, backstory.md). The `/api/prompts/defaults` endpoint serves these defaults, enabling users to customize prompts per session while retaining the ability to reset to defaults via UI buttons in settings.
 - **Automatic Backups**: When updating default prompt files, the system automatically creates timestamped backups (e.g., `primary-2025-10-07T06-30-45.md`) before applying changes. Two methods available:
   - **API Endpoint**: `POST /api/prompts/update` with `{ promptType, content }` - creates backup and updates file
   - **CLI Script**: `npx tsx scripts/update-prompt.ts <promptType> <contentFilePath>` - creates backup and updates from file
 - **Backup Storage**: All backups are stored in the `/prompts/` directory with descriptive timestamps for easy version tracking and rollback
 
-### Dual-LLM Architecture
+### Multi-Agent LLM Architecture
 
-The system utilizes two distinct LLMs:
-- **Primary LLM**: Generates rich, immersive narrative responses (200-400 words) using comprehensive game context, formatted in Markdown.
-- **Parser LLM**: Extracts structured game state updates from the narrative responses *after* they are displayed to the player. Updates include character details, health, gold, XP, attributes, status effects, location, inventory, spells, quests, companions, and encountered characters. It also generates brief history recaps.
+The system utilizes multiple specialized LLMs for different tasks:
+- **Primary LLM (Narrative Agent)**: Generates rich, immersive narrative responses (200-400 words) using comprehensive game context, formatted in Markdown.
+- **Parser LLM (State Extraction Agent)**: Extracts structured game state updates from the narrative responses *after* they are displayed to the player. Updates include character details, health, gold, XP, attributes, status effects, location, inventory, spells, quests, companions, and encountered characters. It also generates brief history recaps.
+- **Image Agent**: Generates AI images for characters, NPCs, companions, and locations using Google's Gemini 2.5 Flash Image Preview model via OpenRouter.
+- **Backstory Agent**: Generates rich, structured backstories for NPCs, companions, quests, and locations. Provides narrative depth and world-building context. (Infrastructure complete, integration pending)
 
-**Execution Flow**: Player action → Primary LLM streams narrative → Parser LLM analyzes narrative and updates game state → Cost tracking updates.
-**Streaming**: Primary LLM uses SSE for real-time text display; Parser LLM uses standard request/response.
+**Execution Flow**: Player action → Primary LLM streams narrative → Parser LLM analyzes narrative and updates game state → Image Agent generates visuals (if auto-enabled) → Backstory Agent creates narrative context (if auto-enabled) → Cost tracking updates.
+**Streaming**: Primary LLM uses SSE for real-time text display; other agents use standard request/response.
 **Error Handling & Resilience**: Robust JSON parsing handles malformed LLM responses using multiple strategies (code fences, direct parse, balanced-brace scanning). It supports both flat and nested JSON structures, performs type coercion, and uses defensive defaults for UI components. If parsing fails, the game gracefully degrades, continuing with narrative-only updates and logging errors.
-**Context Management**: The Primary LLM receives a condensed context package, including all parsed history recaps, recent messages, complete character stats, and current game state, to maintain coherence and reduce token costs.
-**Rationale**: This architecture optimizes cost-per-turn by using powerful models for creative tasks and efficient models for structured data extraction, while enhancing UX through immediate narrative display.
-**System Prompts**: Both DM and Parser prompts are customizable in settings, with default prompts stored as markdown files in `/prompts/` folder. Users can modify prompts per session and reset to defaults via "Reset to Default" buttons in the settings UI. The system includes prompts for narrative generation, state parsing, character image generation, and location image generation.
+**Context Management**: The Primary LLM receives a condensed context package, including all parsed history recaps, recent messages, complete character stats, and current game state, to maintain coherence and reduce token costs. The Backstory Agent receives similar context plus specific entity information.
+**Rationale**: This architecture optimizes cost-per-turn by using powerful models for creative tasks and efficient models for structured data extraction, while enhancing UX through immediate narrative display and rich world-building.
+**System Prompts**: All agent prompts are customizable in settings, with default prompts stored as markdown files in `/prompts/` folder (primary.md, parser.md, image-character.md, image-location.md, backstory.md). Users can modify prompts per session and reset to defaults via "Reset to Default" buttons in the settings UI.
 
 ### Data Storage Solutions
 
