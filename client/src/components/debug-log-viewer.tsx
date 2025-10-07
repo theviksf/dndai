@@ -12,6 +12,7 @@ interface DebugLogViewerProps {
   onClose: () => void;
 }
 
+
 export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogViewerProps) {
   const { toast } = useToast();
   
