@@ -26,15 +26,15 @@ interface GameInfoTabsProps {
   onRefreshImage?: (entityType: 'companion' | 'npc' | 'location', entityId?: string) => Promise<void>;
 }
 
-function getRelationshipLabel(score: number): { label: string; color: string; description: string } {
-  if (score <= -3) return { label: 'Hostile', color: 'bg-red-500/20 text-red-700 dark:text-red-400', description: 'Actively hates or seeks to harm you' };
-  if (score === -2) return { label: 'Unfriendly', color: 'bg-orange-500/20 text-orange-700 dark:text-orange-400', description: 'Dislikes you, distrustful' };
-  if (score === -1) return { label: 'Cold', color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400', description: 'Slightly negative, indifferent but irritable' };
-  if (score === 0) return { label: 'Neutral', color: 'bg-gray-500/20 text-gray-700 dark:text-gray-400', description: 'No particular feelings either way' };
-  if (score === 1) return { label: 'Warm', color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400', description: 'Generally positive or mildly interested' };
-  if (score === 2) return { label: 'Friendly', color: 'bg-green-500/20 text-green-700 dark:text-green-400', description: 'Likes you, emotionally invested' };
-  if (score >= 3) return { label: 'Devoted', color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400', description: 'Deeply loyal, affection or admiration' };
-  return { label: 'Neutral', color: 'bg-gray-500/20 text-gray-700 dark:text-gray-400', description: 'No particular feelings either way' };
+function getRelationshipDisplay(score: number): { label: string; textColor: string; description: string } {
+  if (score === 0) return { label: 'Neutral', textColor: 'text-gray-500 dark:text-gray-400', description: 'No particular feelings either way' };
+  if (score === -1) return { label: 'Cold', textColor: 'text-red-400 dark:text-red-400', description: 'Slightly negative, indifferent but irritable' };
+  if (score === -2) return { label: 'Unfriendly', textColor: 'text-red-500 dark:text-red-500', description: 'Dislikes you, distrustful' };
+  if (score <= -3) return { label: 'Hostile', textColor: 'text-red-600 dark:text-red-600', description: 'Actively hates or seeks to harm you' };
+  if (score === 1) return { label: 'Warm', textColor: 'text-green-400 dark:text-green-400', description: 'Generally positive or mildly interested' };
+  if (score === 2) return { label: 'Friendly', textColor: 'text-green-500 dark:text-green-500', description: 'Likes you, emotionally invested' };
+  if (score >= 3) return { label: 'Devoted', textColor: 'text-green-600 dark:text-green-600', description: 'Deeply loyal, affection or admiration' };
+  return { label: 'Neutral', textColor: 'text-gray-500 dark:text-gray-400', description: 'No particular feelings either way' };
 }
 
 export default function GameInfoTabs({
@@ -510,18 +510,30 @@ export default function GameInfoTabs({
               <p className="text-sm text-muted-foreground text-center py-8">No companions yet</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {companions.map((companion) => (
-                  <div key={companion.id} className="flex flex-col items-center gap-2">
-                    <EntityImageCard
-                      imageUrl={companion.imageUrl}
-                      entityType="companion"
-                      onClick={() => openDetailSheet(companion, 'companion')}
-                      className="w-full aspect-square"
-                      data-testid={`companion-${companion.id}`}
-                    />
-                    <span className="text-sm font-medium text-center truncate w-full">{companion.name}</span>
-                  </div>
-                ))}
+                {companions.map((companion) => {
+                  const relationship = typeof companion.relationship === 'string' 
+                    ? companion.relationship 
+                    : 'Unknown';
+                  return (
+                    <div key={companion.id} className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent/5 transition-colors">
+                      <EntityImageCard
+                        imageUrl={companion.imageUrl}
+                        entityType="companion"
+                        onClick={() => openDetailSheet(companion, 'companion')}
+                        className="w-full aspect-square"
+                        data-testid={`companion-${companion.id}`}
+                      />
+                      <span className="text-sm font-medium text-center truncate w-full">{companion.name}</span>
+                      <div className="text-xs text-muted-foreground text-center w-full">
+                        <div className="truncate">{companion.class} • {companion.sex}</div>
+                        {companion.age && <div className="truncate">Age {companion.age}</div>}
+                      </div>
+                      <div className="text-xs font-medium text-center text-muted-foreground mt-1">
+                        {relationship}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -551,25 +563,33 @@ export default function GameInfoTabs({
                 <p className="text-sm text-muted-foreground text-center py-8">No characters encountered</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {sortedNPCs.map((character) => (
-                    <div key={character.id} className="flex flex-col items-center gap-2">
-                      <EntityImageCard
-                        imageUrl={character.imageUrl}
-                        entityType="npc"
-                        onClick={() => openDetailSheet(character, 'npc')}
-                        className="w-full aspect-square"
-                        data-testid={`encountered-${character.id}`}
-                      />
-                      <span className="text-sm font-medium text-center truncate w-full">{character.name}</span>
-                      <span 
-                        className={`text-xs px-2 py-0.5 rounded font-medium ${getRelationshipLabel(character.relationship ?? 0).color}`}
-                        title={getRelationshipLabel(character.relationship ?? 0).description}
-                        data-testid={`relationship-${character.id}`}
-                      >
-                        {getRelationshipLabel(character.relationship ?? 0).label}
-                      </span>
-                    </div>
-                  ))}
+                  {sortedNPCs.map((character) => {
+                    const relScore = character.relationship ?? 0;
+                    const relDisplay = getRelationshipDisplay(relScore);
+                    return (
+                      <div key={character.id} className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent/5 transition-colors">
+                        <EntityImageCard
+                          imageUrl={character.imageUrl}
+                          entityType="npc"
+                          onClick={() => openDetailSheet(character, 'npc')}
+                          className="w-full aspect-square"
+                          data-testid={`encountered-${character.id}`}
+                        />
+                        <span className="text-sm font-medium text-center truncate w-full">{character.name}</span>
+                        <div className="text-xs text-muted-foreground text-center w-full">
+                          <div className="truncate">{character.role} • {character.sex}</div>
+                          {character.age && <div className="truncate">Age {character.age}</div>}
+                        </div>
+                        <span 
+                          className={`text-xs font-medium ${relDisplay.textColor} mt-1`}
+                          title={relDisplay.description}
+                          data-testid={`relationship-${character.id}`}
+                        >
+                          {relDisplay.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
