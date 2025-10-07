@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertGameStateSchema } from "@shared/schema";
 import { uploadImageToR2, generateCharacterFilename, generateLocationFilename, type CharacterImageMetadata, type LocationImageMetadata } from "./r2-storage";
-import { readFile } from "fs/promises";
+import { readFile, writeFile, copyFile } from "fs/promises";
 import { join } from "path";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || "";
@@ -30,6 +30,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       res.status(500).json({ error: `Failed to load default prompts: ${error.message}` });
+    }
+  });
+
+  // Update prompt with automatic backup
+  app.post('/api/prompts/update', async (req, res) => {
+    try {
+      const { promptType, content } = req.body;
+      
+      if (!promptType || !content) {
+        return res.status(400).json({ error: 'promptType and content are required' });
+      }
+
+      const fileMap: Record<string, string> = {
+        primary: 'primary.md',
+        parser: 'parser.md',
+        imageCharacter: 'image-character.md',
+        imageLocation: 'image-location.md',
+      };
+
+      const filename = fileMap[promptType];
+      if (!filename) {
+        return res.status(400).json({ error: 'Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation' });
+      }
+
+      const promptsDir = join(process.cwd(), 'prompts');
+      const filepath = join(promptsDir, filename);
+      
+      // Create backup with timestamp before updating
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // Format: 2025-10-07T06-30-45
+      const backupFilename = filename.replace('.md', `-${timestamp}.md`);
+      const backupPath = join(promptsDir, backupFilename);
+      
+      let backupCreated = false;
+      try {
+        // Copy existing file to backup
+        await copyFile(filepath, backupPath);
+        backupCreated = true;
+        console.log(`[PROMPT UPDATE] Created backup: ${backupFilename}`);
+      } catch (copyError: any) {
+        // If file doesn't exist yet, that's okay (new file)
+        if (copyError.code === 'ENOENT') {
+          console.log(`[PROMPT UPDATE] No existing file to backup (creating new file: ${filename})`);
+        } else {
+          // Any other error means backup failed - abort the update
+          console.error('[PROMPT UPDATE] Failed to create backup:', copyError.message);
+          return res.status(500).json({ 
+            error: `Failed to create backup: ${copyError.message}. Update aborted to prevent data loss.`,
+            backupCreated: false
+          });
+        }
+      }
+      
+      // Write new content only if backup succeeded or file is new
+      await writeFile(filepath, content, 'utf-8');
+      console.log(`[PROMPT UPDATE] Updated ${filename}`);
+      
+      res.json({ 
+        success: true, 
+        backupCreated: backupCreated ? backupFilename : null,
+        message: backupCreated 
+          ? `Updated ${filename} and created backup ${backupFilename}`
+          : `Created new file ${filename} (no backup needed)`
+      });
+    } catch (error: any) {
+      console.error('[PROMPT UPDATE] Error:', error.message);
+      res.status(500).json({ error: `Failed to update prompt: ${error.message}` });
     }
   });
 

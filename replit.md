@@ -32,6 +32,10 @@ Preferred communication style: Simple, everyday language.
 **Session Management**: Currently in-memory, with plans for PostgreSQL persistence using an abstracted `IStorage` interface.
 **Development Setup**: Vite middleware for HMR, separate production build for client and server.
 **Prompt Management System**: Default prompts are stored as markdown files in `/prompts/` folder (primary.md, parser.md, image-character.md, image-location.md). The `/api/prompts/defaults` endpoint serves these defaults, enabling users to customize prompts per session while retaining the ability to reset to defaults via UI buttons in settings.
+- **Automatic Backups**: When updating default prompt files, the system automatically creates timestamped backups (e.g., `primary-2025-10-07T06-30-45.md`) before applying changes. Two methods available:
+  - **API Endpoint**: `POST /api/prompts/update` with `{ promptType, content }` - creates backup and updates file
+  - **CLI Script**: `npx tsx scripts/update-prompt.ts <promptType> <contentFilePath>` - creates backup and updates from file
+- **Backup Storage**: All backups are stored in the `/prompts/` directory with descriptive timestamps for easy version tracking and rollback
 
 ### Dual-LLM Architecture
 
