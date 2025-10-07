@@ -377,7 +377,7 @@ export default function NarrativePanel({
         config.primaryLLM,
         [{ role: 'user', content: JSON.stringify(context) }],
         config.dmSystemPrompt,
-        800,
+        1600,
         config.openRouterApiKey,
         (chunk) => {
           // Update state immediately - React will batch renders naturally
