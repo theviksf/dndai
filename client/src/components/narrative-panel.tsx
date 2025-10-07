@@ -247,7 +247,8 @@ function validateAndCoerceParserData(data: any): any {
         name: c.name || 'Unknown',
         race: c.race || 'Unknown',
         age: c.age || 'Unknown',
-        class: c.class || 'Unknown',
+        sex: c.sex || 'Unknown',
+        class: c.class || c.role || 'Unknown',
         level: typeof c.level === 'number' ? c.level : 1,
         appearance: c.appearance || c.description || 'No description',
         personality: c.personality || 'Unknown',
@@ -259,16 +260,27 @@ function validateAndCoerceParserData(data: any): any {
     if (updates.encounteredCharacters !== undefined) {
       // Normalize encountered characters - ensure they have required fields
       const encounterList = Array.isArray(updates.encounteredCharacters) ? updates.encounteredCharacters : [updates.encounteredCharacters];
-      result.stateUpdates.encounteredCharacters = encounterList.map((e: any, idx: number) => ({
-        id: e.id || `encounter-${Date.now()}-${idx}`,
-        name: e.name || 'Unknown',
-        age: e.age || 'Unknown',
-        role: e.role || 'NPC',
-        location: e.location || 'Unknown',
-        appearance: e.appearance || e.description || 'No description',
-        description: e.description || e.appearance || 'No description',
-        status: e.status || 'alive'
-      }));
+      result.stateUpdates.encounteredCharacters = encounterList.map((e: any, idx: number) => {
+        let relationship = 0;
+        if (e.relationship !== undefined) {
+          const rel = Number(e.relationship);
+          if (Number.isFinite(rel)) {
+            relationship = Math.max(-3, Math.min(3, Math.floor(rel)));
+          }
+        }
+        return {
+          id: e.id || `encounter-${Date.now()}-${idx}`,
+          name: e.name || 'Unknown',
+          age: e.age || 'Unknown',
+          sex: e.sex || 'Unknown',
+          role: e.role || 'NPC',
+          location: e.location || 'Unknown',
+          appearance: e.appearance || e.description || 'No description',
+          description: e.description || e.appearance || 'No description',
+          status: e.status || 'alive',
+          relationship
+        };
+      });
     }
     if (updates.businesses !== undefined) {
       // Normalize businesses - ensure they have required fields
