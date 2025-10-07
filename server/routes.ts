@@ -15,11 +15,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const promptsDir = join(process.cwd(), 'prompts');
       
-      const [primary, parser, imageCharacter, imageLocation] = await Promise.all([
+      const [primary, parser, imageCharacter, imageLocation, backstory] = await Promise.all([
         readFile(join(promptsDir, 'primary.md'), 'utf-8'),
         readFile(join(promptsDir, 'parser.md'), 'utf-8'),
         readFile(join(promptsDir, 'image-character.md'), 'utf-8'),
         readFile(join(promptsDir, 'image-location.md'), 'utf-8'),
+        readFile(join(promptsDir, 'backstory.md'), 'utf-8'),
       ]);
       
       res.json({
@@ -27,6 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parser,
         imageCharacter,
         imageLocation,
+        backstory,
       });
     } catch (error: any) {
       res.status(500).json({ error: `Failed to load default prompts: ${error.message}` });
@@ -47,11 +49,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parser: 'parser.md',
         imageCharacter: 'image-character.md',
         imageLocation: 'image-location.md',
+        backstory: 'backstory.md',
       };
 
       const filename = fileMap[promptType];
       if (!filename) {
-        return res.status(400).json({ error: 'Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation' });
+        return res.status(400).json({ error: 'Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation, backstory' });
       }
 
       const promptsDir = join(process.cwd(), 'prompts');
@@ -242,6 +245,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Image generation endpoint
+  // Backstory generation endpoint
+  app.post('/api/generate-backstory', async (req, res) => {
+    try {
+      const { systemPrompt, context, entity, entityType, model, apiKey } = req.body;
+      const key = apiKey || OPENROUTER_API_KEY;
+      
+      if (!key) {
+        return res.status(400).json({ error: 'API key required' });
+      }
+      
+      // Build the full prompt
+      const fullPrompt = `${systemPrompt}\n\n# Context for this ${entityType}\n\n${context}\n\n# Entity to create backstory for:\n${JSON.stringify(entity, null, 2)}\n\nGenerate a detailed, rich backstory for this ${entityType}. Remember to return ONLY raw JSON with a "backstory" field.`;
+      
+      console.log('[BACKSTORY GEN] Generating backstory for', entityType, 'using model', model);
+      
+      // Call OpenRouter
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'HTTP-Referer': req.headers.referer || 'http://localhost:5000',
+          'X-Title': 'D&D Adventure Game',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model || 'deepseek/deepseek-chat-v3.1',
+          messages: [
+            {
+              role: 'user',
+              content: fullPrompt
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.8,
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[BACKSTORY GEN] OpenRouter API error:', errorData);
+        return res.status(response.status).json({
+          error: `OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`,
+          fullPrompt,
+          rawResponse: JSON.stringify(errorData, null, 2)
+        });
+      }
+      
+      const data = await response.json();
+      const rawContent = data.choices[0].message.content;
+      
+      console.log('[BACKSTORY GEN] Raw response:', rawContent.substring(0, 200));
+      
+      // Parse JSON response
+      let parsedData;
+      try {
+        // Try to extract JSON from code fences if present
+        const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || 
+                          rawContent.match(/(\{[\s\S]*\})/);
+        const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
+        parsedData = JSON.parse(jsonStr);
+      } catch (parseError) {
+        console.error('[BACKSTORY GEN] Failed to parse JSON:', parseError);
+        return res.status(500).json({
+          error: 'Failed to parse backstory JSON from LLM response',
+          fullPrompt,
+          rawResponse: rawContent
+        });
+      }
+      
+      res.json({
+        backstory: parsedData.backstory || null,
+        usage: data.usage,
+        model: data.model,
+        fullPrompt,
+        rawResponse: rawContent
+      });
+    } catch (error: any) {
+      console.error('[BACKSTORY GEN] Error:', error.message);
+      res.status(500).json({ 
+        error: error.message,
+        fullPrompt: req.body.systemPrompt || 'Prompt not available',
+        rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+      });
+    }
+  });
+
   app.post('/api/generate-image', async (req, res) => {
     try {
       const { entityType, entity, promptTemplate, apiKey, sessionId } = req.body;

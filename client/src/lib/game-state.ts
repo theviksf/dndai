@@ -170,6 +170,39 @@ CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):
 
 REMEMBER: Your entire response must be valid, parseable JSON. Nothing else.`;
 
+export const BACKSTORY_SYSTEM_PROMPT = `You are a D&D world backstory generator. Your role is to create rich, detailed backstories that add depth, structure, and interconnectedness to the game world.
+
+# Mission
+Generate detailed backstories that:
+1. Add depth and history to NPCs, party members, quests, and locations
+2. Create connections and relationships within the world
+3. Include secrets, motivations, and hidden elements that can emerge during gameplay
+4. Maintain consistency with existing world lore and context
+5. Provide hooks for future storylines and character development
+
+# Output Format
+
+=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
+
+Your response must be ONLY the JSON object below. Do NOT include:
+- Code fences (no \`\`\`json or \`\`\`)
+- Explanatory text before or after the JSON
+- Comments or notes
+- Any text that is not valid JSON
+
+EXACT JSON FORMAT TO RETURN:
+{
+  "backstory": "Your 2-4 paragraph backstory here (150-250 words). Include specific names, dates, numbers, relationships, secrets, and connections to the existing world. Be specific and concrete rather than vague. Include at least one secret or hidden element that could emerge during gameplay."
+}
+
+# Important Guidelines
+
+1. **Be Specific**: Use concrete details, names, numbers, and specific events rather than vague descriptions
+2. **Create Connections**: Reference other entities in the world when appropriate (existing NPCs, locations, factions)
+3. **Include Hooks**: Add elements that the DM can develop into future storylines
+4. **Add Depth**: Include one or two secrets or hidden elements that aren't immediately obvious
+5. **Maintain Consistency**: Respect the established world lore and existing relationships
+6. **Make it Actionable**: Include details that can affect gameplay (specific items, locations, contacts)`;
 
 export function createDefaultGameState(): GameStateData {
   return {
@@ -241,6 +274,7 @@ export function createDefaultConfig(): GameConfig {
   return {
     primaryLLM: 'deepseek/deepseek-chat-v3.1',
     parserLLM: 'deepseek/deepseek-chat-v3.1',
+    backstoryLLM: 'deepseek/deepseek-chat-v3.1',
     difficulty: 'normal',
     narrativeStyle: 'balanced',
     autoSave: true,
@@ -249,7 +283,9 @@ export function createDefaultConfig(): GameConfig {
     parserSystemPrompt: PARSER_SYSTEM_PROMPT,
     characterImagePrompt: DEFAULT_CHARACTER_IMAGE_PROMPT,
     locationImagePrompt: DEFAULT_LOCATION_IMAGE_PROMPT,
+    backstorySystemPrompt: BACKSTORY_SYSTEM_PROMPT,
     autoGenerateImages: false,
+    autoGenerateBackstories: true,
   };
 }
 
@@ -283,6 +319,10 @@ export function migrateConfig(config: any): GameConfig {
     characterImagePrompt: config.characterImagePrompt || defaults.characterImagePrompt,
     locationImagePrompt: config.locationImagePrompt || defaults.locationImagePrompt,
     autoGenerateImages: config.autoGenerateImages ?? defaults.autoGenerateImages,
+    // Ensure new backstory fields exist
+    backstoryLLM: config.backstoryLLM || defaults.backstoryLLM,
+    backstorySystemPrompt: config.backstorySystemPrompt || defaults.backstorySystemPrompt,
+    autoGenerateBackstories: config.autoGenerateBackstories ?? defaults.autoGenerateBackstories,
   };
 }
 

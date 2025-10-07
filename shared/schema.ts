@@ -49,6 +49,7 @@ export type Quest = {
     current: number;
     total: number;
   };
+  backstory?: string;
 };
 
 export type Spell = {
@@ -74,6 +75,7 @@ export type Companion = {
   feelingsTowardsPlayer: string;
   relationship: string;
   imageUrl?: string;
+  backstory?: string;
 };
 
 export type EncounteredCharacter = {
@@ -88,6 +90,7 @@ export type EncounteredCharacter = {
   status: 'alive' | 'dead';
   relationship: number;
   imageUrl?: string;
+  backstory?: string;
 };
 
 export type Business = {
@@ -116,7 +119,7 @@ export type NarrativeMessage = {
 export type DebugLogEntry = {
   id: string;
   timestamp: number;
-  type: 'primary' | 'parser' | 'image';
+  type: 'primary' | 'parser' | 'image' | 'backstory';
   prompt: string;
   response: string;
   model: string;
@@ -191,6 +194,7 @@ export type Location = {
     nearby_locations?: NearbyLocation[];
   };
   imageUrl?: string;
+  backstory?: string;
 };
 
 export type PreviousLocation = {
@@ -206,6 +210,7 @@ export type PreviousLocation = {
   };
   imageUrl?: string;
   lastVisited: number;
+  backstory?: string;
 };
 
 export type GameStateData = {
@@ -226,11 +231,13 @@ export type GameStateData = {
   debugLog?: DebugLogEntry[];
   updatedTabs?: string[];
   lastIncomeCollectedTurn?: number;
+  worldBackstory?: string;
 };
 
 export type GameConfig = {
   primaryLLM: string;
   parserLLM: string;
+  backstoryLLM: string;
   difficulty: 'easy' | 'normal' | 'hard' | 'deadly';
   narrativeStyle: 'concise' | 'balanced' | 'detailed' | 'verbose';
   autoSave: boolean;
@@ -239,7 +246,9 @@ export type GameConfig = {
   parserSystemPrompt: string;
   characterImagePrompt: string;
   locationImagePrompt: string;
+  backstorySystemPrompt: string;
   autoGenerateImages: boolean;
+  autoGenerateBackstories: boolean;
 };
 
 export type OpenRouterModel = {
