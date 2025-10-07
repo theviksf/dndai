@@ -179,6 +179,7 @@ export function createDefaultGameState(): GameStateData {
       class: '',
       age: '',
       sex: '',
+      description: '',
       level: 1,
       xp: 0,
       nextLevelXp: 300,

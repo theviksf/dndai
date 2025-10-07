@@ -293,12 +293,11 @@ export default function Home() {
   };
 
   const refreshEntityImage = async (
-    entityType: 'character' | 'companion' | 'npc' | 'location',
+    entityType: 'character' | 'companion' | 'npc' | 'location' | 'business',
     entityId?: string
   ) => {
     try {
       let entity: any;
-      let isBusiness = false;
       
       if (entityType === 'character') {
         entity = gameState.character;
@@ -306,17 +305,11 @@ export default function Home() {
         entity = gameState.companions?.find(c => c.id === entityId);
       } else if (entityType === 'npc') {
         entity = gameState.encounteredCharacters?.find(npc => npc.id === entityId);
+      } else if (entityType === 'business') {
+        entity = gameState.businesses?.find(b => b.id === entityId);
       } else if (entityType === 'location') {
-        // Check if this is a business or actual location
         if (entityId) {
-          const business = gameState.businesses?.find(b => b.id === entityId);
-          if (business) {
-            entity = business;
-            isBusiness = true;
-          } else {
-            // Try to find in previous locations
-            entity = gameState.previousLocations?.find(loc => loc.id === entityId) || gameState.location;
-          }
+          entity = gameState.previousLocations?.find(loc => loc.id === entityId) || gameState.location;
         } else {
           entity = gameState.location;
         }
@@ -327,7 +320,7 @@ export default function Home() {
       }
 
       const result = await generateEntityImage({
-        entityType: isBusiness ? 'business' as any : entityType,
+        entityType,
         entity,
         config,
         sessionId,
@@ -348,13 +341,12 @@ export default function Home() {
             updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
               npc.id === entityId ? { ...npc, imageUrl: result.imageUrl || undefined } : npc
             );
+          } else if (entityType === 'business') {
+            updated.businesses = updated.businesses?.map(b =>
+              b.id === entityId ? { ...b, imageUrl: result.imageUrl || undefined } : b
+            );
           } else if (entityType === 'location') {
-            if (isBusiness) {
-              // Update business image
-              updated.businesses = updated.businesses?.map(b =>
-                b.id === entityId ? { ...b, imageUrl: result.imageUrl || undefined } : b
-              );
-            } else if (entityId) {
+            if (entityId) {
               // Update previous location
               updated.previousLocations = updated.previousLocations?.map(loc =>
                 loc.id === entityId ? { ...loc, imageUrl: result.imageUrl || undefined } : loc
