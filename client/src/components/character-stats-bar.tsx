@@ -150,83 +150,86 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
             </div>
           </div>
 
-          {/* HP Bar */}
-          <div className="flex-1 min-w-[200px] max-w-[300px]">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-destructive" />
-                <span className="text-xs font-medium">Health</span>
+          {/* HP & XP Bars (Stacked) */}
+          <div className="flex-1 min-w-[200px] max-w-[300px] space-y-2">
+            {/* HP Bar */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <Heart className="w-4 h-4 text-destructive" />
+                  <span className="text-xs font-medium">Health</span>
+                </div>
+                <span className="text-xs font-mono font-semibold flex items-center gap-1" data-testid="text-character-hp">
+                  {onUpdate ? (
+                    <>
+                      <InlineEdit
+                        value={character.hp}
+                        onSave={(value) => onUpdate({ character: { hp: Number(value) } as any })}
+                        type="number"
+                        min={0}
+                        max={character.maxHp}
+                        inputClassName="w-12 h-6 text-xs"
+                      />
+                      /
+                      <InlineEdit
+                        value={character.maxHp}
+                        onSave={(value) => onUpdate({ character: { maxHp: Number(value) } as any })}
+                        type="number"
+                        min={1}
+                        inputClassName="w-12 h-6 text-xs"
+                      />
+                    </>
+                  ) : (
+                    <>{character.hp}/{character.maxHp}</>
+                  )}
+                </span>
               </div>
-              <span className="text-xs font-mono font-semibold flex items-center gap-1" data-testid="text-character-hp">
-                {onUpdate ? (
-                  <>
-                    <InlineEdit
-                      value={character.hp}
-                      onSave={(value) => onUpdate({ character: { hp: Number(value) } as any })}
-                      type="number"
-                      min={0}
-                      max={character.maxHp}
-                      inputClassName="w-12 h-6 text-xs"
-                    />
-                    /
-                    <InlineEdit
-                      value={character.maxHp}
-                      onSave={(value) => onUpdate({ character: { maxHp: Number(value) } as any })}
-                      type="number"
-                      min={1}
-                      inputClassName="w-12 h-6 text-xs"
-                    />
-                  </>
-                ) : (
-                  <>{character.hp}/{character.maxHp}</>
-                )}
-              </span>
+              <div className="w-full bg-destructive/20 rounded-full h-2 overflow-hidden">
+                <div 
+                  className={`h-full transition-all ${hpPercentage > 50 ? 'bg-green-500' : hpPercentage > 25 ? 'bg-yellow-500' : 'bg-destructive'}`}
+                  style={{ width: `${hpPercentage}%` }}
+                />
+              </div>
             </div>
-            <div className="w-full bg-destructive/20 rounded-full h-2 overflow-hidden">
-              <div 
-                className={`h-full transition-all ${hpPercentage > 50 ? 'bg-green-500' : hpPercentage > 25 ? 'bg-yellow-500' : 'bg-destructive'}`}
-                style={{ width: `${hpPercentage}%` }}
-              />
-            </div>
-          </div>
 
-          {/* XP Bar */}
-          <div className="flex-1 min-w-[200px] max-w-[300px]">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5">
-                <Star className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium">Experience</span>
+            {/* XP Bar */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <Star className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-medium">Experience</span>
+                </div>
+                <span className="text-xs font-mono font-semibold flex items-center gap-1" data-testid="text-character-xp">
+                  {onUpdate ? (
+                    <>
+                      <InlineEdit
+                        value={safeXp}
+                        onSave={(value) => onUpdate({ character: { xp: Number(value) } as any })}
+                        type="number"
+                        min={0}
+                        max={safeNextLevelXp}
+                        inputClassName="w-12 h-6 text-xs"
+                      />
+                      /
+                      <InlineEdit
+                        value={safeNextLevelXp}
+                        onSave={(value) => onUpdate({ character: { nextLevelXp: Number(value) } as any })}
+                        type="number"
+                        min={1}
+                        inputClassName="w-12 h-6 text-xs"
+                      />
+                    </>
+                  ) : (
+                    <>{safeXp}/{safeNextLevelXp}</>
+                  )}
+                </span>
               </div>
-              <span className="text-xs font-mono font-semibold flex items-center gap-1" data-testid="text-character-xp">
-                {onUpdate ? (
-                  <>
-                    <InlineEdit
-                      value={safeXp}
-                      onSave={(value) => onUpdate({ character: { xp: Number(value) } as any })}
-                      type="number"
-                      min={0}
-                      max={safeNextLevelXp}
-                      inputClassName="w-12 h-6 text-xs"
-                    />
-                    /
-                    <InlineEdit
-                      value={safeNextLevelXp}
-                      onSave={(value) => onUpdate({ character: { nextLevelXp: Number(value) } as any })}
-                      type="number"
-                      min={1}
-                      inputClassName="w-12 h-6 text-xs"
-                    />
-                  </>
-                ) : (
-                  <>{safeXp}/{safeNextLevelXp}</>
-                )}
-              </span>
-            </div>
-            <div className="w-full bg-blue-500/20 rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full transition-all bg-blue-500"
-                style={{ width: `${xpPercentage}%` }}
-              />
+              <div className="w-full bg-blue-500/20 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="h-full transition-all bg-blue-500"
+                  style={{ width: `${xpPercentage}%` }}
+                />
+              </div>
             </div>
           </div>
 
