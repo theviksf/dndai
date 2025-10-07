@@ -198,6 +198,7 @@ export function createDefaultGameState(): GameStateData {
     location: {
       name: 'Starting Village',
       description: 'A peaceful hamlet at the edge of the wilderness',
+      imageUrl: 'https://pub-afdd42fe7a3c42bb872f7beb4a9359ef.r2.dev/loc_village-day-NA-Oakhaven-neutral_o2mq6hGyKD_20251007T045226.jpg',
     },
     previousLocations: [],
     inventory: [],

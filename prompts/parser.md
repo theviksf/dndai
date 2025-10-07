@@ -17,6 +17,8 @@ CRITICAL EXTRACTION RULES:
    - Harmful/hostile actions decrease relationship (-1 to -3)
    - Look for cues like "grateful", "angry", "distrustful", "warm welcome", "hostile", etc.
 8. Generate a brief 2-3 sentence summary (recap) of key events
+9. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
+10. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character. 
 
 === CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
 

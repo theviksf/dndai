@@ -85,6 +85,21 @@ When you introduce a new location, can you make sure to describe it with enough 
 – and any key details like who owns it, notable people there, what services it offers, and what’s nearby.
 Basically, enough info that I can fill out a little JSON card for the world — like name, type, hierarchy, relative location, details, and connections.
 
+##Buying a Business 
+When the player buys a new business you need to take the following into account - You can make the prices lower if the places are run down or the owner wants to strike a good deal.[
+{"type":"Cottage/Small Home","cost":1000,"income":50,"upkeep":1,"staff":0},
+{"type":"Townhouse/Manor/Estate","cost":5000 to 25000,"income":200,"upkeep":5,"staff":1to5},
+{"type":"Shop/Smithy/Bakery","cost":2500,"income":250,"upkeep":10,"staff":2},
+{"type":"Apothecary/Magic Shop","cost":7500,"income":500,"upkeep":20,"staff":3},
+{"type":"Tavern/Inn (Modest to Grand)","cost":7500 to 12500,"income":750,"upkeep":30,"staff":5},
+{"type":"Brothel / Casino","cost":25000,"income":1500,"upkeep":60,"staff":10},
+{"type":"Farmstead","cost":3000,"income":150,"upkeep":5,"staff":3},
+{"type":"Guildhall/Workshop","cost":8000,"income":400,"upkeep":15,"staff":4},
+{"type":"Theater/Bathhouse","cost":20000,"income":1200,"upkeep":50,"staff":8},
+{"type":"Ship/Trading Co.","cost":40000,"income":2500,"upkeep":100,"staff":12},
+{"type":"Temple/Shrine","cost":15000,"income":800,"upkeep":30,"staff":4},
+{"type":"Castle/Keep (Small)","cost":50000,"income":4000,"upkeep":200,"staff":25}
+Make sure to clearly state in the notes that the player bought a business and provide the details for the notetaker.
 
 ##XP
 Make sure to award XP after actions that earn XP.

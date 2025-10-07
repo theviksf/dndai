@@ -23,7 +23,7 @@ interface GameInfoTabsProps {
   updatedTabs?: string[];
   onUpdate?: (updates: Partial<GameStateData>) => void;
   onTabChange?: (tabId: string) => void;
-  onRefreshImage?: (entityType: 'companion' | 'npc' | 'location', entityId?: string) => Promise<void>;
+  onRefreshImage?: (entityType: 'companion' | 'npc' | 'location' | 'business', entityId?: string) => Promise<void>;
 }
 
 function getRelationshipDisplay(score: number): { label: string; textColor: string; description: string } {
@@ -55,12 +55,12 @@ export default function GameInfoTabs({
   const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
   const [spellFilter, setSpellFilter] = useState<string>('');
   const [spellLevelFilter, setSpellLevelFilter] = useState<string>('all');
-  const [detailEntity, setDetailEntity] = useState<Companion | EncounteredCharacter | Location | null>(null);
-  const [detailEntityType, setDetailEntityType] = useState<'companion' | 'npc' | 'location'>('companion');
+  const [detailEntity, setDetailEntity] = useState<Companion | EncounteredCharacter | Location | Business | null>(null);
+  const [detailEntityType, setDetailEntityType] = useState<'companion' | 'npc' | 'location' | 'business'>('companion');
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [isRefreshingImage, setIsRefreshingImage] = useState(false);
 
-  const openDetailSheet = (entity: Companion | EncounteredCharacter | Location, type: 'companion' | 'npc' | 'location') => {
+  const openDetailSheet = (entity: Companion | EncounteredCharacter | Location | Business, type: 'companion' | 'npc' | 'location' | 'business') => {
     setDetailEntity(entity);
     setDetailEntityType(type);
     setDetailSheetOpen(true);
@@ -435,15 +435,7 @@ export default function GameInfoTabs({
                     <EntityImageCard
                       imageUrl={business.imageUrl}
                       entityType="location"
-                      onClick={async () => {
-                        if (onRefreshImage) {
-                          try {
-                            await onRefreshImage('location' as any, business.id);
-                          } catch (error) {
-                            console.error('Failed to generate business image:', error);
-                          }
-                        }
-                      }}
+                      onClick={() => openDetailSheet(business, 'business')}
                       className="w-16 h-16 flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
@@ -677,6 +669,14 @@ export default function GameInfoTabs({
               const updated = [...encounteredCharacters];
               updated[index] = { ...updated[index], ...updates } as EncounteredCharacter;
               onUpdate({ encounteredCharacters: updated });
+              setDetailEntity(updated[index]);
+            }
+          } else if (detailEntityType === 'business') {
+            const index = businesses.findIndex(b => b.id === (detailEntity as Business).id);
+            if (index !== -1) {
+              const updated = [...businesses];
+              updated[index] = { ...updated[index], ...updates } as Business;
+              onUpdate({ businesses: updated });
               setDetailEntity(updated[index]);
             }
           }

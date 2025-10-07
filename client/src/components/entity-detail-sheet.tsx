@@ -4,16 +4,16 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, User, MapPin, Heart, Skull } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
-import type { GameCharacter, Companion, EncounteredCharacter, Location } from '@shared/schema';
+import type { GameCharacter, Companion, EncounteredCharacter, Location, Business } from '@shared/schema';
 
 interface EntityDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entity: GameCharacter | Companion | EncounteredCharacter | Location | null;
-  entityType: 'character' | 'companion' | 'npc' | 'location';
+  entity: GameCharacter | Companion | EncounteredCharacter | Location | Business | null;
+  entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
   onRefresh?: () => void;
   isRefreshing?: boolean;
-  onUpdate?: (updates: Partial<GameCharacter | Companion | EncounteredCharacter | Location>) => void;
+  onUpdate?: (updates: Partial<GameCharacter | Companion | EncounteredCharacter | Location | Business>) => void;
 }
 
 export function EntityDetailSheet({ 
@@ -27,7 +27,7 @@ export function EntityDetailSheet({
 }: EntityDetailSheetProps) {
   if (!entity) return null;
 
-  const Icon = entityType === 'location' ? MapPin : User;
+  const Icon = entityType === 'location' || entityType === 'business' ? MapPin : User;
   
   const renderMetadata = () => {
     if (entityType === 'location') {
@@ -197,6 +197,113 @@ export function EntityDetailSheet({
               </div>
             </div>
           )}
+        </div>
+      );
+    }
+    
+    if (entityType === 'business') {
+      const biz = entity as Business;
+      const netIncome = biz.weeklyIncome - biz.runningCost;
+      
+      return (
+        <div className="space-y-4 text-sm">
+          {/* Basic Info */}
+          <div className="space-y-2">
+            <div>
+              <span className="font-semibold text-foreground">Name:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={biz.name}
+                  onSave={(value) => onUpdate({ name: String(value) } as any)}
+                  inputClassName="ml-2 h-6 text-sm"
+                />
+              ) : (
+                <span className="ml-2 text-muted-foreground">{biz.name}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">Description:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={biz.description || ''}
+                  onSave={(value) => onUpdate({ description: String(value) } as any)}
+                  type="textarea"
+                  className="mt-1"
+                  inputClassName="text-sm"
+                />
+              ) : (
+                <p className="mt-1 text-muted-foreground">{biz.description || 'N/A'}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Financial Info */}
+          <div className="pt-3 border-t border-border">
+            <h4 className="font-semibold text-foreground mb-2">Financial Details</h4>
+            <div className="space-y-2 ml-2">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs">Weekly Income:</span>
+                {onUpdate ? (
+                  <InlineEdit
+                    value={biz.weeklyIncome}
+                    onSave={(value) => onUpdate({ weeklyIncome: Number(value) } as any)}
+                    type="number"
+                    min={0}
+                    inputClassName="h-6 text-sm w-20 text-right"
+                  />
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono">{biz.weeklyIncome} GP</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs">Running Cost:</span>
+                {onUpdate ? (
+                  <InlineEdit
+                    value={biz.runningCost}
+                    onSave={(value) => onUpdate({ runningCost: Number(value) } as any)}
+                    type="number"
+                    min={0}
+                    inputClassName="h-6 text-sm w-20 text-right"
+                  />
+                ) : (
+                  <span className="text-red-600 dark:text-red-400 font-mono">{biz.runningCost} GP</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                <span className="font-semibold text-foreground text-xs">Net Weekly Profit:</span>
+                <span className={`font-mono font-semibold ${
+                  netIncome > 0 ? 'text-emerald-600 dark:text-emerald-400' : 
+                  netIncome < 0 ? 'text-red-600 dark:text-red-400' : 
+                  'text-muted-foreground'
+                }`}>
+                  {netIncome > 0 ? '+' : ''}{netIncome} GP
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs">Purchase Cost:</span>
+                <span className="text-muted-foreground font-mono">{biz.purchaseCost} GP</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Management */}
+          <div className="pt-3 border-t border-border">
+            <h4 className="font-semibold text-foreground mb-2">Management</h4>
+            <div className="ml-2">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs">Manager:</span>
+                {onUpdate ? (
+                  <InlineEdit
+                    value={biz.manager || ''}
+                    onSave={(value) => onUpdate({ manager: String(value) } as any)}
+                    inputClassName="h-6 text-sm"
+                  />
+                ) : (
+                  <span className="text-foreground">{biz.manager || 'N/A'}</span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
