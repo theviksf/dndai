@@ -2,7 +2,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, GameConfig, DebugLogEntry } from '@shared/schema';
 
 export interface ImageGenerationOptions {
-  entityType: 'character' | 'companion' | 'npc' | 'location';
+  entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
   entity: GameCharacter | Companion | EncounteredCharacter | Location;
   config: GameConfig;
   sessionId: string;
@@ -27,7 +27,7 @@ export async function generateEntityImage({
 }: ImageGenerationOptions): Promise<ImageGenerationResult> {
   const timestamp = Date.now();
   const id = `image-${timestamp}`;
-  const isLocationEntity = entityType === 'location';
+  const isLocationEntity = entityType === 'location' || entityType === 'business';
   let promptTemplate = isLocationEntity 
     ? config.locationImagePrompt 
     : config.characterImagePrompt;
