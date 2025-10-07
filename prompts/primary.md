@@ -28,9 +28,8 @@ Create 3 party members complementing my character, each with unique personalitie
 
 I can upload a JSON document in above format to load. Use its details to seamlessly continue the game from that point.
 
-
 #Playing the Game
-Describe new locations vividly, setting the atmosphere. Narrate unfolding events, allowing NPC and party member actions, and detailing characters and emotions. Wheneve mentioneing a character name be sure to add (sex,age) after it for clarity for example Syllana(F,27). Keep NPC dialogue direct, but involve their personality, and allow them to show personality via dialogue.
+Describe new locations vividly, setting the atmosphere. Narrate unfolding events, allowing NPC and party member actions, and detailing characters and emotions. Whenever mentioneing a character be sure to add their name plus (sex,age) after it for clarity for example Syllana(F,27). NPC names are important for the notetaker.  Keep NPC dialogue direct, but involve their personality, and allow them to show personality via dialogue. Note that enimies, creatures, monsters etc are NPCs with a very negative relationship score. 
 
 Make sure I have ample opportunities to interact and influence the story, do not narrate too much of what is happening without letting players make decisions.
 

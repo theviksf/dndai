@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, Coins, MapPin, Zap, Shield, Calendar } from 'lucide-react';
+import { Heart, Coins, MapPin, Zap, Shield, Calendar, Star } from 'lucide-react';
 import type { GameCharacter, StatusEffect, GameStateData } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { EntityImageCard } from '@/components/entity-image-card';
@@ -25,6 +25,12 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
   const [isRefreshingImage, setIsRefreshingImage] = useState(false);
   const [isRefreshingLocationImage, setIsRefreshingLocationImage] = useState(false);
   const hpPercentage = (character.hp / character.maxHp) * 100;
+  
+  // Calculate XP percentage with safeguards
+  const safeNextLevelXp = character.nextLevelXp || 300;
+  const safeXp = character.xp || 0;
+  const rawXpPercentage = (safeXp / safeNextLevelXp) * 100;
+  const xpPercentage = Math.min(Math.max(rawXpPercentage, 0), 100);
   
   const turnInWeek = (turnCount % 15) + 1;
   const weekNumber = Math.floor(turnCount / 15) + 1;
@@ -180,6 +186,46 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
               <div 
                 className={`h-full transition-all ${hpPercentage > 50 ? 'bg-green-500' : hpPercentage > 25 ? 'bg-yellow-500' : 'bg-destructive'}`}
                 style={{ width: `${hpPercentage}%` }}
+              />
+            </div>
+          </div>
+
+          {/* XP Bar */}
+          <div className="flex-1 min-w-[200px] max-w-[300px]">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                <Star className="w-4 h-4 text-blue-500" />
+                <span className="text-xs font-medium">Experience</span>
+              </div>
+              <span className="text-xs font-mono font-semibold flex items-center gap-1" data-testid="text-character-xp">
+                {onUpdate ? (
+                  <>
+                    <InlineEdit
+                      value={safeXp}
+                      onSave={(value) => onUpdate({ character: { xp: Number(value) } as any })}
+                      type="number"
+                      min={0}
+                      max={safeNextLevelXp}
+                      inputClassName="w-12 h-6 text-xs"
+                    />
+                    /
+                    <InlineEdit
+                      value={safeNextLevelXp}
+                      onSave={(value) => onUpdate({ character: { nextLevelXp: Number(value) } as any })}
+                      type="number"
+                      min={1}
+                      inputClassName="w-12 h-6 text-xs"
+                    />
+                  </>
+                ) : (
+                  <>{safeXp}/{safeNextLevelXp}</>
+                )}
+              </span>
+            </div>
+            <div className="w-full bg-blue-500/20 rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full transition-all bg-blue-500"
+                style={{ width: `${xpPercentage}%` }}
               />
             </div>
           </div>

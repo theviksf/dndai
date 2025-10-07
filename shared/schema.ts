@@ -133,6 +133,7 @@ export type GameCharacter = {
   class: string;
   age: string;
   sex: string;
+  description: string;
   level: number;
   xp: number;
   nextLevelXp: number;

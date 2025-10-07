@@ -37,6 +37,7 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [sex, setSex] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedRace, setSelectedRace] = useState('elf');
   const [selectedClass, setSelectedClass] = useState('');
   const [attributes, setAttributes] = useState({
@@ -99,6 +100,7 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
       class: CLASSES.find(c => c.id === selectedClass)?.name || '',
       age: age || 'Unknown',
       sex: sex || 'Unknown',
+      description: description || 'A brave adventurer seeking fortune and glory',
       level: 1,
       xp: 0,
       nextLevelXp: 300,
@@ -151,6 +153,7 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
         class: characterData.class,
         age: characterData.age ?? 'Unknown',
         sex: characterData.sex ?? 'Unknown',
+        description: characterData.description ?? 'A brave adventurer seeking fortune and glory',
         level: characterData.level ?? 1,
         xp: characterData.xp ?? 0,
         nextLevelXp: characterData.nextLevelXp ?? 300,
@@ -296,6 +299,18 @@ export default function CharacterCreationPage({ onComplete }: CharacterCreationP
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Character Description */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-foreground">Description (Optional)</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Brief description of your character's appearance, personality, or background..."
+                className="w-full bg-input border-border border rounded-md p-3 text-sm min-h-[80px] resize-y"
+                data-testid="input-character-description"
+              />
             </div>
 
             {/* Race Selection */}
