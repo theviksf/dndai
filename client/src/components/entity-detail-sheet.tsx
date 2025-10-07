@@ -347,6 +347,111 @@ export function EntityDetailSheet({
             )}
           </div>
         )}
+        
+        {/* Companion-specific fields */}
+        {'criticalMemories' in char && (
+          <div>
+            <span className="font-semibold text-foreground">Critical Memories:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.criticalMemories || ''}
+                onSave={(value) => onUpdate({ criticalMemories: String(value) } as any)}
+                type="textarea"
+                className="mt-1"
+                inputClassName="text-sm"
+              />
+            ) : (
+              <p className="mt-1 text-muted-foreground">{char.criticalMemories || 'N/A'}</p>
+            )}
+          </div>
+        )}
+        {'feelingsTowardsPlayer' in char && (
+          <div>
+            <span className="font-semibold text-foreground">Feelings Towards Player:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.feelingsTowardsPlayer || ''}
+                onSave={(value) => onUpdate({ feelingsTowardsPlayer: String(value) } as any)}
+                type="textarea"
+                className="mt-1"
+                inputClassName="text-sm"
+              />
+            ) : (
+              <p className="mt-1 text-muted-foreground">{char.feelingsTowardsPlayer || 'N/A'}</p>
+            )}
+          </div>
+        )}
+        {'relationship' in char && entityType === 'companion' && (
+          <div>
+            <span className="font-semibold text-foreground">Relationship:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.relationship || ''}
+                onSave={(value) => onUpdate({ relationship: String(value) } as any)}
+                inputClassName="ml-2 h-6 text-sm"
+              />
+            ) : (
+              <span className="ml-2 text-muted-foreground">{char.relationship || 'N/A'}</span>
+            )}
+          </div>
+        )}
+        
+        {/* NPC-specific fields */}
+        {'location' in char && entityType === 'npc' && (
+          <div>
+            <span className="font-semibold text-foreground">Location:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.location || ''}
+                onSave={(value) => onUpdate({ location: String(value) } as any)}
+                inputClassName="ml-2 h-6 text-sm"
+              />
+            ) : (
+              <span className="ml-2 text-muted-foreground">{char.location || 'N/A'}</span>
+            )}
+          </div>
+        )}
+        {'status' in char && entityType === 'npc' && (
+          <div>
+            <span className="font-semibold text-foreground">Status:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.status || 'alive'}
+                onSave={(value) => onUpdate({ status: String(value) } as any)}
+                inputClassName="ml-2 h-6 text-sm"
+              />
+            ) : (
+              <span className={`ml-2 font-medium ${char.status === 'alive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {char.status || 'alive'}
+              </span>
+            )}
+          </div>
+        )}
+        {'relationship' in char && entityType === 'npc' && (
+          <div>
+            <span className="font-semibold text-foreground">Relationship:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={typeof char.relationship === 'number' ? char.relationship : 0}
+                onSave={(value) => onUpdate({ relationship: Number(value) } as any)}
+                type="number"
+                min={-3}
+                max={3}
+                inputClassName="ml-2 h-6 text-sm w-16"
+              />
+            ) : (
+              <span className={`ml-2 font-medium ${
+                char.relationship > 0 
+                  ? 'text-green-600 dark:text-green-400' 
+                  : char.relationship < 0 
+                  ? 'text-red-600 dark:text-red-400' 
+                  : 'text-muted-foreground'
+              }`}>
+                {typeof char.relationship === 'number' ? char.relationship : 0}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   };

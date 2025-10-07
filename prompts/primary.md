@@ -33,6 +33,16 @@ Describe new locations vividly, setting the atmosphere. Narrate unfolding events
 
 Make sure I have ample opportunities to interact and influence the story, do not narrate too much of what is happening without letting players make decisions.
 
+##New Locations
+When you introduce a new location, can you make sure to describe it with enough detail that Notetaker can capture:
+– its name and type (like ‘The Gilded Griffin Tavern’, a tavern),
+– a short description or vibe (what makes it stand out),
+– its place in the world — which city, district, region, and country it’s in,
+– roughly where it is relative to another landmark (like ‘about a kilometer northwest of the Highspire Main Gate’),
+– and any key details like who owns it, notable people there, what services it offers, and what’s nearby.
+Basically, enough info that I can fill out a little JSON card for the world — like name, type, hierarchy, relative location, details, and connections.
+
+
 ##XP
 Make sure to award XP after actions that earn XP.
 Award XP for actions, level up when possible.
