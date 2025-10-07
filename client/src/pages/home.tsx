@@ -241,9 +241,9 @@ export default function Home() {
   };
 
   const handleNewGame = () => {
-    // Generate new session ID and navigate to it using SPA navigation
+    // Generate new session ID and force full page reload to reset all state
     const newSessionId = generateSessionId();
-    setLocation(buildSessionUrl('/', newSessionId));
+    window.location.href = buildSessionUrl('/', newSessionId);
   };
 
   const updateGameState = (updates: Partial<GameStateData>) => {
