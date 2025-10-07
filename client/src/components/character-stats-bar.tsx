@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Heart, Coins, MapPin, Zap, Shield, Calendar, Star } from 'lucide-react';
-import type { GameCharacter, StatusEffect, GameStateData } from '@shared/schema';
+import type { GameCharacter, StatusEffect, GameStateData, Location } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { EntityImageCard } from '@/components/entity-image-card';
 import { EntityDetailSheet } from '@/components/entity-detail-sheet';
@@ -483,6 +483,9 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
         entityType="character"
         onRefresh={onRefreshImage ? handleRefreshImage : undefined}
         isRefreshing={isRefreshingImage}
+        onUpdate={onUpdate ? (updates) => {
+          onUpdate({ character: { ...character, ...updates } as GameCharacter });
+        } : undefined}
       />
 
       {/* Location Detail Sheet */}
@@ -494,6 +497,9 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
           entityType="location"
           onRefresh={onRefreshImage ? handleRefreshLocationImage : undefined}
           isRefreshing={isRefreshingLocationImage}
+          onUpdate={onUpdate ? (updates) => {
+            onUpdate({ location: { ...location, ...updates } as Location });
+          } : undefined}
         />
       )}
     </div>

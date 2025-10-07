@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { RefreshCw, User, MapPin } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { InlineEdit } from '@/components/ui/inline-edit';
 import type { GameCharacter, Companion, EncounteredCharacter, Location } from '@shared/schema';
 
 interface EntityDetailSheetProps {
@@ -11,6 +12,7 @@ interface EntityDetailSheetProps {
   entityType: 'character' | 'companion' | 'npc' | 'location';
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onUpdate?: (updates: Partial<GameCharacter | Companion | EncounteredCharacter | Location>) => void;
 }
 
 export function EntityDetailSheet({ 
@@ -19,7 +21,8 @@ export function EntityDetailSheet({
   entity, 
   entityType,
   onRefresh,
-  isRefreshing = false
+  isRefreshing = false,
+  onUpdate
 }: EntityDetailSheetProps) {
   if (!entity) return null;
 
@@ -34,20 +37,42 @@ export function EntityDetailSheet({
           <div className="space-y-2">
             <div>
               <span className="font-semibold text-foreground">Name:</span>
-              <span className="ml-2 text-muted-foreground">{loc.name}</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={loc.name}
+                  onSave={(value) => onUpdate({ name: String(value) } as any)}
+                  inputClassName="ml-2 h-6 text-sm"
+                />
+              ) : (
+                <span className="ml-2 text-muted-foreground">{loc.name}</span>
+              )}
             </div>
-            {loc.type && (
-              <div>
-                <span className="font-semibold text-foreground">Type:</span>
-                <span className="ml-2 text-muted-foreground capitalize">{loc.type}</span>
-              </div>
-            )}
-            {loc.description && (
-              <div>
-                <span className="font-semibold text-foreground">Description:</span>
-                <p className="mt-1 text-muted-foreground">{loc.description}</p>
-              </div>
-            )}
+            <div>
+              <span className="font-semibold text-foreground">Type:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={loc.type || ''}
+                  onSave={(value) => onUpdate({ type: String(value) } as any)}
+                  inputClassName="ml-2 h-6 text-sm"
+                />
+              ) : (
+                <span className="ml-2 text-muted-foreground capitalize">{loc.type || 'N/A'}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">Description:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={loc.description || ''}
+                  onSave={(value) => onUpdate({ description: String(value) } as any)}
+                  type="textarea"
+                  className="mt-1"
+                  inputClassName="text-sm"
+                />
+              ) : (
+                <p className="mt-1 text-muted-foreground">{loc.description || 'N/A'}</p>
+              )}
+            </div>
           </div>
 
           {/* Hierarchy */}
@@ -181,60 +206,145 @@ export function EntityDetailSheet({
       <div className="space-y-2 text-sm">
         <div>
           <span className="font-semibold text-foreground">Name:</span>
-          <span className="ml-2 text-muted-foreground">{char.name}</span>
+          {onUpdate ? (
+            <InlineEdit
+              value={char.name}
+              onSave={(value) => onUpdate({ name: String(value) } as any)}
+              inputClassName="ml-2 h-6 text-sm"
+            />
+          ) : (
+            <span className="ml-2 text-muted-foreground">{char.name}</span>
+          )}
         </div>
-        {'race' in char && char.race && (
+        {'race' in char && (
           <div>
             <span className="font-semibold text-foreground">Race:</span>
-            <span className="ml-2 text-muted-foreground">{char.race}</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.race || ''}
+                onSave={(value) => onUpdate({ race: String(value) } as any)}
+                inputClassName="ml-2 h-6 text-sm"
+              />
+            ) : (
+              <span className="ml-2 text-muted-foreground">{char.race || 'N/A'}</span>
+            )}
           </div>
         )}
-        {'class' in char && char.class && (
+        {'class' in char && (
           <div>
             <span className="font-semibold text-foreground">Class:</span>
-            <span className="ml-2 text-muted-foreground">{char.class}</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.class || ''}
+                onSave={(value) => onUpdate({ class: String(value) } as any)}
+                inputClassName="ml-2 h-6 text-sm"
+              />
+            ) : (
+              <span className="ml-2 text-muted-foreground">{char.class || 'N/A'}</span>
+            )}
           </div>
         )}
-        {'role' in char && char.role && (
+        {'role' in char && (
           <div>
             <span className="font-semibold text-foreground">Role:</span>
-            <span className="ml-2 text-muted-foreground">{char.role}</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.role || ''}
+                onSave={(value) => onUpdate({ role: String(value) } as any)}
+                inputClassName="ml-2 h-6 text-sm"
+              />
+            ) : (
+              <span className="ml-2 text-muted-foreground">{char.role || 'N/A'}</span>
+            )}
           </div>
         )}
-        {char.age && (
-          <div>
-            <span className="font-semibold text-foreground">Age:</span>
-            <span className="ml-2 text-muted-foreground">{char.age}</span>
-          </div>
-        )}
-        {char.sex && (
-          <div>
-            <span className="font-semibold text-foreground">Sex:</span>
-            <span className="ml-2 text-muted-foreground">{char.sex}</span>
-          </div>
-        )}
-        {'level' in char && char.level && (
+        <div>
+          <span className="font-semibold text-foreground">Age:</span>
+          {onUpdate ? (
+            <InlineEdit
+              value={char.age || ''}
+              onSave={(value) => onUpdate({ age: String(value) } as any)}
+              inputClassName="ml-2 h-6 text-sm"
+            />
+          ) : (
+            <span className="ml-2 text-muted-foreground">{char.age || 'N/A'}</span>
+          )}
+        </div>
+        <div>
+          <span className="font-semibold text-foreground">Sex:</span>
+          {onUpdate ? (
+            <InlineEdit
+              value={char.sex || ''}
+              onSave={(value) => onUpdate({ sex: String(value) } as any)}
+              inputClassName="ml-2 h-6 text-sm"
+            />
+          ) : (
+            <span className="ml-2 text-muted-foreground">{char.sex || 'N/A'}</span>
+          )}
+        </div>
+        {'level' in char && (
           <div>
             <span className="font-semibold text-foreground">Level:</span>
-            <span className="ml-2 text-muted-foreground">{char.level}</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.level || 1}
+                onSave={(value) => onUpdate({ level: Number(value) } as any)}
+                type="number"
+                min={1}
+                max={20}
+                inputClassName="ml-2 h-6 text-sm w-16"
+              />
+            ) : (
+              <span className="ml-2 text-muted-foreground">{char.level || 1}</span>
+            )}
           </div>
         )}
-        {'appearance' in char && char.appearance && (
+        {'appearance' in char && (
           <div>
             <span className="font-semibold text-foreground">Appearance:</span>
-            <p className="mt-1 text-muted-foreground">{char.appearance}</p>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.appearance || ''}
+                onSave={(value) => onUpdate({ appearance: String(value) } as any)}
+                type="textarea"
+                className="mt-1"
+                inputClassName="text-sm"
+              />
+            ) : (
+              <p className="mt-1 text-muted-foreground">{char.appearance || 'N/A'}</p>
+            )}
           </div>
         )}
-        {'personality' in char && char.personality && (
+        {'personality' in char && (
           <div>
             <span className="font-semibold text-foreground">Personality:</span>
-            <p className="mt-1 text-muted-foreground">{char.personality}</p>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.personality || ''}
+                onSave={(value) => onUpdate({ personality: String(value) } as any)}
+                type="textarea"
+                className="mt-1"
+                inputClassName="text-sm"
+              />
+            ) : (
+              <p className="mt-1 text-muted-foreground">{char.personality || 'N/A'}</p>
+            )}
           </div>
         )}
-        {'description' in char && char.description && (
+        {'description' in char && (
           <div>
             <span className="font-semibold text-foreground">Description:</span>
-            <p className="mt-1 text-muted-foreground">{char.description}</p>
+            {onUpdate ? (
+              <InlineEdit
+                value={char.description || ''}
+                onSave={(value) => onUpdate({ description: String(value) } as any)}
+                type="textarea"
+                className="mt-1"
+                inputClassName="text-sm"
+              />
+            ) : (
+              <p className="mt-1 text-muted-foreground">{char.description || 'N/A'}</p>
+            )}
           </div>
         )}
       </div>
@@ -243,7 +353,7 @@ export function EntityDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Icon className="w-5 h-5" />

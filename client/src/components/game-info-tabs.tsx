@@ -505,212 +505,24 @@ export default function GameInfoTabs({
 
       <TabsContent value="companions" className="flex-1 mt-0 border-none p-0">
         <ScrollArea className="h-[calc(100vh-280px)]">
-          <div className="p-4 space-y-4">
+          <div className="p-4">
             {companions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No companions yet</p>
             ) : (
-              companions.map((companion, index) => (
-                <div
-                  key={companion.id}
-                  className="border-2 border-border rounded-lg p-4 bg-card space-y-2"
-                  data-testid={`companion-${companion.id}`}
-                >
-                  <div className="flex items-start gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {companions.map((companion) => (
+                  <div key={companion.id} className="flex flex-col items-center gap-2">
                     <EntityImageCard
                       imageUrl={companion.imageUrl}
                       entityType="companion"
                       onClick={() => openDetailSheet(companion, 'companion')}
-                      className="w-20 h-20 flex-shrink-0"
+                      className="w-full aspect-square"
+                      data-testid={`companion-${companion.id}`}
                     />
-                    <div className="flex-1 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-base">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={companion.name}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, name: String(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          inputClassName="text-base font-semibold"
-                        />
-                      ) : (
-                        <span>{companion.name}</span>
-                      )}
-                    </h4>
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded flex items-center gap-1">
-                      Lv. 
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={companion.level}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, level: Number(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          type="number"
-                          min={1}
-                          max={20}
-                          inputClassName="w-12 h-5 text-xs"
-                        />
-                      ) : (
-                        <span>{companion.level}</span>
-                      )}
-                    </span>
+                    <span className="text-sm font-medium text-center truncate w-full">{companion.name}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
-                    {onUpdate ? (
-                      <>
-                        <InlineEdit
-                          value={companion.race}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, race: String(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          inputClassName="h-5 text-xs"
-                        />
-                        {' '}
-                        <InlineEdit
-                          value={companion.class}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, class: String(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          inputClassName="h-5 text-xs"
-                        />
-                        {' '}
-                        <InlineEdit
-                          value={companion.sex || ''}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, sex: String(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          inputClassName="h-5 text-xs"
-                        />
-                        {' • Age '}
-                        <InlineEdit
-                          value={companion.age || ''}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, age: String(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          inputClassName="h-5 text-xs w-16"
-                        />
-                      </>
-                    ) : (
-                      <span>{companion.race} {companion.class}{companion.sex ? ` ${companion.sex}` : ''}{companion.age ? ` • Age ${companion.age}` : ''}</span>
-                    )}
-                  </p>
-                  <div className="pt-2 space-y-2 border-t border-border">
-                    <p className="text-xs text-foreground leading-relaxed">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={companion.appearance}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, appearance: String(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          type="textarea"
-                          className="text-xs"
-                          inputClassName="text-xs"
-                        />
-                      ) : (
-                        <span>{companion.appearance}</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground italic leading-relaxed">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={companion.personality}
-                          onSave={(value) => {
-                            const updated = [...companions];
-                            updated[index] = { ...companion, personality: String(value) };
-                            onUpdate({ companions: updated });
-                          }}
-                          type="textarea"
-                          className="text-xs italic"
-                          inputClassName="text-xs"
-                        />
-                      ) : (
-                        <span>{companion.personality}</span>
-                      )}
-                    </p>
-                  </div>
-                  {(companion.criticalMemories || onUpdate) && (
-                    <div className="pt-2 border-t border-border">
-                      <p className="text-xs">
-                        <span className="font-medium text-accent">Critical Memories: </span>
-                        {onUpdate ? (
-                          <InlineEdit
-                            value={companion.criticalMemories || ''}
-                            onSave={(value) => {
-                              const updated = [...companions];
-                              updated[index] = { ...companion, criticalMemories: String(value) };
-                              onUpdate({ companions: updated });
-                            }}
-                            type="textarea"
-                            className="text-xs"
-                            inputClassName="text-xs"
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">{companion.criticalMemories}</span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                  {(companion.feelingsTowardsPlayer || onUpdate) && (
-                    <div className="pt-2 border-t border-border">
-                      <p className="text-xs">
-                        <span className="font-medium text-accent">Feelings Towards You: </span>
-                        {onUpdate ? (
-                          <InlineEdit
-                            value={companion.feelingsTowardsPlayer || ''}
-                            onSave={(value) => {
-                              const updated = [...companions];
-                              updated[index] = { ...companion, feelingsTowardsPlayer: String(value) };
-                              onUpdate({ companions: updated });
-                            }}
-                            type="textarea"
-                            className="text-xs"
-                            inputClassName="text-xs"
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">{companion.feelingsTowardsPlayer}</span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                  {(companion.relationship || onUpdate) && (
-                    <div className="pt-2 border-t border-border">
-                      <p className="text-xs">
-                        <span className="font-medium text-accent">Relationship: </span>
-                        {onUpdate ? (
-                          <InlineEdit
-                            value={companion.relationship || ''}
-                            onSave={(value) => {
-                              const updated = [...companions];
-                              updated[index] = { ...companion, relationship: String(value) };
-                              onUpdate({ companions: updated });
-                            }}
-                            className="text-xs"
-                            inputClassName="text-xs"
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">{companion.relationship}</span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                ))}
               </div>
-            </div>
-              ))
             )}
           </div>
         </ScrollArea>
@@ -738,187 +550,27 @@ export default function GameInfoTabs({
               {sortedNPCs.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">No characters encountered</p>
               ) : (
-                <Accordion type="multiple" className="space-y-2">
-                  {sortedNPCs.map((character, index) => (
-                    <AccordionItem 
-                      key={character.id} 
-                      value={character.id}
-                      className="border border-border rounded-lg px-3 bg-card"
-                      data-testid={`encountered-${character.id}`}
-                    >
-                      <AccordionTrigger className="hover:no-underline py-3">
-                        <div className="flex items-center justify-between w-full pr-2">
-                          <div className="flex items-center gap-3 flex-1">
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <EntityImageCard
-                                imageUrl={character.imageUrl}
-                                entityType="npc"
-                                onClick={() => openDetailSheet(character, 'npc')}
-                                className="w-12 h-12 flex-shrink-0"
-                              />
-                            </div>
-                            <div className="flex flex-col items-start gap-1">
-                              <span className="font-semibold text-sm">{character.name}</span>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{character.role}</span>
-                                {character.location && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{character.location}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-3 pt-1">
-                        <div className="space-y-2 text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">Sex:</span>
-                            {onUpdate ? (
-                              <InlineEdit
-                                value={character.sex || ''}
-                                onSave={(value) => {
-                                  const updated = [...encounteredCharacters];
-                                  const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
-                                  updated[origIndex] = { ...character, sex: String(value) };
-                                  onUpdate({ encounteredCharacters: updated });
-                                }}
-                                className="text-xs"
-                                inputClassName="h-6 text-xs w-24"
-                              />
-                            ) : character.sex ? (
-                              <span>{character.sex}</span>
-                            ) : (
-                              <span className="text-muted-foreground/50">Not specified</span>
-                            )}
-                          </div>
-                          {(character.age || onUpdate) && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">Age:</span>
-                              {onUpdate ? (
-                                <InlineEdit
-                                  value={character.age || ''}
-                                  onSave={(value) => {
-                                    const updated = [...encounteredCharacters];
-                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
-                                    updated[origIndex] = { ...character, age: String(value) };
-                                    onUpdate({ encounteredCharacters: updated });
-                                  }}
-                                  className="text-xs"
-                                  inputClassName="h-6 text-xs w-24"
-                                />
-                              ) : (
-                                <span>{character.age}</span>
-                              )}
-                            </div>
-                          )}
-                          {(character.location || onUpdate) && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">Location:</span>
-                              {onUpdate ? (
-                                <InlineEdit
-                                  value={character.location || ''}
-                                  onSave={(value) => {
-                                    const updated = [...encounteredCharacters];
-                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
-                                    updated[origIndex] = { ...character, location: String(value) };
-                                    onUpdate({ encounteredCharacters: updated });
-                                  }}
-                                  className="text-xs"
-                                  inputClassName="h-6 text-xs"
-                                />
-                              ) : (
-                                <span>{character.location}</span>
-                              )}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">Status:</span>
-                            <span 
-                              className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                character.status === 'alive' 
-                                  ? 'bg-green-500/20 text-green-700 dark:text-green-400' 
-                                  : 'bg-red-500/20 text-red-700 dark:text-red-400'
-                              }`}
-                              data-testid={`status-${character.id}`}
-                            >
-                              {character.status || 'alive'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">Relationship:</span>
-                            {onUpdate ? (
-                              <InlineEdit
-                                value={String(character.relationship ?? 0)}
-                                onSave={(value) => {
-                                  const updated = [...encounteredCharacters];
-                                  const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
-                                  const numValue = parseInt(String(value)) || 0;
-                                  const clampedValue = Math.max(-3, Math.min(3, numValue));
-                                  updated[origIndex] = { ...character, relationship: clampedValue };
-                                  onUpdate({ encounteredCharacters: updated });
-                                }}
-                                className="text-xs"
-                                inputClassName="h-6 text-xs w-16"
-                              />
-                            ) : null}
-                            <span 
-                              className={`px-2 py-0.5 rounded text-xs font-medium ${getRelationshipLabel(character.relationship ?? 0).color}`}
-                              title={getRelationshipLabel(character.relationship ?? 0).description}
-                              data-testid={`relationship-${character.id}`}
-                            >
-                              {getRelationshipLabel(character.relationship ?? 0).label} ({character.relationship ?? 0})
-                            </span>
-                          </div>
-                          <div className="pt-2 border-t border-border">
-                            <p className="text-muted-foreground mb-1">Appearance:</p>
-                            <p className="text-foreground leading-relaxed">
-                              {onUpdate ? (
-                                <InlineEdit
-                                  value={character.appearance}
-                                  onSave={(value) => {
-                                    const updated = [...encounteredCharacters];
-                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
-                                    updated[origIndex] = { ...character, appearance: String(value) };
-                                    onUpdate({ encounteredCharacters: updated });
-                                  }}
-                                  type="textarea"
-                                  className="text-xs"
-                                  inputClassName="text-xs"
-                                />
-                              ) : (
-                                <span>{character.appearance}</span>
-                              )}
-                            </p>
-                          </div>
-                          <div className="pt-2 border-t border-border">
-                            <p className="text-muted-foreground mb-1">Description:</p>
-                            <p className="text-foreground leading-relaxed">
-                              {onUpdate ? (
-                                <InlineEdit
-                                  value={character.description}
-                                  onSave={(value) => {
-                                    const updated = [...encounteredCharacters];
-                                    const origIndex = encounteredCharacters.findIndex(c => c.id === character.id);
-                                    updated[origIndex] = { ...character, description: String(value) };
-                                    onUpdate({ encounteredCharacters: updated });
-                                  }}
-                                  type="textarea"
-                                  className="text-xs"
-                                  inputClassName="text-xs"
-                                />
-                              ) : (
-                                <span>{character.description}</span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {sortedNPCs.map((character) => (
+                    <div key={character.id} className="flex flex-col items-center gap-2">
+                      <EntityImageCard
+                        imageUrl={character.imageUrl}
+                        entityType="npc"
+                        onClick={() => openDetailSheet(character, 'npc')}
+                        className="w-full aspect-square"
+                        data-testid={`encountered-${character.id}`}
+                      />
+                      <span className="text-sm font-medium text-center truncate w-full">{character.name}</span>
+                      <span 
+                        className={`text-xs px-2 py-0.5 rounded font-medium ${getRelationshipLabel(character.relationship ?? 0).color}`}
+                        title={getRelationshipLabel(character.relationship ?? 0).description}
+                        data-testid={`relationship-${character.id}`}
+                      >
+                        {getRelationshipLabel(character.relationship ?? 0).label}
+                      </span>
+                    </div>
                   ))}
-                </Accordion>
+                </div>
               )}
             </div>
           </ScrollArea>
@@ -953,6 +605,27 @@ export default function GameInfoTabs({
         entityType={detailEntityType}
         onRefresh={onRefreshImage ? handleRefreshImage : undefined}
         isRefreshing={isRefreshingImage}
+        onUpdate={onUpdate ? (updates) => {
+          if (!detailEntity) return;
+          
+          if (detailEntityType === 'companion') {
+            const index = companions.findIndex(c => c.id === (detailEntity as Companion).id);
+            if (index !== -1) {
+              const updated = [...companions];
+              updated[index] = { ...updated[index], ...updates } as Companion;
+              onUpdate({ companions: updated });
+              setDetailEntity(updated[index]);
+            }
+          } else if (detailEntityType === 'npc') {
+            const index = encounteredCharacters.findIndex(c => c.id === (detailEntity as EncounteredCharacter).id);
+            if (index !== -1) {
+              const updated = [...encounteredCharacters];
+              updated[index] = { ...updated[index], ...updates } as EncounteredCharacter;
+              onUpdate({ encounteredCharacters: updated });
+              setDetailEntity(updated[index]);
+            }
+          }
+        } : undefined}
       />
     </Tabs>
   );
