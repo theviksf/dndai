@@ -29,15 +29,146 @@ export function EntityDetailSheet({
     if (entityType === 'location') {
       const loc = entity as Location;
       return (
-        <div className="space-y-2 text-sm">
-          <div>
-            <span className="font-semibold text-foreground">Location:</span>
-            <span className="ml-2 text-muted-foreground">{loc.name}</span>
-          </div>
-          {loc.description && (
+        <div className="space-y-4 text-sm">
+          {/* Basic Info */}
+          <div className="space-y-2">
             <div>
-              <span className="font-semibold text-foreground">Description:</span>
-              <p className="mt-1 text-muted-foreground">{loc.description}</p>
+              <span className="font-semibold text-foreground">Name:</span>
+              <span className="ml-2 text-muted-foreground">{loc.name}</span>
+            </div>
+            {loc.type && (
+              <div>
+                <span className="font-semibold text-foreground">Type:</span>
+                <span className="ml-2 text-muted-foreground capitalize">{loc.type}</span>
+              </div>
+            )}
+            {loc.description && (
+              <div>
+                <span className="font-semibold text-foreground">Description:</span>
+                <p className="mt-1 text-muted-foreground">{loc.description}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Hierarchy */}
+          {loc.hierarchy && (
+            <div className="pt-3 border-t border-border">
+              <h4 className="font-semibold text-foreground mb-2">Location Hierarchy</h4>
+              <div className="space-y-1 ml-2">
+                {loc.hierarchy.country && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Country:</span>
+                    <span className="text-foreground">{loc.hierarchy.country}</span>
+                  </div>
+                )}
+                {loc.hierarchy.region && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Region:</span>
+                    <span className="text-foreground">{loc.hierarchy.region}</span>
+                  </div>
+                )}
+                {loc.hierarchy.city && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">City:</span>
+                    <span className="text-foreground">{loc.hierarchy.city}</span>
+                  </div>
+                )}
+                {loc.hierarchy.district && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">District:</span>
+                    <span className="text-foreground">{loc.hierarchy.district}</span>
+                  </div>
+                )}
+                {loc.hierarchy.building && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Building:</span>
+                    <span className="text-foreground">{loc.hierarchy.building}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Relative Location */}
+          {loc.relative_location && loc.relative_location.reference_place && (
+            <div className="pt-3 border-t border-border">
+              <h4 className="font-semibold text-foreground mb-2">Relative Location</h4>
+              <div className="ml-2">
+                <p className="text-muted-foreground">
+                  {loc.relative_location.distance_km && loc.relative_location.direction && (
+                    <>{loc.relative_location.distance_km}km {loc.relative_location.direction} of </>
+                  )}
+                  {loc.relative_location.reference_place}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Details */}
+          {loc.details && (
+            <div className="pt-3 border-t border-border">
+              <h4 className="font-semibold text-foreground mb-2">Details</h4>
+              <div className="space-y-1 ml-2">
+                {loc.details.owner && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Owner:</span>
+                    <span className="text-foreground">{loc.details.owner}</span>
+                  </div>
+                )}
+                {loc.details.notable_people && loc.details.notable_people.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground text-xs">Notable People:</span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {loc.details.notable_people.map((person, idx) => (
+                        <span key={idx} className="inline-block bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">
+                          {person}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {loc.details.capacity && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Capacity:</span>
+                    <span className="text-foreground">{loc.details.capacity}</span>
+                  </div>
+                )}
+                {loc.details.services && loc.details.services.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground text-xs">Services:</span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {loc.details.services.map((service, idx) => (
+                        <span key={idx} className="inline-block bg-accent/10 text-accent px-2 py-0.5 rounded text-xs capitalize">
+                          {service}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {loc.details.price_range && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Price Range:</span>
+                    <span className="text-foreground capitalize">{loc.details.price_range}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Nearby Locations */}
+          {loc.connections?.nearby_locations && loc.connections.nearby_locations.length > 0 && (
+            <div className="pt-3 border-t border-border">
+              <h4 className="font-semibold text-foreground mb-2">Nearby Locations</h4>
+              <div className="space-y-2 ml-2">
+                {loc.connections.nearby_locations.map((nearby, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-foreground">{nearby.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      ({nearby.distance_km}km {nearby.direction})
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

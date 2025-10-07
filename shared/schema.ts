@@ -150,16 +150,58 @@ export type TurnSnapshot = {
   timestamp: number;
 };
 
+export type LocationHierarchy = {
+  country?: string;
+  region?: string;
+  city?: string;
+  district?: string;
+  building?: string;
+};
+
+export type LocationRelative = {
+  reference_place?: string;
+  distance_km?: number;
+  direction?: string;
+};
+
+export type LocationDetails = {
+  owner?: string;
+  notable_people?: string[];
+  capacity?: number;
+  services?: string[];
+  price_range?: string;
+};
+
+export type NearbyLocation = {
+  name: string;
+  distance_km: number;
+  direction: string;
+};
+
 export type Location = {
   name: string;
+  type?: string;
   description: string;
+  hierarchy?: LocationHierarchy;
+  relative_location?: LocationRelative;
+  details?: LocationDetails;
+  connections?: {
+    nearby_locations?: NearbyLocation[];
+  };
   imageUrl?: string;
 };
 
 export type PreviousLocation = {
   id: string;
   name: string;
+  type?: string;
   description: string;
+  hierarchy?: LocationHierarchy;
+  relative_location?: LocationRelative;
+  details?: LocationDetails;
+  connections?: {
+    nearby_locations?: NearbyLocation[];
+  };
   imageUrl?: string;
   lastVisited: number;
 };

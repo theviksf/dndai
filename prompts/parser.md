@@ -52,7 +52,11 @@ FIELD SPECIFICATIONS:
 - xp: number (current experience, MUST BE NUMBER)
 - nextLevelXp: number (XP needed for next level, MUST BE NUMBER)
 - attributes: object with "str", "dex", "con", "int", "wis", "cha", "ac" (ALL NUMBERS, ac is Armor Class)
-- location: object with "name" (string) and "description" (string)
+- location: object with "name" (string), "type" (string, e.g. "tavern", "city", "dungeon"), "description" (string), and optional nested objects:
+  - "hierarchy": {"country": string, "region": string, "city": string, "district": string, "building": string}
+  - "relative_location": {"reference_place": string, "distance_km": number, "direction": string}
+  - "details": {"owner": string, "notable_people": array of strings, "capacity": number, "services": array of strings, "price_range": string}
+  - "connections": {"nearby_locations": array of objects with "name", "distance_km", "direction"}
 - previousLocations: array of strings (location names) - APPEND new location when location changes, do not replace
 - statusEffects: array of objects, each with "id", "name", "description", "icon", "turnsRemaining" (number)
 - inventory: array of objects, each with "id", "name", "description", "icon", "type", "quantity" (number), "equipped" (boolean), "magical" (boolean)
@@ -128,6 +132,44 @@ YOUR RESPONSE (raw JSON only):
     ]
   },
   "recap": "Purchased The Golden Goblet tavern for 5000 gold with Marcus as manager"
+}
+
+EXAMPLE 6 - Detailed location arrival:
+Narrative: "You arrive at The Gilded Griffin, a bustling tavern in the Market District of Highspire. The tavern is owned by Borin Flintbeard and known for its honeyed ale. Sara the barkeep and Thom the bard work here. The tavern can hold about 60 people and offers food, drink, and lodging at moderate prices. It's located 1.2km northwest of the Highspire Main Gate. The Temple of Auriel is 0.4km to the east, and the Docks are 1.1km south."
+YOUR RESPONSE (raw JSON only):
+{
+  "stateUpdates": {
+    "location": {
+      "name": "The Gilded Griffin",
+      "type": "tavern",
+      "description": "A bustling tavern known for its honeyed ale and lively atmosphere",
+      "hierarchy": {
+        "country": "Eldoria",
+        "city": "Highspire",
+        "district": "Market District",
+        "building": "The Gilded Griffin"
+      },
+      "relative_location": {
+        "reference_place": "Highspire Main Gate",
+        "distance_km": 1.2,
+        "direction": "northwest"
+      },
+      "details": {
+        "owner": "Borin Flintbeard",
+        "notable_people": ["Sara the Barkeep", "Thom the Bard"],
+        "capacity": 60,
+        "services": ["food", "drink", "lodging"],
+        "price_range": "moderate"
+      },
+      "connections": {
+        "nearby_locations": [
+          {"name": "Temple of Auriel", "distance_km": 0.4, "direction": "east"},
+          {"name": "The Docks", "distance_km": 1.1, "direction": "south"}
+        ]
+      }
+    }
+  },
+  "recap": "Arrived at The Gilded Griffin tavern in the Market District of Highspire, a moderate-priced establishment owned by Borin Flintbeard"
 }
 
 CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):

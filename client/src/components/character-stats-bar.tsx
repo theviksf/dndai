@@ -261,7 +261,14 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
               className="w-12 h-12 flex-shrink-0"
             />
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-xs text-muted-foreground">Location</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Location</span>
+                {location?.type && (
+                  <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded capitalize">
+                    {location.type}
+                  </span>
+                )}
+              </div>
               <span className="text-sm font-medium truncate" data-testid="text-location">
                 {onUpdate ? (
                   <InlineEdit
@@ -273,15 +280,10 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   <span>{location?.name || 'Unknown'}</span>
                 )}
               </span>
-              {onUpdate ? (
+              {location?.hierarchy && (location.hierarchy.city || location.hierarchy.district) ? (
                 <span className="text-xs text-muted-foreground truncate">
-                  <InlineEdit
-                    value={location?.description || ''}
-                    onSave={(value) => onUpdate({ location: { description: String(value) } as any })}
-                    type="textarea"
-                    className="text-xs"
-                    inputClassName="h-12 text-xs"
-                  />
+                  {location.hierarchy.district && `${location.hierarchy.district}, `}
+                  {location.hierarchy.city || ''}
                 </span>
               ) : location?.description ? (
                 <span className="text-xs text-muted-foreground truncate">
