@@ -132,6 +132,7 @@ function validateAndCoerceParserData(data: any): any {
     if (char.race !== undefined) result.stateUpdates.race = String(char.race);
     if (char.class !== undefined) result.stateUpdates.class = String(char.class);
     if (char.age !== undefined) result.stateUpdates.age = String(char.age);
+    if (char.sex !== undefined) result.stateUpdates.sex = String(char.sex);
     
     // Coerce numeric fields with finite check
     if (char.level !== undefined) {
@@ -516,6 +517,9 @@ export default function NarrativePanel({
           }
           if (stateUpdates.age !== undefined) {
             updated.character.age = stateUpdates.age;
+          }
+          if (stateUpdates.sex !== undefined) {
+            updated.character.sex = stateUpdates.sex;
           }
           if (stateUpdates.level !== undefined) {
             updated.character.level = stateUpdates.level;

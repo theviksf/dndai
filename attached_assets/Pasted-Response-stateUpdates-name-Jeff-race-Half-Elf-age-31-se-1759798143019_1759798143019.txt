@@ -1,0 +1,61 @@
+Response:
+{
+  "stateUpdates": {
+    "name": "Jeff",
+    "race": "Half-Elf",
+    "age": "31",
+    "sex": "Male",
+    "level": 5,
+    "hp": 33,
+    "maxHp": 33,
+    "gold": 50,
+    "xp": 0,
+    "nextLevelXp": 6500,
+    "attributes": {
+      "str": 8,
+      "dex": 14,
+      "con": 15,
+      "int": 16,
+      "wis": 10,
+      "cha": 12,
+      "ac": 15
+    },
+    "location": {
+      "name": "Saltmarsh Harbor District",
+      "description": "A bustling town where the smell of saltwater and fish mingles with the cries of gulls"
+    },
+    "previousLocations": ["Starting Village"],
+    "inventory": [
+      {"id": "arcane-focus", "name": "Arcane Focus", "description": "A special item used to channel arcane energy for spellcasting", "icon": "🔮", "type": "Focus", "quantity": 1, "equipped": true, "magical": true},
+      {"id": "dagger", "name": "Dagger", "description": "A simple blade for close-quarters combat", "icon": "🗡️", "type": "Weapon", "quantity": 1, "equipped": false, "magical": false},
+      {"id": "scholars-pack", "name": "Scholar's Pack", "description": "A pack containing writing supplies, books, and scholarly tools", "icon": "📚", "type": "Gear", "quantity": 1, "equipped": false, "magical": false},
+      {"id": "spellbook", "name": "Spellbook", "description": "A tome containing recorded spells and arcane knowledge", "icon": "📖", "type": "Gear", "quantity": 1, "equipped": false, "magical": true}
+    ],
+    "spells": [
+      {"id": "fire-bolt", "name": "Fire Bolt", "level": 0, "school": "Evocation", "description": "Hurl a mote of fire at a creature or object", "icon": "🔥"},
+      {"id": "mage-hand", "name": "Mage Hand", "level": 0, "school": "Conjuration", "description": "Create a spectral hand that can manipulate objects", "icon": "👋"},
+      {"id": "shocking-grasp", "name": "Shocking Grasp", "level": 0, "school": "Evocation", "description": "Deliver a shocking touch to a creature", "icon": "⚡"},
+      {"id": "mage-armor", "name": "Mage Armor", "level": 1, "school": "Abjuration", "description": "Surround yourself with protective magical force", "icon": "🛡️"},
+      {"id": "shield", "name": "Shield", "level": 1, "school": "Abjuration", "description": "Create an invisible barrier of magical force for protection", "icon": "🛡️"},
+      {"id": "magic-missile", "name": "Magic Missile", "level": 1, "school": "Evocation", "description": "Create glowing darts of magical force that strike unerringly", "icon": "✨"},
+      {"id": "chromatic-orb", "name": "Chromatic Orb", "level": 1, "school": "Evocation", "description": "Hurl a sphere of energy that deals damage of a chosen type", "icon": "🔴"},
+      {"id": "misty-step", "name": "Misty Step", "level": 2, "school": "Conjuration", "description": "Teleport a short distance in a cloud of mist", "icon": "🌫️"},
+      {"id": "scorching-ray", "name": "Scorching Ray", "level": 2, "school": "Evocation", "description": "Create rays of fire that streak toward targets", "icon": "🔥"},
+      {"id": "hold-person", "name": "Hold Person", "level": 2, "school": "Enchantment", "description": "Paralyze a humanoid creature with magical energy", "icon": "🧍"},
+      {"id": "fireball", "name": "Fireball", "level": 3, "school": "Evocation", "description": "A bright streak flashes to a point and blossoms into a fiery explosion", "icon": "💥"},
+      {"id": "counterspell", "name": "Counterspell", "level": 3, "school": "Abjuration", "description": "Interrupt another creature's spellcasting", "icon": "🔄"}
+    ],
+    "quests": [
+      {"id": "haunted-house", "title": "Investigate the Haunted House of Saltmarsh", "description": "Investigate the infamous House on the edge of town, rumored to be haunted, to determine if it's ghosts or smugglers causing trouble", "type": "main", "icon": "🏚️", "completed": false, "objectives": ["Investigate the haunted house", "Find proof of ghost or smuggler activity"], "progress": {"current": 0, "total": 100}}
+    ],
+    "companions": [
+      {"id": "thorgrim", "name": "Thorgrim Stonehand", "race": "Dwarf", "age": "45", "sex": "Male", "class": "Fighter", "level": 5, "appearance": "Stout warrior with a braided beard and a well-worn shield", "personality": "Pragmatic and unshakable", "criticalMemories": "Experienced warrior with many battles behind him", "feelingsTowardsPlayer": "Respectful of your leadership", "relationship": "Respectful companion"},
+      {"id": "elara", "name": "Elara Swiftarrow", "race": "Elf", "age": "28", "sex": "Female", "class": "Ranger", "level": 5, "appearance": "Keen-eyed huntress from the deep woods", "personality": "Quiet but fiercely loyal", "criticalMemories": "Skilled tracker and hunter from forest upbringing", "feelingsTowardsPlayer": "Trusting of your decisions", "relationship": "Trusting companion"},
+      {"id": "theron", "name": "Brother Theron", "race": "Human", "age": "60", "sex": "Male", "class": "Cleric", "level": 5, "appearance": "Older priest carrying a heavy mace", "personality": "Gentle and wise", "criticalMemories": "Devoted cleric of a sun deity with deep faith", "feelingsTowardsPlayer": "Considers you a devoted friend", "relationship": "Devoted friend"}
+    ],
+    "encounteredCharacters": [
+      {"id": "eda-oweland", "name": "Eda Oweland", "age": "50", "sex": "Female", "role": "Sea Guildmaster", "location": "Saltmarsh", "appearance": "No-nonsense woman", "description": "Guildmaster who hired the party to investigate the haunted house", "status": "alive", "relationship": 0}
+    ]
+  },
+  "recap": "Jeff the Half-Elf Wizard reached level 5 with updated abilities and spells, formed a party with Thorgrim, Elara, and Brother Theron, and accepted a quest from Eda Oweland to investigate the haunted house in Saltmarsh for a 400 gold reward."
+}
