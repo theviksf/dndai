@@ -22,7 +22,7 @@ export default function SettingsWrapper() {
     } else if (urlSessionId !== sessionId) {
       setSessionId(urlSessionId);
     }
-  }, [sessionId]);
+  }, []);
   
   const [config, setConfig] = useState<GameConfig>(() => {
     const initialSessionId = getSessionIdFromUrl() || '';

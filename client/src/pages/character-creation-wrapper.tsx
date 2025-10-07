@@ -18,7 +18,7 @@ export default function CharacterCreationWrapper() {
     } else if (urlSessionId !== sessionId) {
       setSessionId(urlSessionId);
     }
-  }, [sessionId]);
+  }, []);
 
   const handleComplete = (character: GameStateData['character']) => {
     const currentSessionId = sessionId || getSessionIdFromUrl();

@@ -18,7 +18,8 @@ CRITICAL EXTRACTION RULES:
    - Look for cues like "grateful", "angry", "distrustful", "warm welcome", "hostile", etc.
 8. Generate a brief 2-3 sentence summary (recap) of key events
 9. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
-10. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character. 
+10. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character.
+11. BUSINESSES & PROPERTIES: If the narrative describes a character purchasing, selling, owning, managing, or upgrading a business or property (e.g., tavern, shop, guildhall, farm, ship, temple, etc.), extract it under the businesses field in stateUpdates. Include details such as the business name, type, purchase cost, weekly income, running costs, manager (if mentioned), and a brief description. If the business already exists, update its entry rather than creating a duplicate. Reflect ownership or status changes (e.g., Owned, Sold, Closed, Destroyed) as appropriate. Always include a clear recap summarizing the business-related event.
 
 === CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
 
