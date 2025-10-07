@@ -1,8 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import type { DebugLogEntry } from '@shared/schema';
-import { Terminal, Brain, Clock, Image } from 'lucide-react';
+import { Terminal, Brain, Clock, Image, Copy } from 'lucide-react';
 
 interface DebugLogViewerProps {
   debugLog: DebugLogEntry[];
@@ -11,9 +13,38 @@ interface DebugLogViewerProps {
 }
 
 export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogViewerProps) {
+  const { toast } = useToast();
+  
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString() + '.' + date.getMilliseconds();
+  };
+
+  const copyToClipboard = async (text: string | undefined, label: string) => {
+    const textToCopy = text || '';
+    
+    if (!textToCopy.trim()) {
+      toast({
+        title: "Nothing to copy",
+        description: `${label} is empty`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast({
+        title: "Copied to clipboard",
+        description: `${label} copied successfully`,
+      });
+    } catch (err) {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   const primaryLogs = debugLog.filter(log => log.type === 'primary');
@@ -75,14 +106,38 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
                       )}
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">Prompt:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Prompt:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.prompt, 'Prompt')}
+                            data-testid={`copy-prompt-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.prompt}
                         </pre>
                       </div>
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">Response:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Response:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.response, 'Response')}
+                            data-testid={`copy-response-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.response}
                         </pre>
@@ -122,14 +177,38 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
                       )}
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">Prompt:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Prompt:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.prompt, 'Prompt')}
+                            data-testid={`copy-prompt-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.prompt}
                         </pre>
                       </div>
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">Response:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Response:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.response, 'Response')}
+                            data-testid={`copy-response-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.response}
                         </pre>
@@ -169,14 +248,38 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
                       )}
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">Prompt:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Prompt:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.prompt, 'Prompt')}
+                            data-testid={`copy-prompt-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.prompt}
                         </pre>
                       </div>
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">Response:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Response:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.response, 'Response')}
+                            data-testid={`copy-response-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.response}
                         </pre>
@@ -226,14 +329,38 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
                       </div>
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">Prompt:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Prompt:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.prompt, 'Prompt')}
+                            data-testid={`copy-prompt-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.prompt}
                         </pre>
                       </div>
 
                       <div>
-                        <div className="text-xs font-semibold text-foreground mb-1">API Response:</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">API Response:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.response, 'Response')}
+                            data-testid={`copy-response-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
                         <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
                           {log.response}
                         </pre>
