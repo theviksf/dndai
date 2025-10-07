@@ -49,7 +49,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
     }
   };
 
-  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation') => {
+  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory') => {
     const defaults = await loadDefaultPrompts();
     if (!defaults) return;
 
@@ -58,6 +58,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
       parser: 'parserSystemPrompt',
       imageCharacter: 'characterImagePrompt',
       imageLocation: 'locationImagePrompt',
+      backstory: 'backstorySystemPrompt',
     };
 
     const field = fieldMap[promptType] as keyof GameConfig;
@@ -328,6 +329,36 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                     </Select>
                   </div>
 
+                  {/* Backstory LLM */}
+                  <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                    <label className="block text-sm font-semibold text-foreground">
+                      Backstory LLM <span className="text-primary">(Backstory Generation)</span>
+                    </label>
+                    <Select 
+                      value={localConfig.backstoryLLM} 
+                      onValueChange={(value) => setLocalConfig(prev => ({ ...prev, backstoryLLM: value }))}
+                    >
+                      <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-backstory-llm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(() => {
+                          let filteredModels = models.filter(model => 
+                            model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                          );
+                          if (modelSortBy === 'name') {
+                            filteredModels = [...filteredModels].sort((a, b) => a.name.localeCompare(b.name));
+                          }
+                          return filteredModels.map(model => (
+                            <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                            </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Cost Estimate */}
                   <div className="bg-accent/10 border-2 border-accent rounded-md p-4 glow-effect">
                     <div className="flex items-center justify-between">
@@ -507,6 +538,35 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   data-testid="textarea-location-image-prompt"
                 />
               </div>
+
+              {/* Backstory Prompt */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Backstory Prompt <span className="text-primary">(Backstory Generation)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('backstory')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-backstory-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  System prompt for generating backstories for NPCs, companions, quests, and locations
+                </p>
+                <Textarea
+                  value={localConfig.backstorySystemPrompt}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, backstorySystemPrompt: e.target.value }))}
+                  rows={10}
+                  className="font-mono text-xs bg-input border-border"
+                  data-testid="textarea-backstory-prompt"
+                />
+              </div>
             </TabsContent>
 
             {/* Game Settings Tab */}
@@ -570,6 +630,18 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   checked={localConfig.autoGenerateImages} 
                   onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoGenerateImages: checked }))}
                   data-testid="switch-auto-generate-images"
+                />
+              </div>
+
+              <div className="flex items-center justify-between bg-muted/30 border border-border rounded-md p-4">
+                <div>
+                  <div className="text-sm font-medium text-foreground">Auto-generate Backstories</div>
+                  <div className="text-xs text-muted-foreground">Automatically create rich backstories for NPCs, companions, quests, and locations</div>
+                </div>
+                <Switch 
+                  checked={localConfig.autoGenerateBackstories} 
+                  onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoGenerateBackstories: checked }))}
+                  data-testid="switch-auto-generate-backstories"
                 />
               </div>
             </TabsContent>
