@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin, Building2 } from 'lucide-react';
+import { Backpack, ScrollText, Users, UserCircle, History, Sparkles, MapPin, Building2, X } from 'lucide-react';
 import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData, PreviousLocation, Location } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Badge } from '@/components/ui/badge';
@@ -197,19 +197,41 @@ export default function GameInfoTabs({
               inventory.map((item) => (
                 <div
                   key={item.id}
-                  className="border border-border rounded-lg p-3 bg-card hover:bg-accent/5 transition-colors"
+                  className="border border-border rounded-lg p-3 bg-card hover:bg-accent/5 transition-colors relative"
                   data-testid={`inventory-item-${item.id}`}
                 >
-                  <div className="flex items-start gap-3">
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => {
+                      if (onUpdate) {
+                        onUpdate({
+                          inventory: inventory.filter(i => i.id !== item.id)
+                        });
+                      }
+                    }}
+                    className="absolute top-2 right-2 w-5 h-5 rounded-full bg-destructive/10 hover:bg-destructive/20 text-destructive flex items-center justify-center transition-colors"
+                    data-testid={`button-delete-item-${item.id}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+
+                  <div className="flex items-start gap-3 pr-6">
                     <div className="text-2xl">{item.icon}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h4 className="font-semibold text-sm">{item.name}</h4>
-                        {item.quantity > 1 && (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                            x{item.quantity}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {item.quantity > 1 && (
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              x{item.quantity}
+                            </span>
+                          )}
+                          {item.price !== undefined && (
+                            <span className="text-xs font-mono font-semibold text-amber-600 dark:text-amber-500">
+                              {item.price} gp
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
                       {item.equipped && (
@@ -410,7 +432,20 @@ export default function GameInfoTabs({
                   data-testid={`business-${business.id}`}
                 >
                   <div className="flex items-start gap-3">
-                    <Building2 className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <EntityImageCard
+                      imageUrl={business.imageUrl}
+                      entityType="location"
+                      onClick={async () => {
+                        if (onRefreshImage) {
+                          try {
+                            await onRefreshImage('location' as any, business.id);
+                          } catch (error) {
+                            console.error('Failed to generate business image:', error);
+                          }
+                        }
+                      }}
+                      className="w-16 h-16 flex-shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-sm mb-2">{business.name}</h4>
                       <div className="space-y-1.5">

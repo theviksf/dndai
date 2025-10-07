@@ -7,11 +7,17 @@ interface CharacterStatsProps {
   statusEffects: GameStateData['statusEffects'];
   location: GameStateData['location'];
   spells: GameStateData['spells'];
+  businesses?: GameStateData['businesses'];
 }
 
-export default function CharacterStats({ character, statusEffects, location, spells = [] }: CharacterStatsProps) {
+export default function CharacterStats({ character, statusEffects, location, spells = [], businesses = [] }: CharacterStatsProps) {
   const hpPercent = (character.hp / character.maxHp) * 100;
   const xpPercent = (character.xp / character.nextLevelXp) * 100;
+  
+  // Calculate total weekly income from all businesses
+  const weeklyIncome = businesses.reduce((total, business) => {
+    return total + (business.weeklyIncome - business.runningCost);
+  }, 0);
 
   return (
     <aside className="lg:col-span-3 space-y-4">
@@ -61,12 +67,28 @@ export default function CharacterStats({ character, statusEffects, location, spe
             </div>
           </div>
 
-          {/* Gold */}
-          <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-md p-3">
-            <span className="text-sm font-medium text-foreground">Gold</span>
-            <span className="text-lg font-mono font-bold text-primary" data-testid="text-character-gold">
-              {character.gold}
-            </span>
+          {/* Gold & Weekly Income */}
+          <div className="bg-primary/10 border border-primary/30 rounded-md p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Gold</span>
+              <span className="text-lg font-mono font-bold text-primary" data-testid="text-character-gold">
+                {character.gold}
+              </span>
+            </div>
+            {businesses.length > 0 && (
+              <div className="flex items-center justify-between mt-1 pt-1 border-t border-primary/20">
+                <span className="text-xs text-muted-foreground">Weekly Income</span>
+                <span className={`text-xs font-mono font-semibold ${
+                  weeklyIncome > 0 
+                    ? 'text-green-600 dark:text-green-500' 
+                    : weeklyIncome < 0 
+                    ? 'text-red-600 dark:text-red-500' 
+                    : 'text-muted-foreground'
+                }`} data-testid="text-weekly-income">
+                  {weeklyIncome > 0 ? '+' : ''}{weeklyIncome.toLocaleString()} gp
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -34,6 +34,12 @@ export interface LocationImageMetadata {
   sessionId: string;
 }
 
+export interface BusinessImageMetadata {
+  name: string;
+  type?: string;
+  sessionId: string;
+}
+
 /**
  * Sanitize a string for use in filenames by replacing spaces and special characters with underscores
  */
@@ -74,6 +80,21 @@ export function generateLocationFilename(metadata: LocationImageMetadata): strin
   ];
   
   const filename = `loc_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
+  return filename;
+}
+
+/**
+ * Generate filename for business images
+ * Format: biz_[name]-[type]_[sessionId]_[timestamp].jpg
+ */
+export function generateBusinessFilename(metadata: BusinessImageMetadata): string {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
+  const parts = [
+    sanitizeForFilename(metadata.name || 'NA'),
+    sanitizeForFilename(metadata.type || 'shop'),
+  ];
+  
+  const filename = `biz_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
   return filename;
 }
 

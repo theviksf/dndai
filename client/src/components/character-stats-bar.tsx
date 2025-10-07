@@ -10,6 +10,7 @@ interface CharacterStatsBarProps {
   statusEffects: StatusEffect[];
   location: GameStateData['location'];
   turnCount: number;
+  businesses?: GameStateData['businesses'];
   onUpdate?: (updates: Partial<GameStateData>) => void;
   onRefreshImage?: (entityType: 'character' | 'location', entityId?: string) => Promise<void>;
 }
@@ -19,7 +20,7 @@ function getModifier(score: number): string {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
-export default function CharacterStatsBar({ character, statusEffects, location, turnCount, onUpdate, onRefreshImage }: CharacterStatsBarProps) {
+export default function CharacterStatsBar({ character, statusEffects, location, turnCount, businesses = [], onUpdate, onRefreshImage }: CharacterStatsBarProps) {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [locationDetailSheetOpen, setLocationDetailSheetOpen] = useState(false);
   const [isRefreshingImage, setIsRefreshingImage] = useState(false);
@@ -34,6 +35,11 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
   
   const turnInWeek = (turnCount % 15) + 1;
   const weekNumber = Math.floor(turnCount / 15) + 1;
+  
+  // Calculate total weekly income from all businesses
+  const weeklyIncome = businesses.reduce((total, business) => {
+    return total + (business.weeklyIncome - business.runningCost);
+  }, 0);
 
   const handleRefreshImage = async () => {
     if (!onRefreshImage) return;
@@ -252,6 +258,17 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   <span>{character.gold.toLocaleString()}</span>
                 )}
               </span>
+              {businesses.length > 0 && (
+                <span className={`text-xs font-mono ${
+                  weeklyIncome > 0 
+                    ? 'text-green-600 dark:text-green-500' 
+                    : weeklyIncome < 0 
+                    ? 'text-red-600 dark:text-red-500' 
+                    : 'text-muted-foreground'
+                }`} data-testid="text-weekly-income">
+                  {weeklyIncome > 0 ? '+' : ''}{weeklyIncome.toLocaleString()}/week
+                </span>
+              )}
             </div>
           </div>
 

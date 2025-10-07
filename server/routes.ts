@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertGameStateSchema } from "@shared/schema";
-import { uploadImageToR2, generateCharacterFilename, generateLocationFilename, type CharacterImageMetadata, type LocationImageMetadata } from "./r2-storage";
+import { uploadImageToR2, generateCharacterFilename, generateLocationFilename, generateBusinessFilename, type CharacterImageMetadata, type LocationImageMetadata, type BusinessImageMetadata } from "./r2-storage";
 import { readFile, writeFile, copyFile } from "fs/promises";
 import { join } from "path";
 
@@ -285,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/\[hair_color\]/g, entityData.hairColor || 'dark')
           .replace(/\[body_type\]/g, entityData.bodyType || 'average')
           .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.description || entityData.appearance || entityData.personality || 'determined expression');
-      } else if (entityType === 'location') {
+      } else if (entityType === 'location' || entityType === 'business') {
         filledPrompt = filledPrompt
           .replace(/\[location_name\]/g, entityData.name || 'unknown location')
           .replace(/\[location_description\]/g, entityData.description || 'a mysterious place')
@@ -418,6 +418,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sessionId: sessionId || 'default',
           };
           filename = generateLocationFilename(locationMetadata);
+        } else if (entityType === 'business') {
+          const businessMetadata: BusinessImageMetadata = {
+            name: entityData.name || 'business',
+            type: entityData.type || 'shop',
+            sessionId: sessionId || 'default',
+          };
+          filename = generateBusinessFilename(businessMetadata);
         } else {
           // Character, companion, or NPC
           const characterMetadata: CharacterImageMetadata = {

@@ -298,6 +298,7 @@ export default function Home() {
   ) => {
     try {
       let entity: any;
+      let isBusiness = false;
       
       if (entityType === 'character') {
         entity = gameState.character;
@@ -306,7 +307,19 @@ export default function Home() {
       } else if (entityType === 'npc') {
         entity = gameState.encounteredCharacters?.find(npc => npc.id === entityId);
       } else if (entityType === 'location') {
-        entity = gameState.location;
+        // Check if this is a business or actual location
+        if (entityId) {
+          const business = gameState.businesses?.find(b => b.id === entityId);
+          if (business) {
+            entity = business;
+            isBusiness = true;
+          } else {
+            // Try to find in previous locations
+            entity = gameState.previousLocations?.find(loc => loc.id === entityId) || gameState.location;
+          }
+        } else {
+          entity = gameState.location;
+        }
       }
 
       if (!entity) {
@@ -314,7 +327,7 @@ export default function Home() {
       }
 
       const result = await generateEntityImage({
-        entityType,
+        entityType: isBusiness ? 'business' as any : entityType,
         entity,
         config,
         sessionId,
@@ -336,7 +349,20 @@ export default function Home() {
               npc.id === entityId ? { ...npc, imageUrl: result.imageUrl || undefined } : npc
             );
           } else if (entityType === 'location') {
-            updated.location = { ...updated.location, imageUrl: result.imageUrl || undefined };
+            if (isBusiness) {
+              // Update business image
+              updated.businesses = updated.businesses?.map(b =>
+                b.id === entityId ? { ...b, imageUrl: result.imageUrl || undefined } : b
+              );
+            } else if (entityId) {
+              // Update previous location
+              updated.previousLocations = updated.previousLocations?.map(loc =>
+                loc.id === entityId ? { ...loc, imageUrl: result.imageUrl || undefined } : loc
+              );
+            } else {
+              // Update current location
+              updated.location = { ...updated.location, imageUrl: result.imageUrl || undefined };
+            }
           }
         }
         
@@ -860,6 +886,7 @@ export default function Home() {
         statusEffects={gameState.statusEffects}
         location={gameState.location}
         turnCount={gameState.turnCount}
+        businesses={gameState.businesses || []}
         onUpdate={updateGameState}
         onRefreshImage={refreshEntityImage}
       />
