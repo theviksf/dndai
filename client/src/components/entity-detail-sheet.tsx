@@ -440,15 +440,20 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm w-16"
               />
             ) : (
-              <span className={`ml-2 font-medium ${
-                char.relationship > 0 
-                  ? 'text-green-600 dark:text-green-400' 
-                  : char.relationship < 0 
-                  ? 'text-red-600 dark:text-red-400' 
-                  : 'text-muted-foreground'
-              }`}>
-                {typeof char.relationship === 'number' ? char.relationship : 0}
-              </span>
+              (() => {
+                const rel = typeof char.relationship === 'number' ? char.relationship : 0;
+                return (
+                  <span className={`ml-2 font-medium ${
+                    rel > 0 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : rel < 0 
+                      ? 'text-red-600 dark:text-red-400' 
+                      : 'text-muted-foreground'
+                  }`}>
+                    {rel}
+                  </span>
+                );
+              })()
             )}
           </div>
         )}
