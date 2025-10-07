@@ -346,7 +346,7 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm"
               />
             ) : (
-              <span className="ml-2 text-muted-foreground">{char.race || 'N/A'}</span>
+              <span className="ml-2 text-foreground">{char.race || 'N/A'}</span>
             )}
           </div>
         )}
@@ -360,7 +360,7 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm"
               />
             ) : (
-              <span className="ml-2 text-muted-foreground">{char.class || 'N/A'}</span>
+              <span className="ml-2 text-primary font-medium">{char.class || 'N/A'}</span>
             )}
           </div>
         )}
@@ -374,7 +374,7 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm"
               />
             ) : (
-              <span className="ml-2 text-muted-foreground">{char.role || 'N/A'}</span>
+              <span className="ml-2 text-primary font-medium">{char.role || 'N/A'}</span>
             )}
           </div>
         )}
@@ -387,7 +387,7 @@ export function EntityDetailSheet({
               inputClassName="ml-2 h-6 text-sm"
             />
           ) : (
-            <span className="ml-2 text-muted-foreground">{char.age || 'N/A'}</span>
+            <span className="ml-2 text-foreground">{char.age || 'N/A'}</span>
           )}
         </div>
         <div>
@@ -399,7 +399,7 @@ export function EntityDetailSheet({
               inputClassName="ml-2 h-6 text-sm"
             />
           ) : (
-            <span className="ml-2 text-muted-foreground">{char.sex || 'N/A'}</span>
+            <span className="ml-2 text-foreground">{char.sex || 'N/A'}</span>
           )}
         </div>
         {'level' in char && (
@@ -415,7 +415,9 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm w-16"
               />
             ) : (
-              <span className="ml-2 text-muted-foreground">{char.level || 1}</span>
+              <Badge variant="secondary" className="ml-2 font-mono font-semibold">
+                Level {char.level || 1}
+              </Badge>
             )}
           </div>
         )}
@@ -511,7 +513,9 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm"
               />
             ) : (
-              <span className="ml-2 text-muted-foreground">{char.relationship || 'N/A'}</span>
+              <Badge variant="outline" className="ml-2 text-primary border-primary font-semibold px-2 py-0.5 text-xs">
+                {char.relationship || 'N/A'}
+              </Badge>
             )}
           </div>
         )}
@@ -527,7 +531,7 @@ export function EntityDetailSheet({
                 inputClassName="ml-2 h-6 text-sm"
               />
             ) : (
-              <span className="ml-2 text-muted-foreground">{char.location || 'N/A'}</span>
+              <span className="ml-2 text-foreground">{char.location || 'N/A'}</span>
             )}
           </div>
         )}
