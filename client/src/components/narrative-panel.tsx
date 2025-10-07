@@ -779,7 +779,7 @@ export default function NarrativePanel({
       setGameState(currentState => {
         // Track entities needing images
         const imagesToGenerate: Array<{
-          entityType: 'character' | 'companion' | 'npc' | 'location';
+          entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
           entity: any;
           id: string;
         }> = [];
@@ -811,6 +811,17 @@ export default function NarrativePanel({
               entityType: 'npc',
               entity: npc,
               id: npc.id,
+            });
+          }
+        });
+
+        // Check businesses
+        currentState.businesses?.forEach(business => {
+          if (needsImageGeneration(business)) {
+            imagesToGenerate.push({
+              entityType: 'business',
+              entity: business,
+              id: business.id,
             });
           }
         });
@@ -897,6 +908,10 @@ export default function NarrativePanel({
                 } else if (entityType === 'npc') {
                   updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
                     npc.id === id ? { ...npc, imageUrl: result.imageUrl || undefined } : npc
+                  );
+                } else if (entityType === 'business') {
+                  updated.businesses = updated.businesses?.map(b =>
+                    b.id === id ? { ...b, imageUrl: result.imageUrl || undefined } : b
                   );
                 } else if (entityType === 'location') {
                   updated.location = { ...updated.location, imageUrl: result.imageUrl || undefined };
