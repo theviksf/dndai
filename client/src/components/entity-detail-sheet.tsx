@@ -654,6 +654,27 @@ export function EntityDetailSheet({
             {renderMetadata()}
           </div>
 
+          {/* Backstory */}
+          {'backstory' in entity && entity.backstory && (
+            <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+              <h3 className="font-semibold text-foreground mb-3 text-lg flex items-center gap-2">
+                <span>📜</span> Backstory
+              </h3>
+              {onUpdate ? (
+                <InlineEdit
+                  value={entity.backstory}
+                  onSave={(value) => onUpdate({ backstory: String(value) } as any)}
+                  type="textarea"
+                  inputClassName="text-sm"
+                />
+              ) : (
+                <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                  {entity.backstory}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Refresh Button */}
           {onRefresh && (
             <Button
