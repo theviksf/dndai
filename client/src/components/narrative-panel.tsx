@@ -486,7 +486,7 @@ export default function NarrativePanel({
           content: parserPrompt
         }],
         config.parserSystemPrompt,
-        2000,  // Increased from 500 to handle complex game states with companions, encounters, etc.
+        4000,  // Increased to 4000 to handle complex game states with many items, quests, companions, NPCs
         config.openRouterApiKey
       );
 

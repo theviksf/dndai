@@ -223,6 +223,10 @@ export default function Home() {
                 }));
               }
             }
+            // Ensure debugLog exists (migration for old saves)
+            if (!loadedState.debugLog) {
+              loadedState.debugLog = [];
+            }
             
             setGameState(loadedState);
             setTimeout(() => setIsLoadingState(false), 50); // Clear flag after state settles
@@ -235,14 +239,16 @@ export default function Home() {
     }
   }, [location]);
 
-  // Auto-save conversation history whenever it changes (but not during load)
+  // Auto-save conversation history and debug logs whenever they change (but not during load)
   useEffect(() => {
-    if (!isLoadingState && gameState.narrativeHistory.length > 0) {
-      console.log('[HOME] Auto-saving narrativeHistory, length:', gameState.narrativeHistory.length);
+    if (!isLoadingState && (gameState.narrativeHistory.length > 0 || (gameState.debugLog && gameState.debugLog.length > 0))) {
+      console.log('[HOME] Auto-saving game state');
+      console.log('[HOME] - narrativeHistory length:', gameState.narrativeHistory.length);
+      console.log('[HOME] - debugLog length:', gameState.debugLog?.length || 0);
       saveGameStateToStorage();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.narrativeHistory, isLoadingState]);
+  }, [gameState.narrativeHistory, gameState.debugLog, isLoadingState]);
 
   const [isGameStarted, setIsGameStarted] = useState(() => {
     const currentSessionId = getOrCreateSessionId();
