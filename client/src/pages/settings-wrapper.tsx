@@ -26,6 +26,31 @@ export default function SettingsWrapper() {
     }
   }, []);
   
+  // Reload config from localStorage when component mounts
+  useEffect(() => {
+    const currentSessionId = getSessionIdFromUrl();
+    if (!currentSessionId) return;
+    
+    console.log('[SETTINGS] Loading config for session:', currentSessionId);
+    
+    try {
+      const storageKey = getSessionStorageKey('gameConfig', currentSessionId);
+      const savedConfig = localStorage.getItem(storageKey);
+      console.log('[SETTINGS] Loaded from localStorage key:', storageKey, 'value exists:', !!savedConfig);
+      
+      if (savedConfig) {
+        const loadedConfig = JSON.parse(savedConfig);
+        console.log('[SETTINGS] Loaded config primaryLLM:', loadedConfig.primaryLLM);
+        const migratedConfig = migrateConfig(loadedConfig);
+        const finalConfig = migrateParserPrompt(migratedConfig);
+        console.log('[SETTINGS] Final config primaryLLM:', finalConfig.primaryLLM);
+        setConfig(finalConfig);
+      }
+    } catch (error) {
+      console.error('Failed to reload config from localStorage:', error);
+    }
+  }, []); // Run only on mount
+  
   const [config, setConfig] = useState<GameConfig>(() => {
     const initialSessionId = getSessionIdFromUrl() || '';
     if (!initialSessionId) {
@@ -82,7 +107,6 @@ export default function SettingsWrapper() {
   });
 
   const handleConfigSave = (newConfig: GameConfig) => {
-    setConfig(newConfig);
     const currentSessionId = sessionId || getSessionIdFromUrl();
     if (!currentSessionId) {
       console.error('No session ID available');
@@ -94,9 +118,16 @@ export default function SettingsWrapper() {
       return;
     }
     
+    console.log('[SETTINGS] Saving config with primaryLLM:', newConfig.primaryLLM);
+    
     try {
       // Save to session-scoped localStorage
-      localStorage.setItem(getSessionStorageKey('gameConfig', currentSessionId), JSON.stringify(newConfig));
+      const storageKey = getSessionStorageKey('gameConfig', currentSessionId);
+      localStorage.setItem(storageKey, JSON.stringify(newConfig));
+      console.log('[SETTINGS] Saved to localStorage key:', storageKey);
+      
+      // Update state AFTER successful save
+      setConfig(newConfig);
       
       toast({
         title: "Settings saved",
