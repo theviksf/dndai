@@ -17,67 +17,92 @@ import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle } from 'l
 import { useToast } from '@/hooks/use-toast';
 import { generateEntityImage } from '@/lib/image-generation';
 
+// Helper to get or create session ID
+function getOrCreateSessionId(): string {
+  const urlSessionId = getSessionIdFromUrl();
+  if (!urlSessionId) {
+    const newSessionId = generateSessionId();
+    setSessionIdInUrl(newSessionId);
+    return newSessionId;
+  }
+  return urlSessionId;
+}
+
 export default function Home() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string>(() => getSessionIdFromUrl() || '');
+  // Use consistent session ID across all initializers
+  const [sessionId] = useState<string>(getOrCreateSessionId);
   const [isNewSession, setIsNewSession] = useState(false);
-  
-  // Ensure session ID exists in URL
-  useEffect(() => {
-    const urlSessionId = getSessionIdFromUrl();
-    if (!urlSessionId) {
-      const newSessionId = generateSessionId();
-      setSessionIdInUrl(newSessionId);
-      setSessionId(newSessionId);
-    } else if (urlSessionId !== sessionId) {
-      setSessionId(urlSessionId);
-    }
-  }, []);
   
   const [gameState, setGameState] = useState<GameStateData>(() => {
     const defaultState = createDefaultGameState();
-    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
-    // Load character from session-scoped localStorage if exists
-    const savedCharacter = localStorage.getItem(getSessionStorageKey('gameCharacter', initialSessionId));
+    const currentSessionId = getOrCreateSessionId(); // Use same helper
+    
+    // Try to load full game state first (new storage method)
+    const savedGameState = localStorage.getItem(getSessionStorageKey('gameState', currentSessionId));
+    if (savedGameState) {
+      try {
+        const loadedState = JSON.parse(savedGameState);
+        // Ensure migrations for old data
+        if (loadedState.character) {
+          loadedState.character.sex = loadedState.character.sex || '';
+          loadedState.character.attributes = {
+            str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ac: 10,
+            ...loadedState.character.attributes,
+          };
+        }
+        if (loadedState.companions) {
+          loadedState.companions = loadedState.companions.map((c: any) => ({ ...c, sex: c.sex || '' }));
+        }
+        if (loadedState.encounteredCharacters) {
+          loadedState.encounteredCharacters = loadedState.encounteredCharacters.map((c: any) => ({ ...c, sex: c.sex || '' }));
+        }
+        if (loadedState.updatedTabs && !Array.isArray(loadedState.updatedTabs)) {
+          loadedState.updatedTabs = [];
+        }
+        if (loadedState.previousLocations && loadedState.previousLocations.length > 0) {
+          const firstLoc = loadedState.previousLocations[0];
+          if (typeof firstLoc === 'string') {
+            loadedState.previousLocations = (loadedState.previousLocations as any).map((locName: string, index: number) => ({
+              id: `loc-migrated-${index}`,
+              name: locName,
+              description: '',
+              lastVisited: Date.now() - (index * 60000),
+            }));
+          }
+        }
+        return loadedState;
+      } catch (error) {
+        console.error('Failed to load game state from localStorage:', error);
+      }
+    }
+    
+    // Fallback: Load character only from old storage method
+    const savedCharacter = localStorage.getItem(getSessionStorageKey('gameCharacter', currentSessionId));
     if (savedCharacter) {
       const loadedCharacter = JSON.parse(savedCharacter);
-      // Ensure AC exists in attributes for old saves
-      // Ensure sex exists for old saves
       defaultState.character = {
         ...loadedCharacter,
         sex: loadedCharacter.sex || '',
         attributes: {
-          str: 10,
-          dex: 10,
-          con: 10,
-          int: 10,
-          wis: 10,
-          cha: 10,
-          ac: 10,
+          str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ac: 10,
           ...loadedCharacter.attributes,
         }
       };
     }
+    
     // Migrate companions and NPCs to add sex field for old saves
     if (defaultState.companions) {
-      defaultState.companions = defaultState.companions.map(c => ({
-        ...c,
-        sex: c.sex || ''
-      }));
+      defaultState.companions = defaultState.companions.map(c => ({ ...c, sex: c.sex || '' }));
     }
     if (defaultState.encounteredCharacters) {
-      defaultState.encounteredCharacters = defaultState.encounteredCharacters.map(c => ({
-        ...c,
-        sex: c.sex || ''
-      }));
+      defaultState.encounteredCharacters = defaultState.encounteredCharacters.map(c => ({ ...c, sex: c.sex || '' }));
     }
-    // Migrate updatedTabs from Set (which becomes {}) to array
     if (defaultState.updatedTabs && !Array.isArray(defaultState.updatedTabs)) {
       defaultState.updatedTabs = [];
     }
-    // Migrate previousLocations from string[] to PreviousLocation[]
     if (defaultState.previousLocations && defaultState.previousLocations.length > 0) {
       const firstLoc = defaultState.previousLocations[0];
       if (typeof firstLoc === 'string') {
@@ -85,16 +110,16 @@ export default function Home() {
           id: `loc-migrated-${index}`,
           name: locName,
           description: '',
-          lastVisited: Date.now() - (index * 60000), // Stagger times by 1 minute each
+          lastVisited: Date.now() - (index * 60000),
         }));
       }
     }
     return defaultState;
   });
   const [config, setConfig] = useState<GameConfig>(() => {
-    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
+    const currentSessionId = getOrCreateSessionId();
     // Load config from session-scoped localStorage
-    const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', initialSessionId));
+    const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', currentSessionId));
     if (!savedConfig) {
       setIsNewSession(true);
       return createDefaultConfig();
@@ -119,24 +144,33 @@ export default function Home() {
   // Update config with prompts from .md files when they're loaded for new sessions
   useEffect(() => {
     if (isNewSession && defaultPrompts) {
-      setConfig(prev => ({
-        ...prev,
+      const newConfig = {
+        ...config,
         dmSystemPrompt: defaultPrompts.primary,
         parserSystemPrompt: defaultPrompts.parser,
         characterImagePrompt: defaultPrompts.imageCharacter,
         locationImagePrompt: defaultPrompts.imageLocation,
-      }));
+      };
+      setConfig(newConfig);
+      
+      // Save config to localStorage for new session
+      try {
+        localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(newConfig));
+      } catch (error) {
+        console.error('Failed to save initial config to localStorage:', error);
+      }
+      
       setIsNewSession(false);
     }
-  }, [isNewSession, defaultPrompts]);
+  }, [isNewSession, defaultPrompts, sessionId, config]);
   const [isGameStarted, setIsGameStarted] = useState(() => {
-    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
-    return localStorage.getItem(getSessionStorageKey('isGameStarted', initialSessionId)) === 'true';
+    const currentSessionId = getOrCreateSessionId();
+    return localStorage.getItem(getSessionStorageKey('isGameStarted', currentSessionId)) === 'true';
   });
   const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
   const [turnSnapshots, setTurnSnapshots] = useState<TurnSnapshot[]>(() => {
-    const initialSessionId = getSessionIdFromUrl() || generateSessionId();
-    const savedSnapshots = localStorage.getItem(getSessionStorageKey('turnSnapshots', initialSessionId));
+    const currentSessionId = getOrCreateSessionId();
+    const savedSnapshots = localStorage.getItem(getSessionStorageKey('turnSnapshots', currentSessionId));
     return savedSnapshots ? JSON.parse(savedSnapshots) : [];
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -197,11 +231,12 @@ export default function Home() {
     // (player will get error when trying to take action)
   }, []);
 
-  // Reload config and character when page is visible again (returning from other pages)
+  // Reload config and full game state when page is visible again (returning from other pages)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', sessionId));
+        const savedGameState = localStorage.getItem(getSessionStorageKey('gameState', sessionId));
         const savedCharacter = localStorage.getItem(getSessionStorageKey('gameCharacter', sessionId));
         const gameStarted = localStorage.getItem(getSessionStorageKey('isGameStarted', sessionId));
         
@@ -209,7 +244,31 @@ export default function Home() {
           const loadedConfig = JSON.parse(savedConfig);
           setConfig(migrateParserPrompt(loadedConfig));
         }
-        if (savedCharacter) {
+        
+        // Load full game state first (new method)
+        if (savedGameState) {
+          try {
+            const loadedState = JSON.parse(savedGameState);
+            // Apply migrations
+            if (loadedState.character) {
+              loadedState.character.sex = loadedState.character.sex || '';
+              loadedState.character.attributes = {
+                str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ac: 10,
+                ...loadedState.character.attributes,
+              };
+            }
+            if (loadedState.companions) {
+              loadedState.companions = loadedState.companions.map((c: any) => ({ ...c, sex: c.sex || '' }));
+            }
+            if (loadedState.encounteredCharacters) {
+              loadedState.encounteredCharacters = loadedState.encounteredCharacters.map((c: any) => ({ ...c, sex: c.sex || '' }));
+            }
+            setGameState(loadedState);
+          } catch (error) {
+            console.error('Failed to load full game state on visibility change:', error);
+          }
+        } else if (savedCharacter) {
+          // Fallback to old character-only method
           const loadedCharacter = JSON.parse(savedCharacter);
           setGameState(prev => ({
             ...prev,
@@ -217,22 +276,15 @@ export default function Home() {
               ...loadedCharacter,
               sex: loadedCharacter.sex || '',
               attributes: {
-                str: 10,
-                dex: 10,
-                con: 10,
-                int: 10,
-                wis: 10,
-                cha: 10,
-                ac: 10,
+                str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ac: 10,
                 ...loadedCharacter.attributes,
               }
             },
-            previousLocations: prev.previousLocations || [],
-            // Migrate companions and NPCs for old saves
             companions: (prev.companions || []).map(c => ({ ...c, sex: c.sex || '' })),
             encounteredCharacters: (prev.encounteredCharacters || []).map(c => ({ ...c, sex: c.sex || '' }))
           }));
         }
+        
         if (gameStarted === 'true') {
           setIsGameStarted(true);
         }
@@ -241,7 +293,7 @@ export default function Home() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [sessionId]);
 
   const handleSaveGame = () => {
     saveMutation.mutate();
@@ -257,6 +309,7 @@ export default function Home() {
   const localStorageSize = useMemo(() => {
     let totalSize = 0;
     const keys = [
+      getSessionStorageKey('gameState', sessionId),
       getSessionStorageKey('gameCharacter', sessionId),
       getSessionStorageKey('gameConfig', sessionId),
       getSessionStorageKey('turnSnapshots', sessionId),
@@ -283,7 +336,54 @@ export default function Home() {
     return (bytes / (k * k)).toFixed(2) + ' MB';
   };
 
+  // Helper to save game state to localStorage (without updating state)
+  const saveGameStateToStorage = () => {
+    try {
+      // Create a copy of the current game state without imageUrls
+      const stateToSave = {
+        ...gameState,
+        character: gameState.character.imageUrl ? 
+          { ...gameState.character, imageUrl: undefined } : gameState.character,
+        location: gameState.location?.imageUrl ? 
+          { ...gameState.location, imageUrl: undefined } : gameState.location,
+        previousLocations: gameState.previousLocations?.map(loc => 
+          loc.imageUrl ? { ...loc, imageUrl: undefined } : loc
+        ),
+        companions: gameState.companions?.map(c => 
+          c.imageUrl ? { ...c, imageUrl: undefined } : c
+        ),
+        encounteredCharacters: gameState.encounteredCharacters?.map(npc => 
+          npc.imageUrl ? { ...npc, imageUrl: undefined } : npc
+        ),
+        businesses: gameState.businesses?.map(b => 
+          b.imageUrl ? { ...b, imageUrl: undefined } : b
+        ),
+      };
+      
+      // Save full game state
+      localStorage.setItem(getSessionStorageKey('gameState', sessionId), JSON.stringify(stateToSave));
+      localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(config));
+      
+      // Keep legacy character save for backwards compatibility
+      const { imageUrl, ...characterWithoutImage } = gameState.character;
+      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
+    } catch (error) {
+      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+        console.warn('localStorage quota exceeded when saving game state');
+        toast({
+          title: "Storage quota exceeded",
+          description: "Your browser storage is full. Game updates won't persist after page reload. Start a new session using 'New Game' to fix this.",
+          variant: "destructive",
+        });
+      } else {
+        console.error('Failed to save game state:', error);
+      }
+    }
+  };
+
   const updateGameState = (updates: Partial<GameStateData>) => {
+    let updatedState: GameStateData;
+    
     setGameState(prev => {
       const newState = {
         ...prev,
@@ -318,34 +418,13 @@ export default function Home() {
         newState.previousLocations = [];
       }
       
+      updatedState = newState;
       return newState;
     });
     
-    if (updates.character) {
-      try {
-        // Exclude imageUrl when saving character to localStorage to save space
-        const { imageUrl, ...characterWithoutImage } = {
-          ...gameState.character,
-          ...updates.character,
-        };
-        localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
-      } catch (error) {
-        if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-          console.warn('localStorage quota exceeded when saving character updates');
-          toast({
-            title: "Storage quota exceeded",
-            description: "Your browser storage is full. Character updates won't persist after page reload. Start a new session using 'New Game' to fix this.",
-            variant: "destructive",
-          });
-        } else {
-          console.error('Failed to save character updates:', error);
-          toast({
-            title: "Storage error",
-            description: "Failed to save character updates. Your progress may not persist.",
-            variant: "destructive",
-          });
-        }
-      }
+    // Save after state update
+    if (updates.character || updates.inventory || updates.quests || updates.companions || updates.encounteredCharacters || updates.location) {
+      saveGameStateToStorage();
     }
   };
 
@@ -1025,6 +1104,7 @@ export default function Home() {
             <NarrativePanel 
               gameState={gameState}
               setGameState={setGameState}
+              saveGameState={saveGameStateToStorage}
               config={config}
               costTracker={costTracker}
               setCostTracker={setCostTracker}

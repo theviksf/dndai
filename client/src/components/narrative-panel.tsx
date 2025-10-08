@@ -16,6 +16,7 @@ import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backsto
 interface NarrativePanelProps {
   gameState: GameStateData;
   setGameState: (state: GameStateData | ((prev: GameStateData) => GameStateData)) => void;
+  saveGameState: () => void;
   config: GameConfig;
   costTracker: CostTracker;
   setCostTracker: (tracker: CostTracker | ((prev: CostTracker) => CostTracker)) => void;
@@ -312,7 +313,8 @@ function validateAndCoerceParserData(data: any): any {
 
 export default function NarrativePanel({ 
   gameState, 
-  setGameState, 
+  setGameState,
+  saveGameState,
   config, 
   costTracker, 
   setCostTracker,
@@ -770,6 +772,14 @@ export default function NarrativePanel({
 
         return updated;
       });
+
+      // Trigger save after parser updates - use setTimeout to ensure setGameState completes first
+      if (!parsingFailed && parsedData && parsedData.stateUpdates) {
+        setTimeout(() => {
+          // Save the current game state (which was just updated by parser's setGameState)
+          saveGameState();
+        }, 10);
+      }
 
       // Update cost tracker
       const primaryModel = models.find(m => m.id === config.primaryLLM);
