@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
+import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
 
 interface NarrativePanelProps {
   gameState: GameStateData;
@@ -936,6 +937,137 @@ export default function NarrativePanel({
               }));
             }
           });
+        }
+
+        // Auto-generate backstories for new entities (async, non-blocking)
+        if (config.autoGenerateBackstories) {
+          // Track entities needing backstories
+          const backstoriesToGenerate: Array<{
+            entityType: 'companion' | 'npc' | 'quest' | 'location';
+            entity: any;
+            id: string;
+          }> = [];
+
+          // Check companions
+          currentState.companions?.forEach(companion => {
+            if (needsBackstoryGeneration(companion)) {
+              backstoriesToGenerate.push({
+                entityType: 'companion',
+                entity: companion,
+                id: companion.id,
+              });
+            }
+          });
+
+          // Check NPCs
+          currentState.encounteredCharacters?.forEach(npc => {
+            if (needsBackstoryGeneration(npc)) {
+              backstoriesToGenerate.push({
+                entityType: 'npc',
+                entity: npc,
+                id: npc.id,
+              });
+            }
+          });
+
+          // Check quests
+          currentState.quests?.forEach(quest => {
+            if (needsBackstoryGeneration(quest)) {
+              backstoriesToGenerate.push({
+                entityType: 'quest',
+                entity: quest,
+                id: quest.id,
+              });
+            }
+          });
+
+          // Check location
+          if (needsBackstoryGeneration(currentState.location)) {
+            backstoriesToGenerate.push({
+              entityType: 'location',
+              entity: currentState.location,
+              id: 'current',
+            });
+          }
+
+          // Generate backstories in the background
+          if (backstoriesToGenerate.length > 0) {
+            Promise.allSettled(
+              backstoriesToGenerate.map(async ({ entityType, entity, id }) => {
+                const result = await generateEntityBackstory({
+                  entityType,
+                  entity,
+                  gameState: currentState,
+                  config,
+                });
+                return { entityType, id, result };
+              })
+            ).then(settledResults => {
+              // Collect debug logs
+              const backstoryDebugLogs: any[] = [];
+              
+              // Update game state with generated backstories
+              setGameState(prev => {
+                const updated = { ...prev };
+                
+                settledResults.forEach((settledResult, index) => {
+                  if (settledResult.status === 'rejected') {
+                    console.error('Backstory generation rejected:', settledResult.reason);
+                    // Create a fallback debug entry for the rejected promise
+                    const rejectedEntity = backstoriesToGenerate[index];
+                    backstoryDebugLogs.push({
+                      id: `backstory-rejected-${Date.now()}-${index}`,
+                      timestamp: Date.now(),
+                      type: 'backstory' as const,
+                      prompt: 'Promise rejected before backstory generation could complete',
+                      response: JSON.stringify({ 
+                        error: settledResult.reason?.message || String(settledResult.reason),
+                        stack: settledResult.reason?.stack 
+                      }, null, 2),
+                      model: config.backstoryLLM || 'unknown',
+                      entityType: rejectedEntity.entityType,
+                      error: settledResult.reason?.message || 'Promise rejected',
+                    });
+                    return;
+                  }
+                  
+                  const { entityType, id, result } = settledResult.value;
+                  
+                  // Always collect debug log entry (for both successful and failed backstory generations)
+                  if (result.debugLogEntry) {
+                    backstoryDebugLogs.push(result.debugLogEntry);
+                  }
+                  
+                  // Only update state if backstory was generated
+                  if (!result.backstory) return;
+
+                  // Clone arrays to ensure React detects state changes
+                  if (entityType === 'companion') {
+                    updated.companions = updated.companions?.map(c =>
+                      c.id === id ? { ...c, backstory: result.backstory || undefined } : c
+                    );
+                  } else if (entityType === 'npc') {
+                    updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
+                      npc.id === id ? { ...npc, backstory: result.backstory || undefined } : npc
+                    );
+                  } else if (entityType === 'quest') {
+                    updated.quests = updated.quests?.map(q =>
+                      q.id === id ? { ...q, backstory: result.backstory || undefined } : q
+                    );
+                  } else if (entityType === 'location') {
+                    updated.location = { ...updated.location, backstory: result.backstory || undefined };
+                  }
+                });
+                
+                // Add backstory debug logs to debugLog
+                if (backstoryDebugLogs.length > 0) {
+                  updated.debugLog = [...(updated.debugLog || []), ...backstoryDebugLogs];
+                }
+
+                return updated;
+              });
+            });
+          }
         }
 
         return currentState;
