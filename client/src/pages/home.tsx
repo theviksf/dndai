@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -29,12 +29,15 @@ function getOrCreateSessionId(): string {
 }
 
 export default function Home() {
-  const { toast } = useToast();
+  const { toast} = useToast();
   const [, setLocation] = useLocation();
   const [gameId, setGameId] = useState<string | null>(null);
   // Use consistent session ID across all initializers
   const [sessionId] = useState<string>(getOrCreateSessionId);
   const [isNewSession, setIsNewSession] = useState(false);
+  
+  // Ref to always have latest gameState (avoids stale closures)
+  const gameStateRef = useRef<GameStateData | null>(null);
   
   const [gameState, setGameState] = useState<GameStateData>(() => {
     const defaultState = createDefaultGameState();
@@ -163,6 +166,78 @@ export default function Home() {
       setIsNewSession(false);
     }
   }, [isNewSession, defaultPrompts, sessionId, config]);
+
+  // Keep ref in sync with latest gameState
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  // Track if we're loading to prevent auto-save during load
+  const [isLoadingState, setIsLoadingState] = useState(false);
+
+  // Reload gameState from localStorage when returning from other pages (like settings)
+  const [location] = useLocation();
+  useEffect(() => {
+    // Only reload if we're on the home page and have a session ID
+    if (location === '/' || location.startsWith('/?session=')) {
+      const currentSessionId = getSessionIdFromUrl();
+      if (currentSessionId) {
+        const savedGameState = localStorage.getItem(getSessionStorageKey('gameState', currentSessionId));
+        if (savedGameState) {
+          try {
+            setIsLoadingState(true); // Prevent auto-save during load
+            const loadedState = JSON.parse(savedGameState);
+            console.log('[HOME] Reloading gameState from localStorage, narrativeHistory length:', loadedState.narrativeHistory?.length || 0);
+            
+            // Apply migrations
+            if (loadedState.character) {
+              loadedState.character.sex = loadedState.character.sex || '';
+              loadedState.character.attributes = {
+                str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ac: 10,
+                ...loadedState.character.attributes,
+              };
+            }
+            if (loadedState.companions) {
+              loadedState.companions = loadedState.companions.map((c: any) => ({ ...c, sex: c.sex || '' }));
+            }
+            if (loadedState.encounteredCharacters) {
+              loadedState.encounteredCharacters = loadedState.encounteredCharacters.map((c: any) => ({ ...c, sex: c.sex || '' }));
+            }
+            if (loadedState.updatedTabs && !Array.isArray(loadedState.updatedTabs)) {
+              loadedState.updatedTabs = [];
+            }
+            if (loadedState.previousLocations && loadedState.previousLocations.length > 0) {
+              const firstLoc = loadedState.previousLocations[0];
+              if (typeof firstLoc === 'string') {
+                loadedState.previousLocations = (loadedState.previousLocations as any).map((locName: string, index: number) => ({
+                  id: `loc-migrated-${index}`,
+                  name: locName,
+                  description: '',
+                  lastVisited: Date.now() - (index * 60000),
+                }));
+              }
+            }
+            
+            setGameState(loadedState);
+            setTimeout(() => setIsLoadingState(false), 50); // Clear flag after state settles
+          } catch (error) {
+            console.error('[HOME] Failed to reload gameState:', error);
+            setIsLoadingState(false);
+          }
+        }
+      }
+    }
+  }, [location]);
+
+  // Auto-save conversation history whenever it changes (but not during load)
+  useEffect(() => {
+    if (!isLoadingState && gameState.narrativeHistory.length > 0) {
+      console.log('[HOME] Auto-saving narrativeHistory, length:', gameState.narrativeHistory.length);
+      saveGameStateToStorage();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.narrativeHistory, isLoadingState]);
+
   const [isGameStarted, setIsGameStarted] = useState(() => {
     const currentSessionId = getOrCreateSessionId();
     return localStorage.getItem(getSessionStorageKey('isGameStarted', currentSessionId)) === 'true';
@@ -338,34 +413,39 @@ export default function Home() {
 
   // Helper to save game state to localStorage (without updating state)
   const saveGameStateToStorage = () => {
+    // Always use the latest gameState from ref (avoids stale closures)
+    const currentGameState = gameStateRef.current || gameState;
+    
     try {
       // Create a copy of the current game state without imageUrls
       const stateToSave = {
-        ...gameState,
-        character: gameState.character.imageUrl ? 
-          { ...gameState.character, imageUrl: undefined } : gameState.character,
-        location: gameState.location?.imageUrl ? 
-          { ...gameState.location, imageUrl: undefined } : gameState.location,
-        previousLocations: gameState.previousLocations?.map(loc => 
+        ...currentGameState,
+        character: currentGameState.character.imageUrl ? 
+          { ...currentGameState.character, imageUrl: undefined } : currentGameState.character,
+        location: currentGameState.location?.imageUrl ? 
+          { ...currentGameState.location, imageUrl: undefined } : currentGameState.location,
+        previousLocations: currentGameState.previousLocations?.map(loc => 
           loc.imageUrl ? { ...loc, imageUrl: undefined } : loc
         ),
-        companions: gameState.companions?.map(c => 
+        companions: currentGameState.companions?.map(c => 
           c.imageUrl ? { ...c, imageUrl: undefined } : c
         ),
-        encounteredCharacters: gameState.encounteredCharacters?.map(npc => 
+        encounteredCharacters: currentGameState.encounteredCharacters?.map(npc => 
           npc.imageUrl ? { ...npc, imageUrl: undefined } : npc
         ),
-        businesses: gameState.businesses?.map(b => 
+        businesses: currentGameState.businesses?.map(b => 
           b.imageUrl ? { ...b, imageUrl: undefined } : b
         ),
       };
+      
+      console.log('[SAVE] Saving gameState, narrativeHistory length:', currentGameState.narrativeHistory?.length || 0);
       
       // Save full game state
       localStorage.setItem(getSessionStorageKey('gameState', sessionId), JSON.stringify(stateToSave));
       localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(config));
       
       // Keep legacy character save for backwards compatibility
-      const { imageUrl, ...characterWithoutImage } = gameState.character;
+      const { imageUrl, ...characterWithoutImage } = currentGameState.character;
       localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
     } catch (error) {
       if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
