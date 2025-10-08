@@ -286,10 +286,12 @@ export default function Home() {
     
     if (updates.character) {
       try {
-        localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify({
+        // Exclude imageUrl when saving character to localStorage to save space
+        const { imageUrl, ...characterWithoutImage } = {
           ...gameState.character,
           ...updates.character,
-        }));
+        };
+        localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
       } catch (error) {
         if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
           console.warn('localStorage quota exceeded when saving character updates');
@@ -456,6 +458,22 @@ export default function Home() {
       delete stateWithoutImages.location.imageUrl;
     }
     
+    // Remove imageUrl from businesses
+    if (stateWithoutImages.businesses) {
+      stateWithoutImages.businesses = stateWithoutImages.businesses.map((b: any) => {
+        const { imageUrl, ...rest } = b;
+        return rest;
+      });
+    }
+    
+    // Remove imageUrl from previousLocations
+    if (stateWithoutImages.previousLocations) {
+      stateWithoutImages.previousLocations = stateWithoutImages.previousLocations.map((loc: any) => {
+        const { imageUrl, ...rest } = loc;
+        return rest;
+      });
+    }
+    
     // Limit debug log to last 30 entries and remove base64 images from image logs
     if (stateWithoutImages.debugLog && Array.isArray(stateWithoutImages.debugLog)) {
       stateWithoutImages.debugLog = stateWithoutImages.debugLog
@@ -556,7 +574,9 @@ export default function Home() {
 
     // Update session-scoped localStorage with restored data
     try {
-      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(restoredState.character));
+      // Exclude imageUrl when saving character to localStorage
+      const { imageUrl, ...characterWithoutImage } = restoredState.character;
+      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
       localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(remainingSnapshots));
       
       toast({
@@ -719,7 +739,9 @@ export default function Home() {
         
         // Update session-scoped localStorage with migrated data
         try {
-          localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(migratedState.character));
+          // Exclude imageUrl when saving character to localStorage
+          const { imageUrl, ...characterWithoutImage } = migratedState.character;
+          localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
           localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(migratedConfig));
           localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(migratedSnapshots));
           localStorage.setItem(getSessionStorageKey('isGameStarted', sessionId), 'true');

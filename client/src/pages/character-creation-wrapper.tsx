@@ -35,8 +35,9 @@ export default function CharacterCreationWrapper() {
     }
     
     try {
-      // Save character to session-scoped localStorage
-      localStorage.setItem(getSessionStorageKey('gameCharacter', currentSessionId), JSON.stringify(character));
+      // Exclude imageUrl when saving character to localStorage (may have imageUrl if imported from file)
+      const { imageUrl, ...characterWithoutImage } = character;
+      localStorage.setItem(getSessionStorageKey('gameCharacter', currentSessionId), JSON.stringify(characterWithoutImage));
       localStorage.setItem(getSessionStorageKey('isGameStarted', currentSessionId), 'true');
       
       // Navigate back to home with session ID
