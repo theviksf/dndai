@@ -417,36 +417,21 @@ export default function Home() {
     const currentGameState = gameStateRef.current || gameState;
     
     try {
-      // Create a copy of the current game state without imageUrls
+      // Save complete game state INCLUDING R2 image URLs (they're small strings, not base64)
       const stateToSave = {
         ...currentGameState,
-        character: currentGameState.character.imageUrl ? 
-          { ...currentGameState.character, imageUrl: undefined } : currentGameState.character,
-        location: currentGameState.location?.imageUrl ? 
-          { ...currentGameState.location, imageUrl: undefined } : currentGameState.location,
-        previousLocations: currentGameState.previousLocations?.map(loc => 
-          loc.imageUrl ? { ...loc, imageUrl: undefined } : loc
-        ),
-        companions: currentGameState.companions?.map(c => 
-          c.imageUrl ? { ...c, imageUrl: undefined } : c
-        ),
-        encounteredCharacters: currentGameState.encounteredCharacters?.map(npc => 
-          npc.imageUrl ? { ...npc, imageUrl: undefined } : npc
-        ),
-        businesses: currentGameState.businesses?.map(b => 
-          b.imageUrl ? { ...b, imageUrl: undefined } : b
-        ),
       };
       
       console.log('[SAVE] Saving gameState, narrativeHistory length:', currentGameState.narrativeHistory?.length || 0);
+      console.log('[SAVE] Character imageUrl present:', !!currentGameState.character.imageUrl);
+      console.log('[SAVE] Location imageUrl present:', !!currentGameState.location?.imageUrl);
       
-      // Save full game state
+      // Save full game state WITH image URLs
       localStorage.setItem(getSessionStorageKey('gameState', sessionId), JSON.stringify(stateToSave));
       localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(config));
       
-      // Keep legacy character save for backwards compatibility
-      const { imageUrl, ...characterWithoutImage } = currentGameState.character;
-      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
+      // Keep legacy character save for backwards compatibility (with image URL)
+      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(currentGameState.character));
     } catch (error) {
       if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
         console.warn('localStorage quota exceeded when saving game state');
