@@ -285,10 +285,28 @@ export default function Home() {
     });
     
     if (updates.character) {
-      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify({
-        ...gameState.character,
-        ...updates.character,
-      }));
+      try {
+        localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify({
+          ...gameState.character,
+          ...updates.character,
+        }));
+      } catch (error) {
+        if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+          console.warn('localStorage quota exceeded when saving character updates');
+          toast({
+            title: "Storage quota exceeded",
+            description: "Your browser storage is full. Character updates won't persist after page reload. Start a new session using 'New Game' to fix this.",
+            variant: "destructive",
+          });
+        } else {
+          console.error('Failed to save character updates:', error);
+          toast({
+            title: "Storage error",
+            description: "Failed to save character updates. Your progress may not persist.",
+            variant: "destructive",
+          });
+        }
+      }
     }
   };
 
@@ -469,6 +487,11 @@ export default function Home() {
       } catch (e: any) {
         if (e.name === 'QuotaExceededError') {
           console.warn('localStorage quota exceeded, clearing old snapshots');
+          toast({
+            title: "Storage quota exceeded",
+            description: "Undo history being reduced to save space. Consider starting a new session.",
+            variant: "destructive",
+          });
           // If quota exceeded, keep only the last 3 snapshots and try again
           const minimalSnapshots = newSnapshots.slice(-3);
           try {
@@ -477,11 +500,21 @@ export default function Home() {
           } catch (e2) {
             // If still failing, clear all snapshots and continue without undo
             console.error('Failed to save snapshots even after cleanup, disabling undo');
+            toast({
+              title: "Storage full - Undo disabled",
+              description: "Your browser storage is completely full. Undo feature is now disabled. Start a new session to fix this.",
+              variant: "destructive",
+            });
             localStorage.removeItem(getSessionStorageKey('turnSnapshots', sessionId));
             return [];
           }
         }
         console.error('Error saving snapshots:', e);
+        toast({
+          title: "Error saving undo history",
+          description: "Failed to save turn history. Undo may not work properly.",
+          variant: "destructive",
+        });
       }
       
       return newSnapshots;
@@ -522,13 +555,31 @@ export default function Home() {
     setTurnSnapshots(remainingSnapshots);
 
     // Update session-scoped localStorage with restored data
-    localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(restoredState.character));
-    localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(remainingSnapshots));
-
-    toast({
-      title: "Turn undone",
-      description: "Restored to previous state",
-    });
+    try {
+      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(restoredState.character));
+      localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(remainingSnapshots));
+      
+      toast({
+        title: "Turn undone",
+        description: "Restored to previous state",
+      });
+    } catch (error) {
+      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+        console.warn('localStorage quota exceeded when restoring turn');
+        toast({
+          title: "Turn undone (Storage Warning)",
+          description: "State restored in memory, but storage is full. Changes won't persist after page reload. Start a new session to fix this.",
+          variant: "destructive",
+        });
+      } else {
+        console.error('Failed to save restored state:', error);
+        toast({
+          title: "Turn undone (Storage Warning)",
+          description: "State restored but may not persist after page reload.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleExport = (includeApiKey: boolean) => {
@@ -667,16 +718,36 @@ export default function Home() {
         setTurnSnapshots(migratedSnapshots);
         
         // Update session-scoped localStorage with migrated data
-        localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(migratedState.character));
-        localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(migratedConfig));
-        localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(migratedSnapshots));
-        localStorage.setItem(getSessionStorageKey('isGameStarted', sessionId), 'true');
-        setIsGameStarted(true);
-        
-        toast({
-          title: "Game Loaded",
-          description: `Successfully imported ${file.name}`,
-        });
+        try {
+          localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(migratedState.character));
+          localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(migratedConfig));
+          localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(migratedSnapshots));
+          localStorage.setItem(getSessionStorageKey('isGameStarted', sessionId), 'true');
+          setIsGameStarted(true);
+          
+          toast({
+            title: "Game Loaded",
+            description: `Successfully imported ${file.name}`,
+          });
+        } catch (storageError) {
+          // Even if localStorage fails, the state is already set in memory
+          setIsGameStarted(true);
+          
+          if (storageError instanceof DOMException && (storageError.name === 'QuotaExceededError' || storageError.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+            toast({
+              title: "Game Loaded (Storage Warning)",
+              description: "Game loaded successfully, but storage is full. Some data may not persist on page reload. Consider starting a new session.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Game Loaded (Storage Warning)",
+              description: "Game loaded successfully, but some data may not persist. Consider starting a new session.",
+              variant: "destructive",
+            });
+          }
+          console.error('Failed to save imported data to localStorage:', storageError);
+        }
       } catch (error: any) {
         toast({
           title: "Import Failed",
