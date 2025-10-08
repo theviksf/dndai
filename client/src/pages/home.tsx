@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -244,6 +244,36 @@ export default function Home() {
     // Generate new session ID and force full page reload to reset all state
     const newSessionId = generateSessionId();
     window.location.href = buildSessionUrl('/', newSessionId);
+  };
+
+  // Calculate localStorage size for current session
+  const localStorageSize = useMemo(() => {
+    let totalSize = 0;
+    const keys = [
+      getSessionStorageKey('gameCharacter', sessionId),
+      getSessionStorageKey('gameConfig', sessionId),
+      getSessionStorageKey('turnSnapshots', sessionId),
+      getSessionStorageKey('isGameStarted', sessionId),
+    ];
+    
+    keys.forEach(key => {
+      const item = localStorage.getItem(key);
+      if (item) {
+        // Calculate size in bytes (UTF-16 encoding, 2 bytes per character)
+        totalSize += item.length * 2;
+      }
+    });
+    
+    return totalSize;
+  }, [gameState, config, turnSnapshots, sessionId]);
+
+  // Format bytes to human-readable format
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    if (bytes < k) return bytes.toFixed(0) + ' B';
+    if (bytes < k * k) return (bytes / k).toFixed(1) + ' KB';
+    return (bytes / (k * k)).toFixed(2) + ' MB';
   };
 
   const updateGameState = (updates: Partial<GameStateData>) => {
@@ -921,15 +951,20 @@ export default function Home() {
                 <span className="hidden md:inline">New Game</span>
               </Button>
               
-              <Button
-                onClick={() => setShowExportDialog(true)}
-                variant="outline"
-                className="bg-muted hover:bg-muted/80"
-                data-testid="button-export-game"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Export</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowExportDialog(true)}
+                  variant="outline"
+                  className="bg-muted hover:bg-muted/80"
+                  data-testid="button-export-game"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Export</span>
+                </Button>
+                <span className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded-md" data-testid="text-storage-size">
+                  {formatBytes(localStorageSize)}
+                </span>
+              </div>
               
               <Button
                 onClick={handleImport}
