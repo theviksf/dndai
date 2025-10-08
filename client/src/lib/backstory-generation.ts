@@ -204,5 +204,33 @@ export function needsBackstoryGeneration(
   entity: GameCharacter | Companion | EncounteredCharacter | Location | Quest
 ): boolean {
   // GameCharacter doesn't have backstory field, only other entity types do
-  return 'backstory' in entity && !entity.backstory;
+  // Check for entity-specific required properties to determine type
+  
+  // Check for Companion (has required 'personality' field, unique to companions)
+  if ('personality' in entity) {
+    const companion = entity as Companion;
+    return !companion.backstory;
+  }
+  
+  // Check for EncounteredCharacter/NPC (has 'role' field, unique to NPCs)
+  if ('role' in entity) {
+    const npc = entity as EncounteredCharacter;
+    return !npc.backstory;
+  }
+  
+  // Check for Quest (has 'objectives' array, unique to quests)
+  if ('objectives' in entity) {
+    const quest = entity as Quest;
+    return !quest.backstory;
+  }
+  
+  // Check for Location (has name & description, but NOT personality/role/objectives/attributes)
+  // Use process of elimination, but explicitly exclude GameCharacter (which has 'attributes')
+  if ('name' in entity && 'description' in entity && 
+      !('personality' in entity) && !('role' in entity) && !('objectives' in entity) && !('attributes' in entity)) {
+    const location = entity as Location;
+    return !location.backstory;
+  }
+  
+  return false;
 }
