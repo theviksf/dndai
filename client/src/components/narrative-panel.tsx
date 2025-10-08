@@ -420,13 +420,32 @@ export default function NarrativePanel({
       });
 
       // Log primary LLM call to debug log
+      // IMPORTANT: Strip all imageUrls from context to prevent localStorage bloat
+      const contextForDebugLog = {
+        ...context,
+        character: context.character.imageUrl ? { ...context.character, imageUrl: '[removed]' } : context.character,
+        location: context.location?.imageUrl ? { ...context.location, imageUrl: '[removed]' } : context.location,
+        previousLocations: context.previousLocations?.map((loc: any) => 
+          loc.imageUrl ? { ...loc, imageUrl: '[removed]' } : loc
+        ),
+        companions: context.companions?.map((c: any) => 
+          c.imageUrl ? { ...c, imageUrl: '[removed]' } : c
+        ),
+        encounteredCharacters: context.encounteredCharacters?.map((npc: any) => 
+          npc.imageUrl ? { ...npc, imageUrl: '[removed]' } : npc
+        ),
+        businesses: context.businesses?.map((b: any) => 
+          b.imageUrl ? { ...b, imageUrl: '[removed]' } : b
+        ),
+      };
+      
       const primaryLogEntry = {
         id: `primary-${Date.now()}`,
         timestamp: Date.now(),
         type: 'primary' as const,
         prompt: JSON.stringify({
           system: config.dmSystemPrompt,
-          context
+          context: contextForDebugLog
         }, null, 2),
         response: primaryResponse.content,
         model: config.primaryLLM,
@@ -470,13 +489,34 @@ export default function NarrativePanel({
       );
 
       // Log parser LLM call to debug log
+      // IMPORTANT: Strip all imageUrls from parser input to prevent localStorage bloat
+      const parserInput = JSON.parse(parserPrompt);
+      const parserInputForDebugLog = {
+        ...parserInput,
+        currentState: {
+          ...parserInput.currentState,
+          character: parserInput.currentState.character?.imageUrl ? 
+            { ...parserInput.currentState.character, imageUrl: '[removed]' } : 
+            parserInput.currentState.character,
+          location: parserInput.currentState.location?.imageUrl ? 
+            { ...parserInput.currentState.location, imageUrl: '[removed]' } : 
+            parserInput.currentState.location,
+          companions: parserInput.currentState.companions?.map((c: any) => 
+            c.imageUrl ? { ...c, imageUrl: '[removed]' } : c
+          ),
+          encounteredCharacters: parserInput.currentState.encounteredCharacters?.map((npc: any) => 
+            npc.imageUrl ? { ...npc, imageUrl: '[removed]' } : npc
+          ),
+        }
+      };
+      
       const parserLogEntry = {
         id: `parser-${Date.now()}`,
         timestamp: Date.now(),
         type: 'parser' as const,
         prompt: JSON.stringify({
           system: config.parserSystemPrompt,
-          input: JSON.parse(parserPrompt)
+          input: parserInputForDebugLog
         }, null, 2),
         response: parserResponse.content,
         model: config.parserLLM,
