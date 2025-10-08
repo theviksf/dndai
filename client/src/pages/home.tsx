@@ -619,7 +619,7 @@ export default function Home() {
       try {
         localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(newSnapshots));
       } catch (e: any) {
-        if (e.name === 'QuotaExceededError') {
+        if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
           console.warn('localStorage quota exceeded, clearing old snapshots');
           toast({
             title: "Storage quota exceeded",
@@ -643,12 +643,8 @@ export default function Home() {
             return [];
           }
         }
+        // For non-quota errors, log but don't show toast to user
         console.error('Error saving snapshots:', e);
-        toast({
-          title: "Error saving undo history",
-          description: "Failed to save turn history. Undo may not work properly.",
-          variant: "destructive",
-        });
       }
       
       return newSnapshots;
