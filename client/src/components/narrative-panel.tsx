@@ -538,9 +538,11 @@ export default function NarrativePanel({
         // Debug: Log what we extracted
         console.log('Parser extracted:', parsedData.stateUpdates);
       } catch (error: any) {
-        // Log the raw response for debugging
+        // Log the raw response for debugging with length info
         console.error('Failed to parse parser response:', error.message);
-        console.debug('Raw parser response:', parserResponse.content);
+        console.log('Parser response length:', parserResponse.content.length);
+        console.log('Parser response starts with:', parserResponse.content.substring(0, 100));
+        console.log('Parser response ends with:', parserResponse.content.substring(Math.max(0, parserResponse.content.length - 100)));
         
         // Show non-destructive error toast
         toast({
