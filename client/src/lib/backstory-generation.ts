@@ -1,5 +1,6 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, Quest, GameConfig, DebugLogEntry, GameStateData } from '@shared/schema';
+import { nanoid } from 'nanoid';
 
 export interface BackstoryGenerationOptions {
   entityType: 'character' | 'companion' | 'npc' | 'location' | 'quest';
@@ -26,7 +27,7 @@ export async function generateEntityBackstory({
   config 
 }: BackstoryGenerationOptions): Promise<BackstoryGenerationResult> {
   const timestamp = Date.now();
-  const id = `backstory-${timestamp}`;
+  const id = `backstory-${timestamp}-${nanoid(6)}`;
   const systemPrompt = config.backstorySystemPrompt;
   const model = config.backstoryLLM;
   

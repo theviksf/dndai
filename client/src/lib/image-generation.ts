@@ -1,5 +1,6 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, GameConfig, DebugLogEntry } from '@shared/schema';
+import { nanoid } from 'nanoid';
 
 export interface ImageGenerationOptions {
   entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
@@ -26,7 +27,7 @@ export async function generateEntityImage({
   sessionId 
 }: ImageGenerationOptions): Promise<ImageGenerationResult> {
   const timestamp = Date.now();
-  const id = `image-${timestamp}`;
+  const id = `image-${timestamp}-${nanoid(6)}`;
   const isLocationEntity = entityType === 'location' || entityType === 'business';
   let promptTemplate = isLocationEntity 
     ? config.locationImagePrompt 
