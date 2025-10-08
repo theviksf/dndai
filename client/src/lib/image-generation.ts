@@ -82,16 +82,21 @@ export async function generateEntityImage({
     const data = await response.json();
     
     // Create debug log entry
+    // IMPORTANT: Do NOT store the full imageUrl here - it can be a huge base64 string!
+    // The image is already stored in the entity object (character, companion, etc.)
     const debugLogEntry: DebugLogEntry = {
       id,
       timestamp,
       type: 'image',
       prompt: data.filledPrompt || promptTemplate,
-      response: data.rawResponse || JSON.stringify({ imageUrl: data.imageUrl, model: data.model }, null, 2),
+      response: data.rawResponse || JSON.stringify({ 
+        imageUrl: data.imageUrl ? '[R2 URL stored in entity]' : null, 
+        model: data.model 
+      }, null, 2),
       model: data.model || 'google/gemini-2.5-flash-image-preview',
       tokens: data.usage,
       entityType,
-      imageUrl: data.imageUrl || null,
+      imageUrl: data.imageUrl ? '[Image stored separately - removed to save space]' : null,
       error: data.imageUrl ? undefined : 'No image URL returned',
     };
     

@@ -536,12 +536,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         r2ImageUrl = imageUrl;
       }
       
+      // Create a sanitized response without the base64 image data to prevent localStorage bloat
+      const sanitizedData = {
+        ...data,
+        choices: data.choices?.map((choice: any) => ({
+          ...choice,
+          message: {
+            ...choice.message,
+            // Replace base64 image data with a placeholder
+            content: typeof choice.message.content === 'string' && choice.message.content.startsWith('data:image')
+              ? '[Base64 image data removed - stored in R2]'
+              : choice.message.content
+          }
+        }))
+      };
+      
       res.json({
         imageUrl: r2ImageUrl,
         usage: data.usage,
         model: data.model,
         filledPrompt,
-        rawResponse: JSON.stringify(data, null, 2)
+        rawResponse: JSON.stringify(sanitizedData, null, 2)
       });
     } catch (error: any) {
       console.error('[IMAGE GEN] Error:', error.message);
