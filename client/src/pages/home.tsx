@@ -177,14 +177,21 @@ export default function Home() {
     },
   });
 
-  // Show settings/character creation on first load based on state
+  // Show settings/character creation ONLY on very first page load (not when returning from other pages)
   useEffect(() => {
-    if (!gameState.character.name) {
-      // No character exists - go to character creation
-      setLocation('/character-creation');
-    } else if (!config.openRouterApiKey && !isGameStarted) {
-      // Character exists but no API key and game not started yet - go to settings
-      setLocation('/settings');
+    // Check if we just navigated here from another page (via wouter location change)
+    // If the session is already active, don't redirect - user is intentionally viewing the page
+    const hasActiveSession = !!localStorage.getItem(getSessionStorageKey('gameCharacter', sessionId));
+    
+    // Only redirect if this is a fresh load with no active session
+    if (!hasActiveSession) {
+      if (!gameState.character.name) {
+        // No character exists - go to character creation
+        setLocation('/character-creation');
+      } else if (!config.openRouterApiKey && !isGameStarted) {
+        // Character exists but no API key and game not started yet - go to settings
+        setLocation('/settings');
+      }
     }
     // If character exists and game is started, stay on home page even without API key
     // (player will get error when trying to take action)
