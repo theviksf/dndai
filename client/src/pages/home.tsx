@@ -187,7 +187,13 @@ export default function Home() {
           try {
             setIsLoadingState(true); // Prevent auto-save during load
             const loadedState = JSON.parse(savedGameState);
-            console.log('[HOME] Reloading gameState from localStorage, narrativeHistory length:', loadedState.narrativeHistory?.length || 0);
+            console.log('[LOAD] Reloading gameState from localStorage');
+            console.log('[LOAD] narrativeHistory length:', loadedState.narrativeHistory?.length || 0);
+            console.log('[LOAD] Character imageUrl present:', !!loadedState.character?.imageUrl);
+            console.log('[LOAD] Location imageUrl present:', !!loadedState.location?.imageUrl);
+            console.log('[LOAD] Debug log entries:', loadedState.debugLog?.length || 0);
+            console.log('[LOAD] Companions:', loadedState.companions?.length || 0);
+            console.log('[LOAD] NPCs:', loadedState.encounteredCharacters?.length || 0);
             
             // Apply migrations
             if (loadedState.character) {
@@ -425,6 +431,9 @@ export default function Home() {
       console.log('[SAVE] Saving gameState, narrativeHistory length:', currentGameState.narrativeHistory?.length || 0);
       console.log('[SAVE] Character imageUrl present:', !!currentGameState.character.imageUrl);
       console.log('[SAVE] Location imageUrl present:', !!currentGameState.location?.imageUrl);
+      console.log('[SAVE] Debug log entries:', currentGameState.debugLog?.length || 0);
+      console.log('[SAVE] Companions:', currentGameState.companions?.length || 0);
+      console.log('[SAVE] NPCs:', currentGameState.encounteredCharacters?.length || 0);
       
       // Save full game state WITH image URLs
       localStorage.setItem(getSessionStorageKey('gameState', sessionId), JSON.stringify(stateToSave));
