@@ -635,7 +635,7 @@ export default function NarrativePanel({
             updated.character.attributes = { ...updated.character.attributes, ...stateUpdates.attributes };
           }
           
-          // Update location
+          // Update location - merge to preserve imageUrl and other fields
           if (stateUpdates.location !== undefined) {
             // Track old location before updating
             if (stateUpdates.location.name && stateUpdates.location.name !== prev.location.name) {
@@ -653,7 +653,8 @@ export default function NarrativePanel({
                 updated.previousLocations = [...prevLocations, oldLocationObject];
               }
             }
-            updated.location = stateUpdates.location;
+            // Merge location data to preserve imageUrl and other fields
+            updated.location = { ...prev.location, ...stateUpdates.location };
           }
           
           // Update status effects
@@ -673,9 +674,24 @@ export default function NarrativePanel({
             updatedTabsSet.add('spells');
           }
           
-          // Update quests
+          // Update quests - merge to preserve backstory and other fields
           if (stateUpdates.quests !== undefined) {
-            updated.quests = stateUpdates.quests;
+            const existingQuests = prev.quests || [];
+            const newQuests = stateUpdates.quests;
+            
+            // Merge quests - update existing ones or add new ones
+            const mergedQuests = [...existingQuests];
+            newQuests.forEach((newQuest: any) => {
+              const existingIndex = mergedQuests.findIndex(q => q.id === newQuest.id);
+              if (existingIndex >= 0) {
+                // Update existing quest, preserving fields like backstory
+                mergedQuests[existingIndex] = { ...mergedQuests[existingIndex], ...newQuest };
+              } else {
+                // Add new quest
+                mergedQuests.push(newQuest);
+              }
+            });
+            updated.quests = mergedQuests;
             updatedTabsSet.add('quests');
           }
           
