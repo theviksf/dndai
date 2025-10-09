@@ -28,6 +28,11 @@ export function InlineEdit({
   const [editValue, setEditValue] = useState(String(value));
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
+  // Sync editValue with value prop changes
+  useEffect(() => {
+    setEditValue(String(value));
+  }, [value]);
+
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
