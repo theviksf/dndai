@@ -6,17 +6,19 @@ import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateConfig, migrateCostTracker } from '@/lib/game-state';
 import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
-import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData } from '@/lib/db';
+import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData, deleteAllSessions, getAllSessions } from '@/lib/db';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
 import GameInfoTabs from '@/components/game-info-tabs';
 import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle, MoreVertical, Menu, Database } from 'lucide-react';
+import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle, MoreVertical, Menu, Database, Trash2, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateEntityImage } from '@/lib/image-generation';
 
@@ -47,6 +49,10 @@ export default function Home() {
   const [config, setConfig] = useState<GameConfig>(createDefaultConfig);
   const [costTracker, setCostTracker] = useState<CostTracker>(createDefaultCostTracker);
   const [dbLoaded, setDbLoaded] = useState(false);
+  
+  // Load Game dialog state
+  const [isLoadGameOpen, setIsLoadGameOpen] = useState(false);
+  const [savedSessions, setSavedSessions] = useState<any[]>([]);
 
   // Fetch default prompts from .md files for new sessions
   const { data: defaultPrompts } = useQuery({
@@ -497,6 +503,55 @@ export default function Home() {
     // Generate new session ID and force full page reload to reset all state
     const newSessionId = generateSessionId();
     window.location.href = buildSessionUrl('/', newSessionId);
+  };
+
+  const handleClearAllSaves = async () => {
+    try {
+      await deleteAllSessions();
+      toast({
+        title: "All saves cleared",
+        description: "All saved game sessions have been deleted from storage.",
+      });
+      // Reload page with new session ID
+      const newSessionId = generateSessionId();
+      window.location.href = buildSessionUrl('/', newSessionId);
+    } catch (error) {
+      console.error('[CLEAR ALL] Failed to delete all sessions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear all saves. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLoadGame = async () => {
+    try {
+      const sessions = await getAllSessions();
+      setSavedSessions(sessions);
+      setIsLoadGameOpen(true);
+    } catch (error) {
+      console.error('[LOAD GAME] Failed to load sessions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load saved games. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSelectSession = (selectedSessionId: string) => {
+    if (selectedSessionId === sessionId) {
+      toast({
+        title: "Already loaded",
+        description: "This is the current game session.",
+      });
+      setIsLoadGameOpen(false);
+      return;
+    }
+    
+    // Navigate to the selected session
+    window.location.href = buildSessionUrl('/', selectedSessionId);
   };
 
   // Calculate IndexedDB and localStorage sizes
@@ -1283,6 +1338,14 @@ export default function Home() {
                     New Game
                   </DropdownMenuItem>
                   <DropdownMenuItem 
+                    onClick={handleLoadGame}
+                    className="cursor-pointer"
+                    data-testid="menu-load-game"
+                  >
+                    <FolderOpen className="w-4 h-4 mr-2" />
+                    Load Game
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
                     onClick={handleUndo}
                     disabled={turnSnapshots.length === 0}
                     className="cursor-pointer"
@@ -1310,6 +1373,14 @@ export default function Home() {
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Import Save
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleClearAllSaves}
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                    data-testid="menu-clear-all-saves"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear All Saves
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     className="cursor-default hover:bg-transparent"
@@ -1432,6 +1503,71 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Load Game Dialog */}
+      <Dialog open={isLoadGameOpen} onOpenChange={setIsLoadGameOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Load Game</DialogTitle>
+            <DialogDescription>
+              Select a saved game session to load. Your current game progress will be saved automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {savedSessions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No saved games found
+              </div>
+            ) : (
+              savedSessions.map((session) => {
+                const isCurrentSession = session.sessionId === sessionId;
+                const lastUpdatedDate = new Date(session.lastUpdated);
+                const characterName = session.gameState?.character?.name || 'Unknown Character';
+                const characterRace = session.gameState?.character?.race || '';
+                const characterClass = session.gameState?.character?.class || '';
+                const level = session.gameState?.character?.level || 1;
+                const turnCount = session.gameState?.turnCount || 0;
+                
+                return (
+                  <Card 
+                    key={session.sessionId}
+                    className={`cursor-pointer transition-all hover:border-primary ${isCurrentSession ? 'border-primary bg-accent' : ''}`}
+                    onClick={() => handleSelectSession(session.sessionId)}
+                    data-testid={`session-card-${session.sessionId}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">
+                            {characterName}
+                            {isCurrentSession && (
+                              <span className="ml-2 text-sm text-primary font-normal">(Current)</span>
+                            )}
+                          </CardTitle>
+                          <CardDescription>
+                            Level {level} {characterRace} {characterClass}
+                          </CardDescription>
+                        </div>
+                        <div className="text-xs text-muted-foreground text-right">
+                          {lastUpdatedDate.toLocaleDateString()}
+                          <br />
+                          {lastUpdatedDate.toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <div>Turns: {turnCount}</div>
+                        <div>Session: {session.sessionId.substring(0, 8)}...</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
