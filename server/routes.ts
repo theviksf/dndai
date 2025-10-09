@@ -15,6 +15,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const promptsDir = join(process.cwd(), 'prompts');
       
+      // Load prompts with fallback for revelations (newer prompt that might not exist)
       const [primary, parser, imageCharacter, imageLocation, backstory] = await Promise.all([
         readFile(join(promptsDir, 'primary.md'), 'utf-8'),
         readFile(join(promptsDir, 'parser.md'), 'utf-8'),
@@ -23,12 +24,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         readFile(join(promptsDir, 'backstory.md'), 'utf-8'),
       ]);
       
+      // Try to load revelations, fallback to default if missing
+      let revelations: string;
+      try {
+        revelations = await readFile(join(promptsDir, 'revelations.md'), 'utf-8');
+      } catch {
+        // Fallback to default revelations prompt if file doesn't exist
+        revelations = `You are a revelations tracker for a D&D adventure game. Your role is to identify when elements of an entity's backstory are revealed to the player character during the narrative.
+
+# Mission
+Analyze the DM's narrative response and extract revelations - specific backstory elements that became known to the player.
+
+**CRITICAL RULE**: You can ONLY extract a revelation if:
+1. The entity has an existing backstory in the game context
+2. The revealed information connects to that backstory
+3. The information hasn't already been recorded in existing revelations
+
+# Output Format
+
+=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
+
+EXACT JSON FORMAT TO RETURN:
+{
+  "revelations": [
+    {
+      "entityType": "character" | "companion" | "npc" | "location",
+      "entityId": "entity_id_or_character",
+      "entityName": "Entity Name",
+      "text": "Specific revelation text extracted from the narrative",
+      "revealedAtTurn": 5
+    }
+  ]
+}`;
+      }
+      
       res.json({
         primary,
         parser,
         imageCharacter,
         imageLocation,
         backstory,
+        revelations,
       });
     } catch (error: any) {
       res.status(500).json({ error: `Failed to load default prompts: ${error.message}` });
@@ -50,11 +86,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageCharacter: 'image-character.md',
         imageLocation: 'image-location.md',
         backstory: 'backstory.md',
+        revelations: 'revelations.md',
       };
 
       const filename = fileMap[promptType];
       if (!filename) {
-        return res.status(400).json({ error: 'Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation, backstory' });
+        return res.status(400).json({ error: 'Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation, backstory, revelations' });
       }
 
       const promptsDir = join(process.cwd(), 'prompts');

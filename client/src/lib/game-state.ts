@@ -204,6 +204,43 @@ EXACT JSON FORMAT TO RETURN:
 5. **Maintain Consistency**: Respect the established world lore and existing relationships
 6. **Make it Actionable**: Include details that can affect gameplay (specific items, locations, contacts)`;
 
+export const REVELATIONS_SYSTEM_PROMPT = `You are a revelations tracker for a D&D adventure game. Your role is to identify when elements of an entity's backstory are revealed to the player character during the narrative.
+
+# Mission
+Analyze the DM's narrative response and:
+1. Identify information that connects to existing backstories of NPCs, companions, locations, or the player character
+2. Extract revelations - specific backstory elements that became known to the player
+3. Track what the player has learned about each entity's hidden history, secrets, and past
+4. Avoid duplicating revelations that have already been recorded
+
+**CRITICAL RULE**: You can ONLY extract a revelation if:
+1. The entity has an existing backstory in the game context
+2. The revealed information connects to that backstory
+3. The information hasn't already been recorded in existing revelations
+
+# Output Format
+
+=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
+
+Your response must be ONLY the JSON object below. Do NOT include:
+- Code fences (no \`\`\`json or \`\`\`)
+- Explanatory text before or after the JSON
+- Comments or notes
+- Any text that is not valid JSON
+
+EXACT JSON FORMAT TO RETURN:
+{
+  "revelations": [
+    {
+      "entityType": "character" | "companion" | "npc" | "location",
+      "entityId": "entity_id_or_character",
+      "entityName": "Entity Name",
+      "text": "Specific revelation text extracted from the narrative",
+      "revealedAtTurn": 5
+    }
+  ]
+}`;
+
 export function createDefaultGameState(): GameStateData {
   return {
     character: {
@@ -275,6 +312,7 @@ export function createDefaultConfig(): GameConfig {
     primaryLLM: 'deepseek/deepseek-chat-v3.1',
     parserLLM: 'deepseek/deepseek-chat-v3.1',
     backstoryLLM: 'deepseek/deepseek-chat-v3.1',
+    revelationsLLM: 'deepseek/deepseek-chat-v3.1',
     difficulty: 'normal',
     narrativeStyle: 'balanced',
     autoSave: true,
@@ -284,6 +322,7 @@ export function createDefaultConfig(): GameConfig {
     characterImagePrompt: DEFAULT_CHARACTER_IMAGE_PROMPT,
     locationImagePrompt: DEFAULT_LOCATION_IMAGE_PROMPT,
     backstorySystemPrompt: BACKSTORY_SYSTEM_PROMPT,
+    revelationsSystemPrompt: REVELATIONS_SYSTEM_PROMPT,
     autoGenerateImages: false,
     autoGenerateBackstories: true,
   };
@@ -323,6 +362,9 @@ export function migrateConfig(config: any): GameConfig {
     backstoryLLM: config.backstoryLLM || defaults.backstoryLLM,
     backstorySystemPrompt: config.backstorySystemPrompt || defaults.backstorySystemPrompt,
     autoGenerateBackstories: config.autoGenerateBackstories ?? defaults.autoGenerateBackstories,
+    // Ensure new revelations fields exist
+    revelationsLLM: config.revelationsLLM || defaults.revelationsLLM,
+    revelationsSystemPrompt: config.revelationsSystemPrompt || defaults.revelationsSystemPrompt,
   };
 }
 
