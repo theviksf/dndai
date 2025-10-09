@@ -45,47 +45,46 @@ export function EntityDetailSheet({
     if (entityType === 'location') {
       const loc = entity as Location;
       return (
-        <div className="space-y-4 text-sm">
+        <div className="space-y-3">
           {/* Basic Info */}
-          <div className="space-y-2">
-            <div>
-              <span className="font-semibold text-foreground">Name:</span>
-              {onUpdate ? (
-                <InlineEdit
-                  value={loc.name}
-                  onSave={(value) => onUpdate({ name: String(value) } as any)}
-                  inputClassName="ml-2 h-6 text-sm"
-                />
-              ) : (
-                <span className="ml-2 text-muted-foreground">{loc.name}</span>
-              )}
-            </div>
-            <div>
-              <span className="font-semibold text-foreground">Type:</span>
-              {onUpdate ? (
-                <InlineEdit
-                  value={loc.type || ''}
-                  onSave={(value) => onUpdate({ type: String(value) } as any)}
-                  inputClassName="ml-2 h-6 text-sm"
-                />
-              ) : (
-                <span className="ml-2 text-muted-foreground capitalize">{loc.type || 'N/A'}</span>
-              )}
-            </div>
-            <div>
-              <span className="font-semibold text-foreground">Description:</span>
-              {onUpdate ? (
-                <InlineEdit
-                  value={loc.description || ''}
-                  onSave={(value) => onUpdate({ description: String(value) } as any)}
-                  type="textarea"
-                  className="mt-1"
-                  inputClassName="text-sm"
-                />
-              ) : (
-                <p className="mt-1 text-muted-foreground">{loc.description || 'N/A'}</p>
-              )}
-            </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Name:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={loc.name}
+                onSave={(value) => onUpdate({ name: String(value) } as any)}
+                inputClassName="h-7 text-base"
+              />
+            ) : (
+              <span className="text-foreground font-medium text-base">{loc.name}</span>
+            )}
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Type:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={loc.type || ''}
+                onSave={(value) => onUpdate({ type: String(value) } as any)}
+                inputClassName="h-7 text-base"
+              />
+            ) : (
+              <Badge variant="secondary" className="font-semibold text-sm capitalize">
+                {loc.type || 'Unknown'}
+              </Badge>
+            )}
+          </div>
+          <div className="pt-3 border-t border-border">
+            <span className="font-serif font-bold text-foreground block mb-2">Description:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={loc.description || ''}
+                onSave={(value) => onUpdate({ description: String(value) } as any)}
+                type="textarea"
+                inputClassName="text-sm leading-relaxed"
+              />
+            ) : (
+              <p className="text-foreground text-sm leading-relaxed italic">{loc.description || 'No description'}</p>
+            )}
           </div>
 
           {/* Hierarchy */}
@@ -218,102 +217,97 @@ export function EntityDetailSheet({
       const netIncome = biz.weeklyIncome - biz.runningCost;
       
       return (
-        <div className="space-y-4 text-sm">
+        <div className="space-y-3">
           {/* Basic Info */}
-          <div className="space-y-2">
-            <div>
-              <span className="font-semibold text-foreground">Name:</span>
-              {onUpdate ? (
-                <InlineEdit
-                  value={biz.name}
-                  onSave={(value) => onUpdate({ name: String(value) } as any)}
-                  inputClassName="ml-2 h-6 text-sm"
-                />
-              ) : (
-                <span className="ml-2 text-muted-foreground">{biz.name}</span>
-              )}
-            </div>
-            <div>
-              <span className="font-semibold text-foreground">Description:</span>
-              {onUpdate ? (
-                <InlineEdit
-                  value={biz.description || ''}
-                  onSave={(value) => onUpdate({ description: String(value) } as any)}
-                  type="textarea"
-                  className="mt-1"
-                  inputClassName="text-sm"
-                />
-              ) : (
-                <p className="mt-1 text-muted-foreground">{biz.description || 'N/A'}</p>
-              )}
-            </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[120px]">Name:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={biz.name}
+                onSave={(value) => onUpdate({ name: String(value) } as any)}
+                inputClassName="h-7 text-base"
+              />
+            ) : (
+              <span className="text-foreground font-medium text-base">{biz.name}</span>
+            )}
+          </div>
+          <div className="pt-3 border-t border-border">
+            <span className="font-serif font-bold text-foreground block mb-2">Description:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={biz.description || ''}
+                onSave={(value) => onUpdate({ description: String(value) } as any)}
+                type="textarea"
+                inputClassName="text-sm leading-relaxed"
+              />
+            ) : (
+              <p className="text-foreground text-sm leading-relaxed italic">{biz.description || 'No description'}</p>
+            )}
           </div>
 
           {/* Financial Info */}
           <div className="pt-3 border-t border-border">
-            <h4 className="font-semibold text-foreground mb-2">Financial Details</h4>
-            <div className="space-y-2 ml-2">
+            <h4 className="font-serif font-bold text-foreground mb-3">Financial Details</h4>
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Weekly Income:</span>
+                <span className="font-medium text-foreground text-sm">Weekly Income:</span>
                 {onUpdate ? (
                   <InlineEdit
                     value={biz.weeklyIncome}
                     onSave={(value) => onUpdate({ weeklyIncome: Number(value) } as any)}
                     type="number"
                     min={0}
-                    inputClassName="h-6 text-sm w-20 text-right"
+                    inputClassName="h-7 text-base w-24 text-right"
                   />
                 ) : (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-mono">{biz.weeklyIncome} GP</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold text-base">{biz.weeklyIncome.toLocaleString()} GP</span>
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Running Cost:</span>
+                <span className="font-medium text-foreground text-sm">Running Cost:</span>
                 {onUpdate ? (
                   <InlineEdit
                     value={biz.runningCost}
                     onSave={(value) => onUpdate({ runningCost: Number(value) } as any)}
                     type="number"
                     min={0}
-                    inputClassName="h-6 text-sm w-20 text-right"
+                    inputClassName="h-7 text-base w-24 text-right"
                   />
                 ) : (
-                  <span className="text-red-600 dark:text-red-400 font-mono">{biz.runningCost} GP</span>
+                  <span className="text-red-600 dark:text-red-400 font-bold text-base">{biz.runningCost.toLocaleString()} GP</span>
                 )}
               </div>
-              <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                <span className="font-semibold text-foreground text-xs">Net Weekly Profit:</span>
-                <span className={`font-mono font-semibold ${
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="font-bold text-foreground">Net Weekly Profit:</span>
+                <span className={`font-bold text-base ${
                   netIncome > 0 ? 'text-emerald-600 dark:text-emerald-400' : 
                   netIncome < 0 ? 'text-red-600 dark:text-red-400' : 
                   'text-muted-foreground'
                 }`}>
-                  {netIncome > 0 ? '+' : ''}{netIncome} GP
+                  {netIncome > 0 ? '+' : ''}{netIncome.toLocaleString()} GP/week
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Purchase Cost:</span>
-                <span className="text-muted-foreground font-mono">{biz.purchaseCost} GP</span>
+              <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                <span className="font-medium text-foreground text-sm">Purchase Cost:</span>
+                <span className="text-muted-foreground font-bold text-base">{biz.purchaseCost.toLocaleString()} GP</span>
               </div>
             </div>
           </div>
 
           {/* Management */}
           <div className="pt-3 border-t border-border">
-            <h4 className="font-semibold text-foreground mb-2">Management</h4>
-            <div className="ml-2">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">Manager:</span>
-                {onUpdate ? (
-                  <InlineEdit
-                    value={biz.manager || ''}
-                    onSave={(value) => onUpdate({ manager: String(value) } as any)}
-                    inputClassName="h-6 text-sm"
-                  />
-                ) : (
-                  <span className="text-foreground">{biz.manager || 'N/A'}</span>
-                )}
-              </div>
+            <h4 className="font-serif font-bold text-foreground mb-3">Management</h4>
+            <div className="flex items-baseline gap-2">
+              <span className="font-medium text-foreground text-sm min-w-[100px]">Manager:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={biz.manager || ''}
+                  onSave={(value) => onUpdate({ manager: String(value) } as any)}
+                  inputClassName="h-7 text-base"
+                />
+              ) : (
+                <span className="text-foreground text-base">{biz.manager || 'None'}</span>
+              )}
             </div>
           </div>
         </div>
@@ -324,59 +318,54 @@ export function EntityDetailSheet({
       const quest = entity as Quest;
       
       return (
-        <div className="space-y-4 text-sm">
+        <div className="space-y-3">
           {/* Basic Info */}
-          <div className="space-y-2">
-            <div>
-              <span className="font-semibold text-foreground">Title:</span>
-              {onUpdate ? (
-                <InlineEdit
-                  value={quest.title}
-                  onSave={(value) => onUpdate({ title: String(value) } as any)}
-                  inputClassName="ml-2 h-6 text-sm"
-                />
-              ) : (
-                <span className="ml-2 text-muted-foreground">{quest.title}</span>
-              )}
-            </div>
-            <div>
-              <span className="font-semibold text-foreground">Type:</span>
-              <span className="ml-2">
-                <Badge variant={quest.type === 'main' ? 'default' : 'secondary'} className="text-xs">
-                  {quest.type === 'main' ? 'Main Quest' : 'Side Quest'}
-                </Badge>
-              </span>
-            </div>
-            <div>
-              <span className="font-semibold text-foreground">Description:</span>
-              {onUpdate ? (
-                <InlineEdit
-                  value={quest.description}
-                  onSave={(value) => onUpdate({ description: String(value) } as any)}
-                  type="textarea"
-                  className="mt-1"
-                  inputClassName="text-sm"
-                />
-              ) : (
-                <p className="mt-1 text-muted-foreground">{quest.description}</p>
-              )}
-            </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Title:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={quest.title}
+                onSave={(value) => onUpdate({ title: String(value) } as any)}
+                inputClassName="h-7 text-base"
+              />
+            ) : (
+              <span className="text-foreground font-medium text-base">{quest.title}</span>
+            )}
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Type:</span>
+            <Badge variant={quest.type === 'main' ? 'default' : 'secondary'} className="font-bold text-sm px-3 py-1">
+              {quest.type === 'main' ? '⚔️ Main Quest' : '📜 Side Quest'}
+            </Badge>
+          </div>
+          <div className="pt-3 border-t border-border">
+            <span className="font-serif font-bold text-foreground block mb-2">Description:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={quest.description}
+                onSave={(value) => onUpdate({ description: String(value) } as any)}
+                type="textarea"
+                inputClassName="text-sm leading-relaxed"
+              />
+            ) : (
+              <p className="text-foreground text-sm leading-relaxed italic">{quest.description}</p>
+            )}
           </div>
 
           {/* Objectives */}
           {quest.objectives && quest.objectives.length > 0 && (
             <div className="pt-3 border-t border-border">
-              <h4 className="font-semibold text-foreground mb-2">Objectives</h4>
-              <ul className="space-y-2 ml-2">
+              <h4 className="font-serif font-bold text-foreground mb-3">Objectives</h4>
+              <ul className="space-y-2.5">
                 {quest.objectives.filter(obj => obj.text && obj.text.trim() !== '').map((obj, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
+                  <li key={idx} className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       checked={obj.completed}
                       readOnly
-                      className="w-4 h-4 rounded mt-0.5"
+                      className="w-5 h-5 rounded mt-0.5 cursor-not-allowed"
                     />
-                    <span className={obj.completed ? 'line-through text-muted-foreground' : 'text-foreground'}>
+                    <span className={obj.completed ? 'line-through text-muted-foreground text-sm' : 'text-foreground text-sm font-medium'}>
                       {obj.text}
                     </span>
                   </li>
@@ -388,14 +377,12 @@ export function EntityDetailSheet({
           {/* Progress */}
           {quest.progress && (
             <div className="pt-3 border-t border-border">
-              <h4 className="font-semibold text-foreground mb-2">Progress</h4>
-              <div className="ml-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs">Completion:</span>
-                  <span className="text-foreground font-mono">
-                    {quest.progress.current} / {quest.progress.total}
-                  </span>
-                </div>
+              <h4 className="font-serif font-bold text-foreground mb-3">Progress</h4>
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-foreground text-sm">Completion:</span>
+                <Badge variant="outline" className="font-bold text-sm px-3 py-1">
+                  {quest.progress.current} / {quest.progress.total}
+                </Badge>
               </div>
             </div>
           )}
@@ -406,88 +393,92 @@ export function EntityDetailSheet({
     const char = entity as GameCharacter | Companion | EncounteredCharacter;
     
     return (
-      <div className="space-y-2 text-sm">
-        <div>
-          <span className="font-semibold text-foreground">Name:</span>
+      <div className="space-y-3">
+        <div className="flex items-baseline gap-2">
+          <span className="font-serif font-semibold text-foreground min-w-[100px]">Name:</span>
           {onUpdate ? (
             <InlineEdit
               value={char.name}
               onSave={(value) => onUpdate({ name: String(value) } as any)}
-              inputClassName="ml-2 h-6 text-sm"
+              inputClassName="h-7 text-base"
             />
           ) : (
-            <span className="ml-2 text-muted-foreground">{char.name}</span>
+            <span className="text-foreground font-medium text-base">{char.name}</span>
           )}
         </div>
         {'race' in char && (
-          <div>
-            <span className="font-semibold text-foreground">Race:</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Race:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.race || ''}
                 onSave={(value) => onUpdate({ race: String(value) } as any)}
-                inputClassName="ml-2 h-6 text-sm"
+                inputClassName="h-7 text-base"
               />
             ) : (
-              <span className="ml-2 text-foreground">{char.race || 'N/A'}</span>
+              <span className="text-foreground text-base">{char.race || 'Unknown'}</span>
             )}
           </div>
         )}
         {'class' in char && (
-          <div>
-            <span className="font-semibold text-foreground">Class:</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Class:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.class || ''}
                 onSave={(value) => onUpdate({ class: String(value) } as any)}
-                inputClassName="ml-2 h-6 text-sm"
+                inputClassName="h-7 text-base"
               />
             ) : (
-              <span className="ml-2 text-primary font-medium">{char.class || 'N/A'}</span>
+              <Badge variant="secondary" className="font-semibold text-sm">
+                {char.class || 'Unknown'}
+              </Badge>
             )}
           </div>
         )}
         {'role' in char && (
-          <div>
-            <span className="font-semibold text-foreground">Role:</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Role:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.role || ''}
                 onSave={(value) => onUpdate({ role: String(value) } as any)}
-                inputClassName="ml-2 h-6 text-sm"
+                inputClassName="h-7 text-base"
               />
             ) : (
-              <span className="ml-2 text-primary font-medium">{char.role || 'N/A'}</span>
+              <Badge variant="secondary" className="font-semibold text-sm">
+                {char.role || 'Unknown'}
+              </Badge>
             )}
           </div>
         )}
-        <div>
-          <span className="font-semibold text-foreground">Age:</span>
+        <div className="flex items-baseline gap-2">
+          <span className="font-serif font-semibold text-foreground min-w-[100px]">Age:</span>
           {onUpdate ? (
             <InlineEdit
               value={char.age || ''}
               onSave={(value) => onUpdate({ age: String(value) } as any)}
-              inputClassName="ml-2 h-6 text-sm"
+              inputClassName="h-7 text-base"
             />
           ) : (
-            <span className="ml-2 text-foreground">{char.age || 'N/A'}</span>
+            <span className="text-foreground text-base">{char.age || 'Unknown'}</span>
           )}
         </div>
-        <div>
-          <span className="font-semibold text-foreground">Sex:</span>
+        <div className="flex items-baseline gap-2">
+          <span className="font-serif font-semibold text-foreground min-w-[100px]">Sex:</span>
           {onUpdate ? (
             <InlineEdit
               value={char.sex || ''}
               onSave={(value) => onUpdate({ sex: String(value) } as any)}
-              inputClassName="ml-2 h-6 text-sm"
+              inputClassName="h-7 text-base"
             />
           ) : (
-            <span className="ml-2 text-foreground">{char.sex || 'N/A'}</span>
+            <span className="text-foreground text-base capitalize">{char.sex || 'Unknown'}</span>
           )}
         </div>
         {'level' in char && (
-          <div>
-            <span className="font-semibold text-foreground">Level:</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Level:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.level || 1}
@@ -495,60 +486,57 @@ export function EntityDetailSheet({
                 type="number"
                 min={1}
                 max={20}
-                inputClassName="ml-2 h-6 text-sm w-16"
+                inputClassName="h-7 text-base w-20"
               />
             ) : (
-              <Badge variant="secondary" className="ml-2 font-mono font-semibold">
+              <Badge variant="default" className="font-bold text-sm px-3 py-1">
                 Level {char.level || 1}
               </Badge>
             )}
           </div>
         )}
         {'appearance' in char && (
-          <div>
-            <span className="font-semibold text-foreground">Appearance:</span>
+          <div className="pt-3 border-t border-border">
+            <span className="font-serif font-bold text-foreground block mb-2">Appearance:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.appearance || ''}
                 onSave={(value) => onUpdate({ appearance: String(value) } as any)}
                 type="textarea"
-                className="mt-1"
-                inputClassName="text-sm"
+                inputClassName="text-sm leading-relaxed"
               />
             ) : (
-              <p className="mt-1 text-muted-foreground">{char.appearance || 'N/A'}</p>
+              <p className="text-foreground text-sm leading-relaxed italic">{char.appearance || 'No description'}</p>
             )}
           </div>
         )}
         {'personality' in char && (
-          <div>
-            <span className="font-semibold text-foreground">Personality:</span>
+          <div className="pt-3 border-t border-border">
+            <span className="font-serif font-bold text-foreground block mb-2">Personality:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.personality || ''}
                 onSave={(value) => onUpdate({ personality: String(value) } as any)}
                 type="textarea"
-                className="mt-1"
-                inputClassName="text-sm"
+                inputClassName="text-sm leading-relaxed"
               />
             ) : (
-              <p className="mt-1 text-muted-foreground">{char.personality || 'N/A'}</p>
+              <p className="text-foreground text-sm leading-relaxed italic">{char.personality || 'No description'}</p>
             )}
           </div>
         )}
         {'description' in char && (
-          <div>
-            <span className="font-semibold text-foreground">Description:</span>
+          <div className="pt-3 border-t border-border">
+            <span className="font-serif font-bold text-foreground block mb-2">Description:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.description || ''}
                 onSave={(value) => onUpdate({ description: String(value) } as any)}
                 type="textarea"
-                className="mt-1"
-                inputClassName="text-sm"
+                inputClassName="text-sm leading-relaxed"
               />
             ) : (
-              <p className="mt-1 text-muted-foreground">{char.description || 'N/A'}</p>
+              <p className="text-foreground text-sm leading-relaxed italic">{char.description || 'No description'}</p>
             )}
           </div>
         )}
@@ -605,49 +593,49 @@ export function EntityDetailSheet({
         
         {/* NPC-specific fields */}
         {'location' in char && entityType === 'npc' && (
-          <div>
-            <span className="font-semibold text-foreground">Location:</span>
+          <div className="flex items-baseline gap-2 pt-3 border-t border-border">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Location:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.location || ''}
                 onSave={(value) => onUpdate({ location: String(value) } as any)}
-                inputClassName="ml-2 h-6 text-sm"
+                inputClassName="h-7 text-base"
               />
             ) : (
-              <span className="ml-2 text-foreground">{char.location || 'N/A'}</span>
+              <span className="text-foreground text-base">{char.location || 'Unknown'}</span>
             )}
           </div>
         )}
         {'status' in char && entityType === 'npc' && (
-          <div>
-            <span className="font-semibold text-foreground">Status:</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Status:</span>
             {onUpdate ? (
               <InlineEdit
                 value={char.status || 'alive'}
                 onSave={(value) => onUpdate({ status: String(value) } as any)}
-                inputClassName="ml-2 h-6 text-sm"
+                inputClassName="h-7 text-base"
               />
             ) : (
               <Badge 
                 variant={char.status === 'alive' ? 'default' : 'destructive'}
-                className={`ml-2 ${
+                className={`${
                   char.status === 'alive'
                     ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600' 
                     : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-                } text-white font-semibold px-2 py-0.5 text-xs flex items-center gap-1`}
+                } text-white font-bold px-3 py-1 text-sm flex items-center gap-1.5`}
               >
                 {char.status === 'alive' ? (
-                  <><Heart className="w-3 h-3" /> Alive</>
+                  <><Heart className="w-4 h-4" /> Alive</>
                 ) : (
-                  <><Skull className="w-3 h-3" /> Dead</>
+                  <><Skull className="w-4 h-4" /> Dead</>
                 )}
               </Badge>
             )}
           </div>
         )}
         {'relationship' in char && entityType === 'npc' && (
-          <div>
-            <span className="font-semibold text-foreground">Relationship:</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif font-semibold text-foreground min-w-[100px]">Relationship:</span>
             {onUpdate ? (
               <InlineEdit
                 value={typeof char.relationship === 'number' ? char.relationship : 0}
@@ -655,7 +643,7 @@ export function EntityDetailSheet({
                 type="number"
                 min={-3}
                 max={3}
-                inputClassName="ml-2 h-6 text-sm w-16"
+                inputClassName="h-7 text-base w-20"
               />
             ) : (
               (() => {
@@ -664,7 +652,8 @@ export function EntityDetailSheet({
                 return (
                   <Badge 
                     variant="outline"
-                    className={`ml-2 ${relDisplay.textColor} border-current font-semibold px-2 py-0.5 text-xs`}
+                    className={`${relDisplay.textColor} border-current font-bold px-3 py-1 text-sm`}
+                    title={relDisplay.description}
                   >
                     {relDisplay.label}
                   </Badge>
@@ -703,10 +692,10 @@ export function EntityDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
-        <SheetHeader className="space-y-4">
+      <SheetContent className="w-full sm:max-w-7xl overflow-y-auto">
+        <SheetHeader className="space-y-4 pb-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">
-            <SheetTitle className="flex items-center gap-3 text-2xl">
+            <SheetTitle className="flex items-center gap-3 text-2xl font-serif">
               {Icon && <Icon className="w-6 h-6" />}
               {entityType === 'quest' && <span className="text-2xl">{(entity as Quest).icon}</span>}
               {'name' in entity ? entity.name : entityType === 'quest' ? (entity as Quest).title : 'Details'}
@@ -715,65 +704,74 @@ export function EntityDetailSheet({
           </div>
         </SheetHeader>
         
-        <div className="mt-6 space-y-6">
-          {/* Bigger Image - Only for entities with images */}
-          {entityType !== 'quest' && (
-            <div className="w-full">
-              <AspectRatio ratio={1/1} className="bg-muted/20 rounded-xl overflow-hidden shadow-lg">
-                {'imageUrl' in entity && entity.imageUrl ? (
-                  <img 
-                    src={entity.imageUrl} 
-                    alt={`${entityType} portrait`}
-                    className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-muted/50 to-muted/20">
-                    {Icon && <Icon className="w-24 h-24 text-muted-foreground/30" />}
-                  </div>
+        <div className="mt-6">
+          {/* Side-by-side layout: Image on left, content on right */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left: Image - Only for entities with images */}
+            {entityType !== 'quest' && (
+              <div className="lg:w-2/5 flex-shrink-0">
+                <AspectRatio ratio={1/1} className="bg-muted/20 rounded-xl overflow-hidden shadow-lg border-2 border-border">
+                  {'imageUrl' in entity && entity.imageUrl ? (
+                    <img 
+                      src={entity.imageUrl} 
+                      alt={`${entityType} portrait`}
+                      className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-muted/50 to-muted/20">
+                      {Icon && <Icon className="w-24 h-24 text-muted-foreground/30" />}
+                    </div>
+                  )}
+                </AspectRatio>
+                
+                {/* Refresh Button under image */}
+                {onRefresh && (
+                  <Button
+                    onClick={onRefresh}
+                    disabled={isRefreshing}
+                    className="w-full mt-4 h-11 text-sm font-medium"
+                    variant="outline"
+                    data-testid={`button-refresh-image-${entityType}`}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Generating...' : 'Refresh Image'}
+                  </Button>
                 )}
-              </AspectRatio>
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* Metadata */}
-          <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-            {renderMetadata()}
-          </div>
+            {/* Right: Content */}
+            <div className={`flex-1 space-y-6 ${entityType === 'quest' ? 'lg:w-full' : ''}`}>
+              {/* Metadata */}
+              <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                <h3 className="font-serif font-bold text-lg mb-4 text-foreground border-b border-border pb-2">
+                  Details
+                </h3>
+                {renderMetadata()}
+              </div>
 
-          {/* Backstory */}
-          {'backstory' in entity && entity.backstory && (
-            <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-              <h3 className="font-semibold text-foreground mb-3 text-lg flex items-center gap-2">
-                <span>📜</span> Backstory
-              </h3>
-              {onUpdate ? (
-                <InlineEdit
-                  value={entity.backstory}
-                  onSave={(value) => onUpdate({ backstory: String(value) } as any)}
-                  type="textarea"
-                  inputClassName="text-sm"
-                />
-              ) : (
-                <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-                  {entity.backstory}
-                </p>
+              {/* Backstory */}
+              {'backstory' in entity && entity.backstory && (
+                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                  <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
+                    <span>📜</span> Backstory
+                  </h3>
+                  {onUpdate ? (
+                    <InlineEdit
+                      value={entity.backstory}
+                      onSave={(value) => onUpdate({ backstory: String(value) } as any)}
+                      type="textarea"
+                      inputClassName="text-sm leading-relaxed"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                      {entity.backstory}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
-
-          {/* Refresh Button */}
-          {onRefresh && (
-            <Button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="w-full h-12 text-base font-medium"
-              variant="outline"
-              data-testid={`button-refresh-image-${entityType}`}
-            >
-              <RefreshCw className={`w-5 h-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Generating New Image...' : 'Refresh Image'}
-            </Button>
-          )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>
