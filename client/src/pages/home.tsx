@@ -6,7 +6,7 @@ import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateConfig, migrateCostTracker } from '@/lib/game-state';
 import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
-import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData, deleteAllSessions, getAllSessions } from '@/lib/db';
+import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData, deleteAllSessions, getAllSessions, type SessionData } from '@/lib/db';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
 import GameInfoTabs from '@/components/game-info-tabs';
@@ -52,7 +52,7 @@ export default function Home() {
   
   // Load Game dialog state
   const [isLoadGameOpen, setIsLoadGameOpen] = useState(false);
-  const [savedSessions, setSavedSessions] = useState<any[]>([]);
+  const [savedSessions, setSavedSessions] = useState<SessionData[]>([]);
 
   // Fetch default prompts from .md files for new sessions
   const { data: defaultPrompts } = useQuery({
