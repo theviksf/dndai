@@ -79,6 +79,10 @@ export async function deleteSessionData(sessionId: string): Promise<void> {
   await db.sessions.delete(sessionId);
 }
 
+export async function deleteAllSessions(): Promise<void> {
+  await db.sessions.clear();
+}
+
 export async function getAllSessions(): Promise<SessionData[]> {
   return await db.sessions.orderBy('lastUpdated').reverse().toArray();
 }
