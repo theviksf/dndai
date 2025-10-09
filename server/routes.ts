@@ -331,6 +331,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to sanitize image responses by removing base64 data
+  function sanitizeImageResponse(data: any): any {
+    const sanitized = JSON.parse(JSON.stringify(data)); // Deep clone
+    
+    if (sanitized.choices && Array.isArray(sanitized.choices)) {
+      sanitized.choices = sanitized.choices.map((choice: any) => {
+        if (!choice.message) return choice;
+        
+        const msg = choice.message;
+        
+        // Sanitize content if it's a string with base64
+        if (typeof msg.content === 'string' && msg.content.startsWith('data:image')) {
+          msg.content = '[Base64 image data removed - stored in R2]';
+        }
+        
+        // Sanitize content if it's an array with base64
+        if (Array.isArray(msg.content)) {
+          msg.content = msg.content.map((item: any) => {
+            if (item.image_base64) {
+              return { ...item, image_base64: '[Base64 removed]' };
+            }
+            if (item.url && item.url.startsWith('data:image')) {
+              return { ...item, url: '[Base64 removed]' };
+            }
+            if (item.image_url?.url && item.image_url.url.startsWith('data:image')) {
+              return { ...item, image_url: { ...item.image_url, url: '[Base64 removed]' } };
+            }
+            return item;
+          });
+        }
+        
+        // Sanitize images array if present
+        if (msg.images && Array.isArray(msg.images)) {
+          msg.images = msg.images.map((img: any) => {
+            if (img.image_base64) {
+              return { ...img, image_base64: '[Base64 removed]' };
+            }
+            if (img.url && img.url.startsWith('data:image')) {
+              return { ...img, url: '[Base64 removed]' };
+            }
+            if (img.image_url?.url && img.image_url.url.startsWith('data:image')) {
+              return { ...img, image_url: { ...img.image_url, url: '[Base64 removed]' } };
+            }
+            return img;
+          });
+        }
+        
+        return { ...choice, message: msg };
+      });
+    }
+    
+    return sanitized;
+  }
+
   app.post('/api/generate-image', async (req, res) => {
     try {
       const { entityType, entity, promptTemplate, apiKey, sessionId } = req.body;
@@ -478,13 +532,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log if no image URL was found for debugging
       if (!imageUrl) {
-        console.error('[IMAGE GEN] Failed to extract image URL from response:', JSON.stringify(message, null, 2));
+        console.error('[IMAGE GEN] Failed to extract image URL from response');
+        
+        // Sanitize response even on failure to prevent base64 bloat
+        const sanitizedData = sanitizeImageResponse(data);
+        
         res.json({
           imageUrl: null,
           usage: data.usage,
           model: data.model,
           filledPrompt,
-          rawResponse: JSON.stringify(data, null, 2)
+          rawResponse: JSON.stringify(sanitizedData, null, 2)
         });
         return;
       }
@@ -536,20 +594,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         r2ImageUrl = null;
       }
       
-      // Create a sanitized response without the base64 image data to prevent localStorage bloat
-      const sanitizedData = {
-        ...data,
-        choices: data.choices?.map((choice: any) => ({
-          ...choice,
-          message: {
-            ...choice.message,
-            // Replace base64 image data with a placeholder
-            content: typeof choice.message.content === 'string' && choice.message.content.startsWith('data:image')
-              ? '[Base64 image data removed - stored in R2]'
-              : choice.message.content
-          }
-        }))
-      };
+      // Sanitize response to remove ALL base64 image data
+      const sanitizedData = sanitizeImageResponse(data);
       
       res.json({
         imageUrl: r2ImageUrl,
