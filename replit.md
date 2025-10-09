@@ -55,12 +55,15 @@ The system utilizes multiple specialized LLMs for different tasks:
 
 ### Data Storage Solutions
 
-**Session-Based Storage**: All game data is stored in browser localStorage with session-scoped keys. Each game has a unique session ID in the URL (e.g., `/?session=abc123`), allowing multiple independent games to coexist.
-- **Session ID**: 10-character unique identifier generated using nanoid
-- **Storage Keys**: All localStorage keys are prefixed with session ID (e.g., `gameCharacter_abc123`, `gameConfig_abc123`, `turnSnapshots_abc123`)
-- **Session Management**: Session ID is automatically created on first visit and persists in URL across all navigation
-- **Multi-Session Support**: Users can have multiple games by changing the session parameter in URL
-- **New Game Button**: Creates a fresh session with new ID, resetting to default settings and prompting for new character creation
+**IndexedDB Storage (Primary)**: All game data is stored in browser IndexedDB using Dexie.js for better storage capacity (50-100MB+) and performance. Each game has a unique session ID in the URL (e.g., `/?session=abc123`).
+- **Database**: Single `DnDAdventureDB` database with `sessions` table, where each session is a separate record keyed by `sessionId`
+- **Session ID**: 10-character unique identifier generated using nanoid, stored in URL
+- **Session Data**: Each session record contains complete game state, config, cost tracker, turn snapshots, and metadata
+- **localStorage Migration**: Automatically migrates legacy localStorage data to IndexedDB on first load, then removes old data
+- **Multi-Session Support**: Multiple session records can coexist in IndexedDB - users can switch between games via URL session parameter
+- **New Game Cleanup**: Clicking "New Game" deletes the current session from IndexedDB before creating a new one with fresh ID
+- **Storage Display**: UI shows current session size (resets on new game), total number of saved sessions, and overall IndexedDB usage
+- **Base64 Protection**: Comprehensive sanitization prevents base64 image data from being stored in debug logs or turn snapshots - only R2 URLs are persisted
 
 **Image Storage (Cloudflare R2)**: AI-generated images are stored in Cloudflare R2 cloud storage to prevent localStorage quota issues.
 - **Storage Service**: Uses AWS S3-compatible API via @aws-sdk/client-s3

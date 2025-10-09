@@ -6,7 +6,7 @@ import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateConfig, migrateCostTracker } from '@/lib/game-state';
 import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
-import { db, getSessionData, saveSessionData, getStorageEstimate } from '@/lib/db';
+import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData } from '@/lib/db';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
 import GameInfoTabs from '@/components/game-info-tabs';
@@ -483,21 +483,41 @@ export default function Home() {
     saveMutation.mutate();
   };
 
-  const handleNewGame = () => {
+  const handleNewGame = async () => {
+    // Delete current session data from IndexedDB before creating new session
+    try {
+      await deleteSessionData(sessionId);
+      console.log('[NEW GAME] Deleted old session data:', sessionId);
+    } catch (error) {
+      console.error('[NEW GAME] Failed to delete old session:', error);
+    }
+    
     // Generate new session ID and force full page reload to reset all state
     const newSessionId = generateSessionId();
     window.location.href = buildSessionUrl('/', newSessionId);
   };
 
   // Calculate IndexedDB and localStorage sizes
-  const [storageStats, setStorageStats] = useState({ indexedDB: 0, localStorage: 0, quota: 0 });
+  const [storageStats, setStorageStats] = useState({ indexedDB: 0, localStorage: 0, quota: 0, currentSession: 0, totalSessions: 0 });
   
   useEffect(() => {
     const updateStorageStats = async () => {
-      // Get IndexedDB size estimate
+      // Get total storage estimate for quota
       const estimate = await getStorageEstimate();
       
-      // Get localStorage size for comparison
+      // Calculate current session size accurately
+      let currentSessionSize = 0;
+      const sessionData = await getSessionData(sessionId);
+      if (sessionData) {
+        const jsonString = JSON.stringify(sessionData);
+        currentSessionSize = new Blob([jsonString]).size;
+      }
+      
+      // Get all sessions to count total
+      const allSessions = await db.sessions.toArray();
+      const totalSessionsCount = allSessions.length;
+      
+      // Get localStorage size for comparison (legacy data)
       let localSize = 0;
       const keys = [
         getSessionStorageKey('gameState', sessionId),
@@ -518,6 +538,8 @@ export default function Home() {
         indexedDB: estimate.usage,
         localStorage: localSize,
         quota: estimate.quota,
+        currentSession: currentSessionSize,
+        totalSessions: totalSessionsCount,
       });
     };
     
@@ -1264,8 +1286,8 @@ export default function Home() {
                   <span className="hidden md:inline">Export</span>
                 </Button>
                 <div className="flex flex-col gap-0.5 text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded-md" data-testid="text-storage-size">
-                  <div className="font-semibold text-primary">IndexedDB: {formatBytes(storageStats.indexedDB)}</div>
-                  <div className="text-[10px]">localStorage: {formatBytes(storageStats.localStorage)}</div>
+                  <div className="font-semibold text-primary">Session: {formatBytes(storageStats.currentSession)}</div>
+                  <div className="text-[10px]">Sessions: {storageStats.totalSessions} | Total: {formatBytes(storageStats.indexedDB)}</div>
                 </div>
               </div>
               
