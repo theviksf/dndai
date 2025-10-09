@@ -77,6 +77,7 @@ export type Companion = {
   relationship: string;
   imageUrl?: string;
   backstory?: string;
+  revelations?: Revelation[];
 };
 
 export type EncounteredCharacter = {
@@ -93,6 +94,7 @@ export type EncounteredCharacter = {
   relationship: number;
   imageUrl?: string;
   backstory?: string;
+  revelations?: Revelation[];
 };
 
 export type Business = {
@@ -118,10 +120,15 @@ export type NarrativeMessage = {
   };
 };
 
+export type Revelation = {
+  text: string;
+  revealedAtTurn?: number;
+};
+
 export type DebugLogEntry = {
   id: string;
   timestamp: number;
-  type: 'primary' | 'parser' | 'image' | 'backstory';
+  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations';
   prompt: string;
   response: string;
   model: string;
@@ -150,6 +157,7 @@ export type GameCharacter = {
   gold: number;
   attributes: Attribute;
   imageUrl?: string;
+  revelations?: Revelation[];
 };
 
 export type TurnSnapshot = {
@@ -198,6 +206,7 @@ export type Location = {
   };
   imageUrl?: string;
   backstory?: string;
+  revelations?: Revelation[];
 };
 
 export type PreviousLocation = {
@@ -214,6 +223,7 @@ export type PreviousLocation = {
   imageUrl?: string;
   lastVisited: number;
   backstory?: string;
+  revelations?: Revelation[];
 };
 
 export type GameStateData = {
@@ -241,6 +251,7 @@ export type GameConfig = {
   primaryLLM: string;
   parserLLM: string;
   backstoryLLM: string;
+  revelationsLLM: string;
   difficulty: 'easy' | 'normal' | 'hard' | 'deadly';
   narrativeStyle: 'concise' | 'balanced' | 'detailed' | 'verbose';
   autoSave: boolean;
@@ -250,6 +261,7 @@ export type GameConfig = {
   characterImagePrompt: string;
   locationImagePrompt: string;
   backstorySystemPrompt: string;
+  revelationsSystemPrompt: string;
   autoGenerateImages: boolean;
   autoGenerateBackstories: boolean;
 };
