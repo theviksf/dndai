@@ -258,6 +258,25 @@ export default function Home() {
                 loadedState.debugLog = [];
               }
               
+              // Clean up any base64 images from debug logs (one-time cleanup on load)
+              if (loadedState.debugLog && Array.isArray(loadedState.debugLog)) {
+                let hadBase64 = false;
+                loadedState.debugLog = loadedState.debugLog.map((log: any) => {
+                  if (log.imageUrl && typeof log.imageUrl === 'string' && log.imageUrl.startsWith('data:image')) {
+                    hadBase64 = true;
+                    return { ...log, imageUrl: null };
+                  }
+                  if (log.response && typeof log.response === 'string' && log.response.includes('data:image')) {
+                    hadBase64 = true;
+                    return { ...log, response: log.response.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[Base64 image data removed]') };
+                  }
+                  return log;
+                });
+                if (hadBase64) {
+                  console.log('[DB] Cleaned up base64 images from debug logs on load');
+                }
+              }
+              
               setGameState(loadedState);
               setConfig(sessionData.gameConfig);
               setCostTracker(sessionData.costTracker || createDefaultCostTracker());
@@ -390,6 +409,25 @@ export default function Home() {
               migratedState.debugLog = [];
             }
             
+            // Clean up any base64 images from debug logs (one-time cleanup on load)
+            if (migratedState.debugLog && Array.isArray(migratedState.debugLog)) {
+              let hadBase64 = false;
+              migratedState.debugLog = migratedState.debugLog.map((log: any) => {
+                if (log.imageUrl && typeof log.imageUrl === 'string' && log.imageUrl.startsWith('data:image')) {
+                  hadBase64 = true;
+                  return { ...log, imageUrl: null };
+                }
+                if (log.response && typeof log.response === 'string' && log.response.includes('data:image')) {
+                  hadBase64 = true;
+                  return { ...log, response: log.response.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[Base64 image data removed]') };
+                }
+                return log;
+              });
+              if (hadBase64) {
+                console.log('[DB] Cleaned up base64 images from debug logs on load');
+              }
+            }
+            
             setGameState(migratedState);
           }
         } catch (error) {
@@ -456,23 +494,56 @@ export default function Home() {
     return (bytes / (k * k)).toFixed(2) + ' MB';
   };
 
+  // Helper to sanitize game state before saving (removes base64 images)
+  const sanitizeGameState = (state: GameStateData): GameStateData => {
+    const sanitized = { ...state };
+    
+    // Sanitize debug logs - remove base64 images from imageUrl fields
+    if (sanitized.debugLog && Array.isArray(sanitized.debugLog)) {
+      sanitized.debugLog = sanitized.debugLog.map((log: any) => {
+        // If imageUrl contains base64 data, replace with placeholder
+        if (log.imageUrl && typeof log.imageUrl === 'string' && log.imageUrl.startsWith('data:image')) {
+          return {
+            ...log,
+            imageUrl: null, // Remove base64 - only R2 URLs should be stored
+          };
+        }
+        
+        // Also sanitize response field in case it contains base64
+        if (log.response && typeof log.response === 'string' && log.response.includes('data:image')) {
+          return {
+            ...log,
+            response: log.response.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[Base64 image data removed]'),
+          };
+        }
+        
+        return log;
+      });
+    }
+    
+    return sanitized;
+  };
+
   // Helper to save game state to IndexedDB (without updating state)
   const saveGameStateToStorage = async (stateToSave?: GameStateData) => {
     // Use provided state or fall back to current state
     const currentGameState = stateToSave || gameStateRef.current || gameState;
     
+    // Sanitize state to remove any base64 images before saving
+    const sanitizedState = sanitizeGameState(currentGameState);
+    
     try {
-      console.log('[DB] Saving to IndexedDB, narrativeHistory length:', currentGameState.narrativeHistory?.length || 0);
-      console.log('[DB] Character imageUrl present:', !!currentGameState.character.imageUrl);
-      console.log('[DB] Location imageUrl present:', !!currentGameState.location?.imageUrl);
-      console.log('[DB] Debug log entries:', currentGameState.debugLog?.length || 0);
-      console.log('[DB] Companions:', currentGameState.companions?.length || 0);
-      console.log('[DB] NPCs:', currentGameState.encounteredCharacters?.length || 0);
+      console.log('[DB] Saving to IndexedDB, narrativeHistory length:', sanitizedState.narrativeHistory?.length || 0);
+      console.log('[DB] Character imageUrl present:', !!sanitizedState.character.imageUrl);
+      console.log('[DB] Location imageUrl present:', !!sanitizedState.location?.imageUrl);
+      console.log('[DB] Debug log entries:', sanitizedState.debugLog?.length || 0);
+      console.log('[DB] Companions:', sanitizedState.companions?.length || 0);
+      console.log('[DB] NPCs:', sanitizedState.encounteredCharacters?.length || 0);
       
       // Save to IndexedDB
       await saveSessionData({
         sessionId,
-        gameState: currentGameState,
+        gameState: sanitizedState,
         gameConfig: config,
         costTracker,
         turnSnapshots,

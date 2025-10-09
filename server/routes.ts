@@ -532,8 +532,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[R2 UPLOAD] Successfully uploaded to R2:', r2ImageUrl);
       } catch (uploadError: any) {
         console.error('[R2 UPLOAD] Failed to upload to R2:', uploadError.message);
-        // Fall back to original base64 URL if R2 upload fails
-        r2ImageUrl = imageUrl;
+        // NEVER return base64 URLs to prevent IndexedDB bloat - return null instead
+        r2ImageUrl = null;
       }
       
       // Create a sanitized response without the base64 image data to prevent localStorage bloat
