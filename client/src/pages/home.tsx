@@ -570,9 +570,21 @@ export default function Home() {
         currentSessionSize = new Blob([jsonString]).size;
       }
       
-      // Get all sessions to count total
+      // Get all sessions and calculate ACTUAL IndexedDB size (compressed)
       const allSessions = await db.sessions.toArray();
       const totalSessionsCount = allSessions.length;
+      
+      // Calculate actual IndexedDB size by summing compressed session data
+      let totalIndexedDBSize = 0;
+      allSessions.forEach((session: any) => {
+        if (session.compressedData) {
+          // Size of the compressed data string
+          totalIndexedDBSize += new Blob([session.compressedData]).size;
+        }
+        // Add overhead for sessionId and lastUpdated
+        totalIndexedDBSize += new Blob([session.sessionId]).size;
+        totalIndexedDBSize += 8; // lastUpdated is a number (8 bytes)
+      });
       
       // Get localStorage size for comparison (legacy data)
       let localSize = 0;
@@ -592,7 +604,7 @@ export default function Home() {
       });
       
       setStorageStats({
-        indexedDB: estimate.usage,
+        indexedDB: totalIndexedDBSize, // Now shows ONLY IndexedDB session data
         localStorage: localSize,
         quota: estimate.quota,
         currentSession: currentSessionSize,
