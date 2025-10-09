@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, User, MapPin, Heart, Skull } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
-import type { GameCharacter, Companion, EncounteredCharacter, Location, Business } from '@shared/schema';
+import type { GameCharacter, Companion, EncounteredCharacter, Location, Business, Quest } from '@shared/schema';
 
 // Helper function to get relationship display info
 function getRelationshipDisplay(score: number): { label: string; textColor: string; description: string } {
@@ -21,11 +21,11 @@ function getRelationshipDisplay(score: number): { label: string; textColor: stri
 interface EntityDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entity: GameCharacter | Companion | EncounteredCharacter | Location | Business | null;
-  entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
+  entity: GameCharacter | Companion | EncounteredCharacter | Location | Business | Quest | null;
+  entityType: 'character' | 'companion' | 'npc' | 'location' | 'business' | 'quest';
   onRefresh?: () => void;
   isRefreshing?: boolean;
-  onUpdate?: (updates: Partial<GameCharacter | Companion | EncounteredCharacter | Location | Business>) => void;
+  onUpdate?: (updates: Partial<GameCharacter | Companion | EncounteredCharacter | Location | Business | Quest>) => void;
 }
 
 export function EntityDetailSheet({ 
@@ -39,7 +39,7 @@ export function EntityDetailSheet({
 }: EntityDetailSheetProps) {
   if (!entity) return null;
 
-  const Icon = entityType === 'location' || entityType === 'business' ? MapPin : User;
+  const Icon = entityType === 'location' || entityType === 'business' ? MapPin : entityType === 'quest' ? null : User;
   
   const renderMetadata = () => {
     if (entityType === 'location') {
@@ -316,6 +316,89 @@ export function EntityDetailSheet({
               </div>
             </div>
           </div>
+        </div>
+      );
+    }
+
+    if (entityType === 'quest') {
+      const quest = entity as Quest;
+      
+      return (
+        <div className="space-y-4 text-sm">
+          {/* Basic Info */}
+          <div className="space-y-2">
+            <div>
+              <span className="font-semibold text-foreground">Title:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={quest.title}
+                  onSave={(value) => onUpdate({ title: String(value) } as any)}
+                  inputClassName="ml-2 h-6 text-sm"
+                />
+              ) : (
+                <span className="ml-2 text-muted-foreground">{quest.title}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">Type:</span>
+              <span className="ml-2">
+                <Badge variant={quest.type === 'main' ? 'default' : 'secondary'} className="text-xs">
+                  {quest.type === 'main' ? 'Main Quest' : 'Side Quest'}
+                </Badge>
+              </span>
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">Description:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={quest.description}
+                  onSave={(value) => onUpdate({ description: String(value) } as any)}
+                  type="textarea"
+                  className="mt-1"
+                  inputClassName="text-sm"
+                />
+              ) : (
+                <p className="mt-1 text-muted-foreground">{quest.description}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Objectives */}
+          {quest.objectives && quest.objectives.length > 0 && (
+            <div className="pt-3 border-t border-border">
+              <h4 className="font-semibold text-foreground mb-2">Objectives</h4>
+              <ul className="space-y-2 ml-2">
+                {quest.objectives.filter(obj => obj.text && obj.text.trim() !== '').map((obj, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={obj.completed}
+                      readOnly
+                      className="w-4 h-4 rounded mt-0.5"
+                    />
+                    <span className={obj.completed ? 'line-through text-muted-foreground' : 'text-foreground'}>
+                      {obj.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Progress */}
+          {quest.progress && (
+            <div className="pt-3 border-t border-border">
+              <h4 className="font-semibold text-foreground mb-2">Progress</h4>
+              <div className="ml-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-xs">Completion:</span>
+                  <span className="text-foreground font-mono">
+                    {quest.progress.current} / {quest.progress.total}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -624,30 +707,33 @@ export function EntityDetailSheet({
         <SheetHeader className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <SheetTitle className="flex items-center gap-3 text-2xl">
-              <Icon className="w-6 h-6" />
-              {'name' in entity ? entity.name : 'Location Details'}
+              {Icon && <Icon className="w-6 h-6" />}
+              {entityType === 'quest' && <span className="text-2xl">{(entity as Quest).icon}</span>}
+              {'name' in entity ? entity.name : entityType === 'quest' ? (entity as Quest).title : 'Details'}
             </SheetTitle>
             {getStatusBadge()}
           </div>
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
-          {/* Bigger Image */}
-          <div className="w-full">
-            <AspectRatio ratio={1/1} className="bg-muted/20 rounded-xl overflow-hidden shadow-lg">
-              {entity.imageUrl ? (
-                <img 
-                  src={entity.imageUrl} 
-                  alt={`${entityType} portrait`}
-                  className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-muted/50 to-muted/20">
-                  <Icon className="w-24 h-24 text-muted-foreground/30" />
-                </div>
-              )}
-            </AspectRatio>
-          </div>
+          {/* Bigger Image - Only for entities with images */}
+          {entityType !== 'quest' && (
+            <div className="w-full">
+              <AspectRatio ratio={1/1} className="bg-muted/20 rounded-xl overflow-hidden shadow-lg">
+                {'imageUrl' in entity && entity.imageUrl ? (
+                  <img 
+                    src={entity.imageUrl} 
+                    alt={`${entityType} portrait`}
+                    className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-muted/50 to-muted/20">
+                    {Icon && <Icon className="w-24 h-24 text-muted-foreground/30" />}
+                  </div>
+                )}
+              </AspectRatio>
+            </div>
+          )}
 
           {/* Metadata */}
           <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">

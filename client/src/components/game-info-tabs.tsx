@@ -55,19 +55,19 @@ export default function GameInfoTabs({
   const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
   const [spellFilter, setSpellFilter] = useState<string>('');
   const [spellLevelFilter, setSpellLevelFilter] = useState<string>('all');
-  const [detailEntity, setDetailEntity] = useState<Companion | EncounteredCharacter | Location | Business | null>(null);
-  const [detailEntityType, setDetailEntityType] = useState<'companion' | 'npc' | 'location' | 'business'>('companion');
+  const [detailEntity, setDetailEntity] = useState<Companion | EncounteredCharacter | Location | Business | Quest | null>(null);
+  const [detailEntityType, setDetailEntityType] = useState<'companion' | 'npc' | 'location' | 'business' | 'quest'>('companion');
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [isRefreshingImage, setIsRefreshingImage] = useState(false);
 
-  const openDetailSheet = (entity: Companion | EncounteredCharacter | Location | Business, type: 'companion' | 'npc' | 'location' | 'business') => {
+  const openDetailSheet = (entity: Companion | EncounteredCharacter | Location | Business | Quest, type: 'companion' | 'npc' | 'location' | 'business' | 'quest') => {
     setDetailEntity(entity);
     setDetailEntityType(type);
     setDetailSheetOpen(true);
   };
 
   const handleRefreshImage = async () => {
-    if (!onRefreshImage || !detailEntity) return;
+    if (!onRefreshImage || !detailEntity || detailEntityType === 'quest') return;
     setIsRefreshingImage(true);
     try {
       const entityId = 'id' in detailEntity ? detailEntity.id : undefined;
@@ -491,8 +491,9 @@ export default function GameInfoTabs({
               quests.map((quest) => (
                 <div
                   key={quest.id}
-                  className="border border-border rounded-lg p-3 bg-card"
+                  className="border border-border rounded-lg p-3 bg-card cursor-pointer hover:bg-accent/50 transition-colors"
                   data-testid={`quest-${quest.id}`}
+                  onClick={() => openDetailSheet(quest, 'quest')}
                 >
                   <div className="flex items-start gap-3">
                     <div className="text-2xl">{quest.icon}</div>
