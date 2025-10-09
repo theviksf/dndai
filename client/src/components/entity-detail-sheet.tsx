@@ -1,10 +1,11 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, User, MapPin, Heart, Skull } from 'lucide-react';
+import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
-import type { GameCharacter, Companion, EncounteredCharacter, Location, Business, Quest } from '@shared/schema';
+import { Separator } from '@/components/ui/separator';
+import type { GameCharacter, Companion, EncounteredCharacter, Location, Business, Quest, StatusEffect } from '@shared/schema';
 
 // Helper function to get relationship display info
 function getRelationshipDisplay(score: number): { label: string; textColor: string; description: string } {
@@ -18,6 +19,13 @@ function getRelationshipDisplay(score: number): { label: string; textColor: stri
   return { label: 'Neutral', textColor: 'text-gray-500 dark:text-gray-400', description: 'No particular feelings either way' };
 }
 
+// Helper function to get attribute modifier
+function getModifier(score: number | undefined): string {
+  if (score == null) return '+0';
+  const mod = Math.floor((score - 10) / 2);
+  return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
 interface EntityDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -26,6 +34,8 @@ interface EntityDetailSheetProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
   onUpdate?: (updates: Partial<GameCharacter | Companion | EncounteredCharacter | Location | Business | Quest>) => void;
+  statusEffects?: StatusEffect[];
+  businesses?: Business[];
 }
 
 export function EntityDetailSheet({ 
@@ -35,7 +45,9 @@ export function EntityDetailSheet({
   entityType,
   onRefresh,
   isRefreshing = false,
-  onUpdate
+  onUpdate,
+  statusEffects = [],
+  businesses = []
 }: EntityDetailSheetProps) {
   if (!entity) return null;
 
@@ -476,6 +488,18 @@ export function EntityDetailSheet({
             <span className="text-foreground text-base capitalize">{char.sex || 'Unknown'}</span>
           )}
         </div>
+        <div className="flex items-baseline gap-2">
+          <span className="font-serif font-semibold text-foreground min-w-[100px]">Hair Color:</span>
+          {onUpdate ? (
+            <InlineEdit
+              value={char.hairColor || ''}
+              onSave={(value) => onUpdate({ hairColor: String(value) } as any)}
+              inputClassName="h-7 text-base"
+            />
+          ) : (
+            <span className="text-foreground text-base">{char.hairColor || 'Not specified'}</span>
+          )}
+        </div>
         {'level' in char && (
           <div className="flex items-baseline gap-2">
             <span className="font-serif font-semibold text-foreground min-w-[100px]">Level:</span>
@@ -539,6 +563,194 @@ export function EntityDetailSheet({
               <p className="text-foreground text-sm leading-relaxed italic">{char.description || 'No description'}</p>
             )}
           </div>
+        )}
+        
+        {/* Character-specific stats (HP, XP, Gold, Attributes, AC, Status Effects) */}
+        {entityType === 'character' && 'hp' in char && (
+          <>
+            <Separator className="my-4" />
+            <div className="space-y-4">
+              <h4 className="font-serif font-bold text-lg text-primary">Character Stats</h4>
+              
+              {/* HP and XP */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1 p-3 bg-destructive/10 rounded-lg border border-destructive/30">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-destructive" />
+                    <span className="text-xs font-semibold text-muted-foreground">Health</span>
+                  </div>
+                  <div className="text-lg font-mono font-bold">
+                    {onUpdate ? (
+                      <div className="flex items-center gap-1">
+                        <InlineEdit
+                          value={char.hp}
+                          onSave={(value) => onUpdate({ hp: Number(value) } as any)}
+                          type="number"
+                          min={0}
+                          max={char.maxHp}
+                          inputClassName="w-16 h-7 text-lg"
+                        />
+                        /
+                        <InlineEdit
+                          value={char.maxHp}
+                          onSave={(value) => onUpdate({ maxHp: Number(value) } as any)}
+                          type="number"
+                          min={1}
+                          inputClassName="w-16 h-7 text-lg"
+                        />
+                      </div>
+                    ) : (
+                      <span>{char.hp}/{char.maxHp}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-blue-500" />
+                    <span className="text-xs font-semibold text-muted-foreground">Experience</span>
+                  </div>
+                  <div className="text-lg font-mono font-bold">
+                    {onUpdate ? (
+                      <div className="flex items-center gap-1">
+                        <InlineEdit
+                          value={char.xp}
+                          onSave={(value) => onUpdate({ xp: Number(value) } as any)}
+                          type="number"
+                          min={0}
+                          inputClassName="w-16 h-7 text-lg"
+                        />
+                        /
+                        <InlineEdit
+                          value={char.nextLevelXp}
+                          onSave={(value) => onUpdate({ nextLevelXp: Number(value) } as any)}
+                          type="number"
+                          min={1}
+                          inputClassName="w-16 h-7 text-lg"
+                        />
+                      </div>
+                    ) : (
+                      <span>{char.xp}/{char.nextLevelXp}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Gold */}
+              <div className="flex flex-col gap-1 p-3 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-lg border border-yellow-500/30">
+                <div className="flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
+                  <span className="text-xs font-semibold text-muted-foreground">Gold</span>
+                </div>
+                <div className="text-lg font-mono font-bold text-yellow-700 dark:text-yellow-500">
+                  {onUpdate ? (
+                    <InlineEdit
+                      value={char.gold}
+                      onSave={(value) => onUpdate({ gold: Number(value) } as any)}
+                      type="number"
+                      min={0}
+                      inputClassName="w-28 h-7 text-lg"
+                      displayAs={(val) => Number(val).toLocaleString()}
+                    />
+                  ) : (
+                    <span>{char.gold.toLocaleString()} GP</span>
+                  )}
+                </div>
+                {businesses.length > 0 && (
+                  <span className={`text-xs font-mono font-semibold ${
+                    businesses.reduce((total, b) => total + (b.weeklyIncome - b.runningCost), 0) > 0 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    Weekly Income: {businesses.reduce((total, b) => total + (b.weeklyIncome - b.runningCost), 0).toLocaleString()} GP
+                  </span>
+                )}
+              </div>
+
+              {/* Attributes */}
+              <div className="p-3 bg-muted/30 rounded-lg border border-border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Attributes</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { key: 'str', label: 'STR' },
+                    { key: 'dex', label: 'DEX' },
+                    { key: 'con', label: 'CON' },
+                    { key: 'int', label: 'INT' },
+                    { key: 'wis', label: 'WIS' },
+                    { key: 'cha', label: 'CHA' },
+                  ].map(({ key, label }) => {
+                    const attrValue = char.attributes[key as keyof typeof char.attributes] ?? 10;
+                    return (
+                      <div key={key} className="flex flex-col items-center p-2 bg-accent/10 rounded-md">
+                        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+                        <span className="text-xl font-bold">
+                          {onUpdate ? (
+                            <InlineEdit
+                              value={attrValue}
+                              onSave={(val) => onUpdate({ attributes: { ...char.attributes, [key]: Number(val) } } as any)}
+                              type="number"
+                              min={1}
+                              max={30}
+                              inputClassName="w-12 h-7 text-xl text-center font-bold"
+                            />
+                          ) : (
+                            <span>{attrValue}</span>
+                          )}
+                        </span>
+                        <Badge variant="outline" className="mt-1 text-xs font-mono">
+                          {getModifier(attrValue as number)}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* AC */}
+              <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-muted-foreground">Armor Class</span>
+                  <span className="text-2xl font-bold font-mono">
+                    {onUpdate ? (
+                      <InlineEdit
+                        value={char.attributes.ac ?? 10}
+                        onSave={(value) => onUpdate({ attributes: { ...char.attributes, ac: Number(value) } } as any)}
+                        type="number"
+                        min={1}
+                        max={30}
+                        inputClassName="w-16 h-8 text-2xl text-center font-bold"
+                      />
+                    ) : (
+                      <span>{char.attributes.ac ?? 10}</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Status Effects */}
+              {statusEffects.length > 0 && (
+                <div className="p-3 bg-accent/10 rounded-lg border border-accent/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-accent" />
+                    <span className="text-sm font-semibold text-accent">Active Effects</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {statusEffects.map((effect, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1.5 bg-accent/20">
+                        <span>{effect.icon}</span>
+                        <span className="font-medium">{effect.name}</span>
+                        <span className="text-xs opacity-70">({effect.turnsRemaining}t)</span>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
         
         {/* Companion-specific fields */}

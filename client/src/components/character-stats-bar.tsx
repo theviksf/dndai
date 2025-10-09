@@ -444,6 +444,8 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
         onUpdate={onUpdate ? (updates) => {
           onUpdate({ character: { ...character, ...updates } as GameCharacter });
         } : undefined}
+        statusEffects={statusEffects}
+        businesses={businesses}
       />
 
       {/* Location Detail Sheet */}
