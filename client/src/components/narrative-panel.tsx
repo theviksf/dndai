@@ -679,9 +679,24 @@ export default function NarrativePanel({
             updatedTabsSet.add('quests');
           }
           
-          // Update companions
+          // Update companions - NEVER DELETE, only merge/add
           if (stateUpdates.companions !== undefined) {
-            updated.companions = stateUpdates.companions;
+            const existingCompanions = prev.companions || [];
+            const newCompanions = stateUpdates.companions;
+            
+            // Merge companions - update existing ones or add new ones
+            const mergedCompanions = [...existingCompanions];
+            newCompanions.forEach((newComp: any) => {
+              const existingIndex = mergedCompanions.findIndex(comp => comp.id === newComp.id);
+              if (existingIndex >= 0) {
+                // Update existing companion, preserving fields like imageUrl
+                mergedCompanions[existingIndex] = { ...mergedCompanions[existingIndex], ...newComp };
+              } else {
+                // Add new companion
+                mergedCompanions.push(newComp);
+              }
+            });
+            updated.companions = mergedCompanions;
             updatedTabsSet.add('companions');
           }
           
