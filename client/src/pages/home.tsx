@@ -105,6 +105,25 @@ export default function Home() {
             migratedState.debugLog = [];
           }
           
+          // Clean up any base64 images from debug logs (initial load cleanup)
+          if (migratedState.debugLog && Array.isArray(migratedState.debugLog)) {
+            let hadBase64 = false;
+            migratedState.debugLog = migratedState.debugLog.map((log: any) => {
+              if (log.imageUrl && typeof log.imageUrl === 'string' && log.imageUrl.startsWith('data:image')) {
+                hadBase64 = true;
+                return { ...log, imageUrl: null };
+              }
+              if (log.response && typeof log.response === 'string' && log.response.includes('data:image')) {
+                hadBase64 = true;
+                return { ...log, response: log.response.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[Base64 image data removed]') };
+              }
+              return log;
+            });
+            if (hadBase64) {
+              console.log('[DB] Cleaned up base64 images from debug logs on initial load');
+            }
+          }
+          
           setGameState(migratedState);
           setConfig(migrateParserPrompt(migrateConfig(sessionData.gameConfig)));
           setCostTracker(sessionData.costTracker || createDefaultCostTracker());
@@ -148,6 +167,26 @@ export default function Home() {
                 if (!loadedState.debugLog) {
                   loadedState.debugLog = [];
                 }
+                
+                // Clean up any base64 images from debug logs during migration
+                if (loadedState.debugLog && Array.isArray(loadedState.debugLog)) {
+                  let hadBase64 = false;
+                  loadedState.debugLog = loadedState.debugLog.map((log: any) => {
+                    if (log.imageUrl && typeof log.imageUrl === 'string' && log.imageUrl.startsWith('data:image')) {
+                      hadBase64 = true;
+                      return { ...log, imageUrl: null };
+                    }
+                    if (log.response && typeof log.response === 'string' && log.response.includes('data:image')) {
+                      hadBase64 = true;
+                      return { ...log, response: log.response.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[Base64 image data removed]') };
+                    }
+                    return log;
+                  });
+                  if (hadBase64) {
+                    console.log('[DB] Cleaned up base64 images during localStorage migration');
+                  }
+                }
+                
                 migratedState = loadedState;
               } catch (error) {
                 console.error('[DB] Failed to parse localStorage gameState:', error);
