@@ -14,7 +14,9 @@ import DebugLogViewer from '@/components/debug-log-viewer';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
+import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle, MoreVertical, Menu, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateEntityImage } from '@/lib/image-generation';
 
@@ -1152,7 +1154,7 @@ export default function Home() {
               {/* Cost Tracker */}
               <HoverCard>
                 <HoverCardTrigger asChild>
-                  <div className="hidden md:flex items-center gap-2 bg-accent/10 border border-accent rounded-md px-4 py-2 cursor-pointer hover:bg-accent/20 transition-colors">
+                  <div className="hidden lg:flex items-center gap-2 bg-accent/10 border border-accent rounded-lg px-4 py-2 cursor-pointer hover:bg-accent/20 transition-colors">
                     <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -1243,83 +1245,104 @@ export default function Home() {
                 </HoverCardContent>
               </HoverCard>
               
-              {/* Game Actions */}
-              <Button
-                onClick={handleUndo}
-                disabled={turnSnapshots.length === 0}
-                variant="outline"
-                className="bg-muted hover:bg-muted/80"
-                data-testid="button-undo"
-              >
-                <Undo2 className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Undo</span>
-              </Button>
-              
+              {/* Primary Actions */}
               <Button
                 onClick={handleSaveGame}
                 disabled={saveMutation.isPending}
-                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                size="default"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold shadow-sm"
                 data-testid="button-save-game"
               >
                 <Save className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Save</span>
+                <span className="hidden sm:inline">Save Game</span>
+                <span className="sm:hidden">Save</span>
               </Button>
               
-              <Button
-                onClick={handleNewGame}
-                variant="outline"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                data-testid="button-new-game"
-              >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">New Game</span>
-              </Button>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => setShowExportDialog(true)}
-                  variant="outline"
-                  className="bg-muted hover:bg-muted/80"
-                  data-testid="button-export-game"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  <span className="hidden md:inline">Export</span>
-                </Button>
-                <div className="flex flex-col gap-0.5 text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded-md" data-testid="text-storage-size">
-                  <div className="font-semibold text-primary">Session: {formatBytes(storageStats.currentSession)}</div>
-                  <div className="text-[10px]">Sessions: {storageStats.totalSessions} | Total: {formatBytes(storageStats.indexedDB)}</div>
-                </div>
-              </div>
-              
-              <Button
-                onClick={handleImport}
-                variant="outline"
-                className="bg-muted hover:bg-muted/80"
-                data-testid="button-import-game"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Import</span>
-              </Button>
-              
-              <Button
-                onClick={() => setIsDebugLogOpen(true)}
-                variant="outline"
-                className="bg-muted hover:bg-muted/80"
-                data-testid="button-view-log"
-              >
-                <Terminal className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">View Log</span>
-              </Button>
-              
-              <Button
-                onClick={() => setLocation(`/settings?session=${sessionId}`)}
-                variant="outline"
-                className="bg-muted hover:bg-muted/80"
-                data-testid="button-settings"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Settings</span>
-              </Button>
+              {/* Game Menu Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="default"
+                    className="font-medium"
+                    data-testid="button-game-menu"
+                  >
+                    <Menu className="w-4 h-4 mr-2" />
+                    <span className="hidden md:inline">Game</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-semibold">Game Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleNewGame}
+                    className="cursor-pointer"
+                    data-testid="menu-new-game"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    New Game
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleUndo}
+                    disabled={turnSnapshots.length === 0}
+                    className="cursor-pointer"
+                    data-testid="menu-undo"
+                  >
+                    <Undo2 className="w-4 h-4 mr-2" />
+                    Undo Last Turn
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="font-semibold">Data Management</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => setShowExportDialog(true)}
+                    className="cursor-pointer"
+                    data-testid="menu-export"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Save
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleImport}
+                    className="cursor-pointer"
+                    data-testid="menu-import"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import Save
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="cursor-default hover:bg-transparent"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <Database className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <div className="flex flex-col gap-0.5 text-xs">
+                      <div className="font-semibold text-primary">Session: {formatBytes(storageStats.currentSession)}</div>
+                      <div className="text-[10px] text-muted-foreground">Sessions: {storageStats.totalSessions} | Total: {formatBytes(storageStats.indexedDB)}</div>
+                    </div>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="font-semibold">System</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => setIsDebugLogOpen(true)}
+                    className="cursor-pointer"
+                    data-testid="menu-view-log"
+                  >
+                    <Terminal className="w-4 h-4 mr-2" />
+                    View Debug Log
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setLocation(`/settings?session=${sessionId}`)}
+                    className="cursor-pointer"
+                    data-testid="menu-settings"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

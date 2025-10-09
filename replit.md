@@ -23,6 +23,13 @@ Preferred communication style: Simple, everyday language.
 - **NarrativePanel**: Displays AI-generated story progress, supports Markdown rendering (GFM), and includes a custom action text input.
 - **GameInfoTabs**: Tabbed interface with 8 tabs (Inventory, Spells, Locations, Business, Quests, Party, NPCs, History). Features notification badges that pulse when parser updates a tab, clearing when opened. Spells tab includes search filtering, level filtering, and sorting by name/level/school with compact card layout. NPCs tab displays sex/gender and relationship status (-3 to +3 scale) with color-coded text. All tabs have consistent icons.
 - **EntityDetailSheet**: Wide modal panel (sm:max-w-7xl) with side-by-side layout - image on left (40%), content on right (60%). Features serif typography for headings, larger readable fonts, and improved spacing. Status displays as colored badges ("Alive" in green with Heart icon, "Dead" in red with Skull icon). Relationship shows as colored text labels (Neutral/Warm/Friendly/Devoted or Cold/Unfriendly/Hostile), not numeric values. All entities support in-place editing. Supports NPCs, companions, quests, locations, and businesses. Quest panel displays title with icon, type badge (⚔️ Main Quest/📜 Side Quest), description, objectives with checkboxes, progress tracking, and backstory when available.
+- **Header Navigation**: Modern, organized header with clean 3-element design:
+  - Cost Tracker (HoverCard showing detailed token usage and costs)
+  - Save Game button (primary action)
+  - Game Menu (DropdownMenu) organizing all actions into logical sections:
+    - Game Actions: New Game, Undo Last Turn
+    - Data Management: Export Save, Import Save, Storage Stats display
+    - System: View Debug Log, Settings
 **Routing Logic**: Smart navigation ensures a smooth user experience, preventing redirect loops and guiding users to character creation or settings when necessary.
 
 ### Backend Architecture
