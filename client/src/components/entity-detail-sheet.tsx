@@ -971,6 +971,31 @@ export function EntityDetailSheet({
                   )}
                 </div>
               )}
+
+              {/* Revelations */}
+              {'revelations' in entity && entity.revelations && entity.revelations.length > 0 && (
+                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                  <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
+                    <Sparkles className="w-5 h-5" /> Revelations
+                  </h3>
+                  <div className="space-y-3" data-testid="entity-revelations-list">
+                    {entity.revelations.map((revelation, index) => (
+                      <div key={index} className="bg-muted/30 border-l-4 border-primary rounded-r-lg p-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-1">
+                            <Badge variant="outline" className="font-mono text-xs">
+                              Turn {revelation.revealedAtTurn}
+                            </Badge>
+                          </div>
+                          <p className="text-foreground text-sm leading-relaxed flex-1">
+                            {revelation.text}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
