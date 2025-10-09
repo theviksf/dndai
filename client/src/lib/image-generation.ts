@@ -1,6 +1,7 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, GameConfig, DebugLogEntry } from '@shared/schema';
 import { nanoid } from 'nanoid';
+import { truncateDebugResponse } from '@/lib/game-state';
 
 export interface ImageGenerationOptions {
   entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
@@ -63,11 +64,11 @@ export async function generateEntityImage({
         timestamp,
         type: 'image',
         prompt: errorData.filledPrompt || promptTemplate,
-        response: errorData.rawResponse || JSON.stringify({ 
+        response: truncateDebugResponse(errorData.rawResponse || JSON.stringify({ 
           status: response.status,
           statusText: response.statusText,
           error: errorData 
-        }, null, 2),
+        }, null, 2)),
         model: 'google/gemini-2.5-flash-image-preview',
         entityType,
         imageUrl: null,

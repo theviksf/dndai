@@ -1,4 +1,24 @@
-import type { GameStateData, GameConfig, GameCharacter, CostTracker, NarrativeMessage } from '@shared/schema';
+import type { GameStateData, GameConfig, GameCharacter, CostTracker, NarrativeMessage, DebugLogEntry } from '@shared/schema';
+
+// Helper to truncate debug log responses to prevent bloating IndexedDB
+// Keep only first 500 chars of response to save storage space
+const MAX_DEBUG_RESPONSE_LENGTH = 500;
+const MAX_DEBUG_LOG_ENTRIES = 20;
+
+export function truncateDebugResponse(response: string): string {
+  if (response.length <= MAX_DEBUG_RESPONSE_LENGTH) {
+    return response;
+  }
+  return response.substring(0, MAX_DEBUG_RESPONSE_LENGTH) + '... [truncated]';
+}
+
+export function limitDebugLogSize(debugLog: DebugLogEntry[]): DebugLogEntry[] {
+  if (debugLog.length <= MAX_DEBUG_LOG_ENTRIES) {
+    return debugLog;
+  }
+  // Keep only the last MAX_DEBUG_LOG_ENTRIES entries
+  return debugLog.slice(-MAX_DEBUG_LOG_ENTRIES);
+}
 
 export const DM_SYSTEM_PROMPT = `You are an experienced Dungeon Master running a Dungeons & Dragons adventure. Your role is to:
 
