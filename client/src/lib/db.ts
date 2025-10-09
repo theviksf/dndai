@@ -39,12 +39,26 @@ export class DnDGameDB extends Dexie {
       await tx.table('sessions').clear();
       
       for (const session of sessions) {
-        // Check if already compressed (has compressedData field)
-        if ('compressedData' in session) {
-          await tx.table('sessions').put(session);
+        const sessionAny = session as any;
+        
+        // Check if this is a legacy uncompressed record (has gameState field)
+        if ('gameState' in sessionAny && !('compressedData' in sessionAny)) {
+          // Legacy uncompressed format - compress it
+          const { sessionId, lastUpdated, ...data } = sessionAny;
+          const compressed = LZString.compressToUTF16(JSON.stringify(data));
+          await tx.table('sessions').put({
+            sessionId,
+            compressedData: compressed,
+            lastUpdated
+          });
+          console.log('[DB MIGRATION] Compressed legacy session:', sessionId);
+        } else if ('compressedData' in sessionAny) {
+          // Already compressed - keep as is
+          await tx.table('sessions').put(sessionAny);
         } else {
-          // Old uncompressed format - compress it
-          const { sessionId, lastUpdated, ...data } = session as any;
+          // Unknown format - try to compress anyway
+          console.warn('[DB MIGRATION] Unknown session format, attempting compression:', sessionAny.sessionId);
+          const { sessionId, lastUpdated, ...data } = sessionAny;
           const compressed = LZString.compressToUTF16(JSON.stringify(data));
           await tx.table('sessions').put({
             sessionId,
@@ -61,24 +75,53 @@ export class DnDGameDB extends Dexie {
 export const db = new DnDGameDB();
 
 export async function getSessionData(sessionId: string): Promise<SessionData | undefined> {
-  const compressed = await db.sessions.get(sessionId);
-  if (!compressed) return undefined;
+  const record = await db.sessions.get(sessionId);
+  if (!record) return undefined;
   
   try {
-    const decompressed = LZString.decompressFromUTF16(compressed.compressedData);
-    if (!decompressed) {
-      console.error('[DB GET] Failed to decompress data');
-      return undefined;
+    // Check if this is a compressed record
+    if ('compressedData' in record) {
+      const decompressed = LZString.decompressFromUTF16(record.compressedData);
+      if (!decompressed) {
+        console.error('[DB GET] Failed to decompress data, attempting raw JSON parse');
+        // Fallback: try parsing as raw JSON (legacy data that wasn't properly compressed)
+        try {
+          const data = JSON.parse(record.compressedData);
+          console.log('[DB GET] Successfully parsed as raw JSON, re-saving as compressed');
+          // Re-save in compressed format
+          await saveSessionData({
+            sessionId: record.sessionId,
+            lastUpdated: record.lastUpdated,
+            ...data
+          } as SessionData);
+          return {
+            sessionId: record.sessionId,
+            lastUpdated: record.lastUpdated,
+            ...data
+          } as SessionData;
+        } catch {
+          console.error('[DB GET] Failed to parse as JSON, data may be corrupted');
+          return undefined;
+        }
+      }
+      
+      const data = JSON.parse(decompressed);
+      return {
+        sessionId: record.sessionId,
+        lastUpdated: record.lastUpdated,
+        ...data
+      } as SessionData;
+    } else {
+      // Legacy uncompressed record - this shouldn't happen after migration but handle it
+      console.log('[DB GET] Found legacy uncompressed record, converting to compressed');
+      const legacyData = record as any;
+      const { sessionId, lastUpdated, ...data } = legacyData;
+      // Re-save in compressed format
+      await saveSessionData(legacyData as SessionData);
+      return legacyData as SessionData;
     }
-    
-    const data = JSON.parse(decompressed);
-    return {
-      sessionId: compressed.sessionId,
-      lastUpdated: compressed.lastUpdated,
-      ...data
-    } as SessionData;
   } catch (error) {
-    console.error('[DB GET] Error decompressing session data:', error);
+    console.error('[DB GET] Error loading session data:', error);
     return undefined;
   }
 }
@@ -153,25 +196,43 @@ export async function deleteAllSessions(): Promise<void> {
 }
 
 export async function getAllSessions(): Promise<SessionData[]> {
-  const compressedSessions = await db.sessions.orderBy('lastUpdated').reverse().toArray();
+  const records = await db.sessions.orderBy('lastUpdated').reverse().toArray();
   
   const sessions: SessionData[] = [];
-  for (const compressed of compressedSessions) {
+  for (const record of records) {
     try {
-      const decompressed = LZString.decompressFromUTF16(compressed.compressedData);
-      if (!decompressed) {
-        console.error('[DB GET ALL] Failed to decompress session:', compressed.sessionId);
-        continue;
+      // Check if this is a compressed record
+      if ('compressedData' in record) {
+        const decompressed = LZString.decompressFromUTF16(record.compressedData);
+        if (!decompressed) {
+          // Fallback: try parsing as raw JSON
+          try {
+            const data = JSON.parse(record.compressedData);
+            console.log('[DB GET ALL] Parsed session as raw JSON:', record.sessionId);
+            sessions.push({
+              sessionId: record.sessionId,
+              lastUpdated: record.lastUpdated,
+              ...data
+            } as SessionData);
+          } catch {
+            console.error('[DB GET ALL] Failed to parse session:', record.sessionId);
+          }
+          continue;
+        }
+        
+        const data = JSON.parse(decompressed);
+        sessions.push({
+          sessionId: record.sessionId,
+          lastUpdated: record.lastUpdated,
+          ...data
+        } as SessionData);
+      } else {
+        // Legacy uncompressed record
+        console.log('[DB GET ALL] Found legacy uncompressed session:', record.sessionId);
+        sessions.push(record as any as SessionData);
       }
-      
-      const data = JSON.parse(decompressed);
-      sessions.push({
-        sessionId: compressed.sessionId,
-        lastUpdated: compressed.lastUpdated,
-        ...data
-      } as SessionData);
     } catch (error) {
-      console.error('[DB GET ALL] Error decompressing session:', compressed.sessionId, error);
+      console.error('[DB GET ALL] Error loading session:', record.sessionId, error);
     }
   }
   
