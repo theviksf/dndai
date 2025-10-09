@@ -704,6 +704,18 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   data-testid="switch-auto-generate-backstories"
                 />
               </div>
+
+              <div className="flex items-center justify-between bg-muted/30 border border-border rounded-md p-4">
+                <div>
+                  <div className="text-sm font-medium text-foreground">Auto-track Revelations</div>
+                  <div className="text-xs text-muted-foreground">Automatically detect and record backstory revelations from narrative</div>
+                </div>
+                <Switch 
+                  checked={localConfig.autoGenerateRevelations} 
+                  onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoGenerateRevelations: checked }))}
+                  data-testid="switch-auto-track-revelations"
+                />
+              </div>
             </TabsContent>
           </Tabs>
 

@@ -12,6 +12,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
 import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
+import { trackRevelations } from '@/lib/revelations-tracking';
 
 interface NarrativePanelProps {
   gameState: GameStateData;
@@ -775,11 +776,115 @@ export default function NarrativePanel({
         return updated;
       });
 
-      // Trigger save after parser updates - use setTimeout to ensure setGameState completes first
+      // Trigger save and revelations after parser updates - use setTimeout to ensure setGameState completes first
       if (!parsingFailed && parsedData && parsedData.stateUpdates) {
         setTimeout(() => {
           // Save the current game state (which was just updated by parser's setGameState)
           saveGameState();
+          
+          // Track revelations with fresh state (after parser updates are committed)
+          if (config.autoGenerateRevelations && primaryResponse?.content) {
+            // Get fresh state by using functional update
+            setGameState(freshState => {
+              // Call revelations tracking with the committed state
+              trackRevelations({
+                narrative: primaryResponse.content,
+                gameState: freshState,
+                config,
+              }).then(revelationsResult => {
+                // Update cost tracker with revelations cost
+                if (revelationsResult.usage) {
+                  const revelationsModel = models.find(m => m.id === config.revelationsLLM);
+                  if (revelationsModel) {
+                    const revelationsCost = 
+                      (revelationsResult.usage.prompt_tokens * parseFloat(revelationsModel.pricing.prompt)) +
+                      (revelationsResult.usage.completion_tokens * parseFloat(revelationsModel.pricing.completion));
+                    
+                    setCostTracker(prev => ({
+                      ...prev,
+                      revelationsCost: (prev.revelationsCost || 0) + revelationsCost,
+                      lastTurnRevelationsCost: revelationsCost,
+                      sessionCost: prev.sessionCost + revelationsCost,
+                    }));
+                  }
+                }
+
+                // Add debug log
+                if (revelationsResult.debugLogEntry) {
+                  setGameState(prev => ({
+                    ...prev,
+                    debugLog: [...(prev.debugLog || []), revelationsResult.debugLogEntry!],
+                  }));
+                }
+
+                // Update entities with revelations
+                if (revelationsResult.revelations && revelationsResult.revelations.length > 0) {
+                  setGameState(prev => {
+                    const updated = { ...prev };
+                    
+                    revelationsResult.revelations.forEach(revelation => {
+                      const { entityType, entityId, text } = revelation;
+                      const newRevelation = {
+                        text,
+                        revealedAtTurn: updated.turnCount,
+                      };
+
+                      if (entityType === 'character') {
+                        // Add to main character
+                        const existingRevelations = updated.character.revelations || [];
+                        updated.character = {
+                          ...updated.character,
+                          revelations: [...existingRevelations, newRevelation],
+                        };
+                      } else if (entityType === 'companion') {
+                        // Find and update companion
+                        updated.companions = updated.companions?.map(c =>
+                          c.id === entityId ? {
+                            ...c,
+                            revelations: [...(c.revelations || []), newRevelation],
+                          } : c
+                        );
+                      } else if (entityType === 'npc') {
+                        // Find and update NPC
+                        updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
+                          npc.id === entityId ? {
+                            ...npc,
+                            revelations: [...(npc.revelations || []), newRevelation],
+                          } : npc
+                        );
+                      } else if (entityType === 'location') {
+                        // Update current or previous location
+                        // Check if it's for current location (by name or no entityId specified)
+                        if (updated.location.name === revelation.entityName || !entityId) {
+                          updated.location = {
+                            ...updated.location,
+                            revelations: [...(updated.location.revelations || []), newRevelation],
+                          };
+                        } else {
+                          // Check previous locations by id
+                          updated.previousLocations = updated.previousLocations?.map(loc =>
+                            loc.id === entityId ? {
+                              ...loc,
+                              revelations: [...(loc.revelations || []), newRevelation],
+                            } : loc
+                          );
+                        }
+                      }
+                    });
+
+                    return updated;
+                  });
+
+                  console.log(`[REVELATIONS] Added ${revelationsResult.revelations.length} revelations to game state`);
+                }
+              }).catch(error => {
+                console.error('[REVELATIONS] Error tracking revelations:', error);
+              });
+              
+              // Return state unchanged - revelations updates happen in nested setGameState calls
+              return freshState;
+            });
+          }
         }, 10);
       }
 

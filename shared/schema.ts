@@ -264,6 +264,7 @@ export type GameConfig = {
   revelationsSystemPrompt: string;
   autoGenerateImages: boolean;
   autoGenerateBackstories: boolean;
+  autoGenerateRevelations: boolean;
 };
 
 export type OpenRouterModel = {
@@ -302,6 +303,8 @@ export type CostTracker = {
   lastTurnCost: number;
   imageCost: number;
   lastTurnImageCost: number;
+  revelationsCost?: number;
+  lastTurnRevelationsCost?: number;
 };
 
 // Database tables

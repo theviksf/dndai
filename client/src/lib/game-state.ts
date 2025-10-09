@@ -325,6 +325,7 @@ export function createDefaultConfig(): GameConfig {
     revelationsSystemPrompt: REVELATIONS_SYSTEM_PROMPT,
     autoGenerateImages: false,
     autoGenerateBackstories: true,
+    autoGenerateRevelations: false,
   };
 }
 
@@ -365,6 +366,7 @@ export function migrateConfig(config: any): GameConfig {
     // Ensure new revelations fields exist
     revelationsLLM: config.revelationsLLM || defaults.revelationsLLM,
     revelationsSystemPrompt: config.revelationsSystemPrompt || defaults.revelationsSystemPrompt,
+    autoGenerateRevelations: config.autoGenerateRevelations ?? defaults.autoGenerateRevelations,
   };
 }
 
