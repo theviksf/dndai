@@ -923,6 +923,51 @@ export default function NarrativePanel({
                       }
                     });
 
+                    // Create friendly notification message for revealed backstories
+                    const entityNames = revelationsResult.revelations.map(r => {
+                      // Use entityName from result if available, otherwise look up in game state
+                      if (r.entityName) return r.entityName;
+                      
+                      // Lookup entity name from game state by type and id
+                      if (r.entityType === 'character') {
+                        return updated.character.name;
+                      } else if (r.entityType === 'companion') {
+                        const companion = updated.companions?.find(c => c.id === r.entityId);
+                        return companion?.name || 'a companion';
+                      } else if (r.entityType === 'npc') {
+                        const npc = updated.encounteredCharacters?.find(n => n.id === r.entityId);
+                        return npc?.name || 'an NPC';
+                      } else if (r.entityType === 'quest') {
+                        const quest = updated.quests?.find(q => q.id === r.entityId);
+                        return quest?.title || 'a quest';
+                      } else if (r.entityType === 'location') {
+                        return updated.location.name || 'this location';
+                      }
+                      return 'an entity';
+                    });
+                    const uniqueNames = Array.from(new Set(entityNames));
+                    const count = revelationsResult.revelations.length;
+                    
+                    let notificationContent = '';
+                    if (uniqueNames.length === 1) {
+                      notificationContent = `✨ *You've uncovered ${count} ${count === 1 ? 'revelation' : 'revelations'} about ${uniqueNames[0]}! Check their details to learn more.*`;
+                    } else if (uniqueNames.length === 2) {
+                      notificationContent = `✨ *You've uncovered ${count} ${count === 1 ? 'revelation' : 'revelations'} about ${uniqueNames[0]} and ${uniqueNames[1]}! Check their details to learn more.*`;
+                    } else {
+                      const lastEntity = uniqueNames[uniqueNames.length - 1];
+                      const otherEntities = uniqueNames.slice(0, -1).join(', ');
+                      notificationContent = `✨ *You've uncovered ${count} revelations about ${otherEntities}, and ${lastEntity}! Check their details to learn more.*`;
+                    }
+                    
+                    const notificationMessage = {
+                      id: `revelation-notification-${Date.now()}`,
+                      type: 'dm' as const,
+                      content: notificationContent,
+                      timestamp: Date.now(),
+                    };
+                    
+                    updated.narrativeHistory = [...updated.narrativeHistory, notificationMessage];
+
                     return updated;
                   });
 
