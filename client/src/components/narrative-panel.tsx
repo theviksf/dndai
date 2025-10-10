@@ -708,36 +708,89 @@ export default function NarrativePanel({
           }
           
           // Update companions - NEVER DELETE, only merge/add
+          // Also migrate NPCs to companions when they join the party
           if (stateUpdates.companions !== undefined) {
             const existingCompanions = prev.companions || [];
             const newCompanions = stateUpdates.companions;
+            const existingNPCs = prev.encounteredCharacters || [];
+            const npcsToRemove: string[] = [];
             
             // Merge companions - update existing ones or add new ones
             const mergedCompanions = [...existingCompanions];
             newCompanions.forEach((newComp: any) => {
               const existingIndex = mergedCompanions.findIndex(comp => comp.id === newComp.id);
               if (existingIndex >= 0) {
-                // Update existing companion, preserving fields like imageUrl
+                // Update existing companion, preserving fields like imageUrl, backstory, revelations
                 mergedCompanions[existingIndex] = { ...mergedCompanions[existingIndex], ...newComp };
               } else {
-                // Add new companion
-                mergedCompanions.push(newComp);
+                // Check if this companion was previously an NPC
+                const matchingNPC = existingNPCs.find(npc => 
+                  npc.name.toLowerCase() === newComp.name.toLowerCase() ||
+                  npc.id === newComp.id
+                );
+                
+                if (matchingNPC) {
+                  // Migrate NPC data to companion, preserving important fields
+                  const migratedCompanion = {
+                    ...newComp,
+                    id: matchingNPC.id, // Keep the same ID
+                    imageUrl: matchingNPC.imageUrl || newComp.imageUrl,
+                    backstory: matchingNPC.backstory || newComp.backstory,
+                    revelations: matchingNPC.revelations || newComp.revelations,
+                    // Map NPC fields to companion fields where appropriate
+                    appearance: newComp.appearance || matchingNPC.appearance || matchingNPC.description,
+                    class: newComp.class || matchingNPC.role || 'Unknown',
+                    // Convert relationship number to string if needed
+                    relationship: newComp.relationship || (
+                      matchingNPC.relationship >= 2 ? 'Ally' :
+                      matchingNPC.relationship >= 1 ? 'Friendly' :
+                      matchingNPC.relationship <= -2 ? 'Hostile' :
+                      matchingNPC.relationship <= -1 ? 'Unfriendly' :
+                      'Neutral'
+                    ),
+                  };
+                  mergedCompanions.push(migratedCompanion);
+                  // Mark NPC for removal
+                  npcsToRemove.push(matchingNPC.id);
+                  console.log(`[MIGRATION] NPC "${matchingNPC.name}" migrated to companion, preserving imageUrl and backstory`);
+                } else {
+                  // Add new companion (not from NPC)
+                  mergedCompanions.push(newComp);
+                }
               }
             });
+            
             updated.companions = mergedCompanions;
+            
+            // Remove migrated NPCs from encounteredCharacters
+            if (npcsToRemove.length > 0) {
+              updated.encounteredCharacters = existingNPCs.filter(npc => !npcsToRemove.includes(npc.id));
+              console.log(`[MIGRATION] Removed ${npcsToRemove.length} NPC(s) from encounters after migration to companions`);
+            }
+            
             updatedTabsSet.add('companions');
           }
           
           // Update encountered characters - NEVER DELETE, only merge/add
           if (stateUpdates.encounteredCharacters !== undefined) {
-            const existingNPCs = prev.encounteredCharacters || [];
+            const existingNPCs = updated.encounteredCharacters || prev.encounteredCharacters || [];
             const newNPCs = stateUpdates.encounteredCharacters;
+            const currentCompanions = updated.companions || prev.companions || [];
             
             // Merge NPCs - update existing ones or add new ones
             const mergedNPCs = [...existingNPCs];
             newNPCs.forEach((newNPC: any) => {
               const existingIndex = mergedNPCs.findIndex(npc => npc.id === newNPC.id);
-              if (existingIndex >= 0) {
+              
+              // Check if this NPC is already a companion (prevent duplication)
+              const isCompanion = currentCompanions.some(comp => 
+                comp.id === newNPC.id || 
+                comp.name.toLowerCase() === newNPC.name.toLowerCase()
+              );
+              
+              if (isCompanion) {
+                console.log(`[MIGRATION] Skipping NPC "${newNPC.name}" - already a companion`);
+              } else if (existingIndex >= 0) {
                 // Update existing NPC
                 mergedNPCs[existingIndex] = { ...mergedNPCs[existingIndex], ...newNPC };
               } else {
