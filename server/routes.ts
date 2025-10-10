@@ -481,8 +481,6 @@ EXACT JSON FORMAT TO RETURN:
         sections.push(`## ${comp.name} (ID: ${comp.id})`);
         if (comp.backstory) {
           sections.push(`Backstory: ${comp.backstory.substring(0, 300)}...`);
-        } else {
-          sections.push('Backstory: [No backstory yet - extract any backstory information revealed in narrative]');
         }
         if (comp.revelations && comp.revelations.length > 0) {
           sections.push('Existing Revelations:');
@@ -501,8 +499,6 @@ EXACT JSON FORMAT TO RETURN:
         sections.push(`## ${npc.name} (ID: ${npc.id})`);
         if (npc.backstory) {
           sections.push(`Backstory: ${npc.backstory.substring(0, 300)}...`);
-        } else {
-          sections.push('Backstory: [No backstory yet - extract any backstory information revealed in narrative]');
         }
         if (npc.revelations && npc.revelations.length > 0) {
           sections.push('Existing Revelations:');
@@ -519,8 +515,6 @@ EXACT JSON FORMAT TO RETURN:
     sections.push(`Name: ${gameState.location.name}`);
     if (gameState.location.backstory) {
       sections.push(`Backstory: ${gameState.location.backstory.substring(0, 300)}...`);
-    } else {
-      sections.push('Backstory: [No backstory yet - extract any backstory information revealed in narrative]');
     }
     if (gameState.location.revelations && gameState.location.revelations.length > 0) {
       sections.push('Existing Revelations:');
@@ -537,8 +531,6 @@ EXACT JSON FORMAT TO RETURN:
         sections.push(`## ${loc.name}`);
         if (loc.backstory) {
           sections.push(`Backstory: ${loc.backstory.substring(0, 200)}...`);
-        } else {
-          sections.push('Backstory: [No backstory yet - extract any backstory information revealed in narrative]');
         }
         if (loc.revelations && loc.revelations.length > 0) {
           sections.push('Existing Revelations:');

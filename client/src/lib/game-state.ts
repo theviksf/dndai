@@ -204,26 +204,19 @@ EXACT JSON FORMAT TO RETURN:
 5. **Maintain Consistency**: Respect the established world lore and existing relationships
 6. **Make it Actionable**: Include details that can affect gameplay (specific items, locations, contacts)`;
 
-export const REVELATIONS_SYSTEM_PROMPT = `You are a revelations tracker for a D&D adventure game. Your role is to identify when backstory information about entities is revealed to the player character during the narrative.
+export const REVELATIONS_SYSTEM_PROMPT = `You are a revelations tracker for a D&D adventure game. Your role is to identify when elements of an entity's backstory are revealed to the player character during the narrative.
 
 # Mission
 Analyze the DM's narrative response and:
-1. Identify backstory information revealed about NPCs, companions, locations, quests, or the player character
-2. Extract revelations - specific backstory elements, secrets, past events, or hidden details
-3. Track what the player has learned about each entity's history, motivations, connections, and secrets
+1. Identify information that connects to existing backstories of NPCs, companions, locations, or the player character
+2. Extract revelations - specific backstory elements that became known to the player
+3. Track what the player has learned about each entity's hidden history, secrets, and past
 4. Avoid duplicating revelations that have already been recorded
 
-**What Counts as a Revelation**:
-- Information about an entity's past, history, or origins
-- Secrets, hidden motivations, or undisclosed relationships
-- Significant events that shaped the entity
-- Personal details that add depth (family, occupation, experiences)
-- Connections to other entities or events in the world
-- Character traits, fears, desires revealed through story
-
-**When to Extract**: Extract a revelation if the narrative reveals backstory information about an entity, whether or not that entity already has a backstory in the game context. First-time reveals are especially important!
-
-**When NOT to Extract**: Skip if the information was already recorded in existing revelations for that entity
+**CRITICAL RULE**: You can ONLY extract a revelation if:
+1. The entity has an existing backstory in the game context
+2. The revealed information connects to that backstory
+3. The information hasn't already been recorded in existing revelations
 
 # Output Format
 
@@ -332,7 +325,7 @@ export function createDefaultConfig(): GameConfig {
     revelationsSystemPrompt: REVELATIONS_SYSTEM_PROMPT,
     autoGenerateImages: false,
     autoGenerateBackstories: true,
-    autoGenerateRevelations: true,
+    autoGenerateRevelations: false,
   };
 }
 
@@ -359,11 +352,6 @@ export function migrateParserPrompt(config: GameConfig): GameConfig {
 
 export function migrateConfig(config: any): GameConfig {
   const defaults = createDefaultConfig();
-  
-  // Force-enable revelations for all users (new feature that should be on by default)
-  // This ensures existing users with old configs get the new feature enabled
-  const shouldEnableRevelations = config.autoGenerateRevelations === false || config.autoGenerateRevelations === undefined;
-  
   return {
     ...defaults,
     ...config,
@@ -375,10 +363,10 @@ export function migrateConfig(config: any): GameConfig {
     backstoryLLM: config.backstoryLLM || defaults.backstoryLLM,
     backstorySystemPrompt: config.backstorySystemPrompt || defaults.backstorySystemPrompt,
     autoGenerateBackstories: config.autoGenerateBackstories ?? defaults.autoGenerateBackstories,
-    // Ensure new revelations fields exist - force enable for all users
+    // Ensure new revelations fields exist
     revelationsLLM: config.revelationsLLM || defaults.revelationsLLM,
     revelationsSystemPrompt: config.revelationsSystemPrompt || defaults.revelationsSystemPrompt,
-    autoGenerateRevelations: shouldEnableRevelations ? true : config.autoGenerateRevelations,
+    autoGenerateRevelations: config.autoGenerateRevelations ?? defaults.autoGenerateRevelations,
   };
 }
 
