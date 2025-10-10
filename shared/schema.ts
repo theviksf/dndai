@@ -50,6 +50,7 @@ export type Quest = {
     total: number;
   };
   backstory?: string;
+  revelations?: Revelation[];
 };
 
 export type Spell = {

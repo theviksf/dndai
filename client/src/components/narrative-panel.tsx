@@ -895,6 +895,14 @@ export default function NarrativePanel({
                             revelations: [...(npc.revelations || []), newRevelation],
                           } : npc
                         );
+                      } else if (entityType === 'quest') {
+                        // Find and update quest
+                        updated.quests = updated.quests?.map(q =>
+                          q.id === entityId ? {
+                            ...q,
+                            revelations: [...(q.revelations || []), newRevelation],
+                          } : q
+                        );
                       } else if (entityType === 'location') {
                         // Update current or previous location
                         // Check if it's for current location (by name or no entityId specified)

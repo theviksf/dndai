@@ -9,7 +9,7 @@ export interface RevelationsTrackingOptions {
 }
 
 export interface RevelationResult {
-  entityType: 'character' | 'companion' | 'npc' | 'location';
+  entityType: 'character' | 'companion' | 'npc' | 'location' | 'quest';
   entityId: string;
   entityName: string;
   text: string;
