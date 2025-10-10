@@ -50,7 +50,7 @@ Preferred communication style: Simple, everyday language.
 The system utilizes multiple specialized LLMs for different tasks:
 - **Primary LLM (Narrative Agent)**: Generates rich, immersive narrative responses (200-400 words) using comprehensive game context, formatted in Markdown.
 - **Parser LLM (State Extraction Agent)**: Extracts structured game state updates from the narrative responses *after* they are displayed to the player. Updates include character details, health, gold, XP, attributes, status effects, location, inventory, spells, quests, companions, and encountered characters. It also generates brief history recaps.
-- **Revelations Agent**: Analyzes narrative responses to identify and extract backstory revelations for entities (NPCs, companions, locations). Tracks when story elements from an entity's backstory are revealed during gameplay, creating a revelation history tied to specific turns. Revelations are displayed in EntityDetailSheet with turn badges.
+- **Revelations Agent**: Analyzes narrative responses to identify and extract backstory revelations for entities (NPCs, companions, quests, locations). Tracks when story elements from an entity's backstory are revealed during gameplay, creating a revelation history tied to specific turns. Revelations are displayed in EntityDetailSheet with turn badges showing when each revelation occurred.
 - **Image Agent**: Generates AI images for characters, NPCs, companions, and locations using Google's Gemini 2.5 Flash Image Preview model via OpenRouter.
 - **Backstory Agent**: Generates rich, structured backstories for NPCs, companions, quests, and locations. Provides narrative depth and world-building context.
 
