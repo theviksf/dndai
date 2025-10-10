@@ -549,18 +549,18 @@ export function EntityDetailSheet({
             )}
           </div>
         )}
-        {'description' in char && (
+        {(entityType === 'character' || 'description' in char) && (
           <div className="pt-3 border-t border-border">
             <span className="font-serif font-bold text-foreground block mb-2">Description:</span>
             {onUpdate ? (
               <InlineEdit
-                value={char.description || ''}
+                value={(char as any).description || ''}
                 onSave={(value) => onUpdate({ description: String(value) } as any)}
                 type="textarea"
                 inputClassName="text-sm leading-relaxed"
               />
             ) : (
-              <p className="text-foreground text-sm leading-relaxed italic">{char.description || 'No description'}</p>
+              <p className="text-foreground text-sm leading-relaxed italic">{(char as any).description || 'No description'}</p>
             )}
           </div>
         )}
