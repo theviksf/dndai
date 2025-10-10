@@ -120,7 +120,7 @@ export function InlineEdit({
       data-testid="inline-edit-display"
     >
       <span>{displayAs ? displayAs(value) : value}</span>
-      <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+      <Pencil className={`w-3 h-3 transition-opacity ${type === 'textarea' ? 'opacity-40 group-hover:opacity-70' : 'opacity-0 group-hover:opacity-50'}`} />
     </div>
   );
 }
