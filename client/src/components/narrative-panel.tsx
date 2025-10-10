@@ -653,8 +653,20 @@ export default function NarrativePanel({
                 updated.previousLocations = [...prevLocations, oldLocationObject];
               }
             }
-            // Merge location data to preserve imageUrl and other fields
-            updated.location = { ...prev.location, ...stateUpdates.location };
+            // Merge location data, but clear imageUrl if location name changed
+            const locationNameChanged = stateUpdates.location.name && stateUpdates.location.name !== prev.location.name;
+            if (locationNameChanged) {
+              // Don't preserve imageUrl/backstory/revelations for new location
+              updated.location = { 
+                ...stateUpdates.location,
+                imageUrl: undefined,
+                backstory: undefined,
+                revelations: undefined,
+              };
+            } else {
+              // Same location, preserve imageUrl and other fields
+              updated.location = { ...prev.location, ...stateUpdates.location };
+            }
           }
           
           // Update status effects
