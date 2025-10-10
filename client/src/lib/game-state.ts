@@ -325,7 +325,7 @@ export function createDefaultConfig(): GameConfig {
     revelationsSystemPrompt: REVELATIONS_SYSTEM_PROMPT,
     autoGenerateImages: false,
     autoGenerateBackstories: true,
-    autoGenerateRevelations: false,
+    autoGenerateRevelations: true,
   };
 }
 

@@ -466,6 +466,9 @@ EXACT JSON FORMAT TO RETURN:
     // Player character
     sections.push('# Player Character');
     sections.push(`Name: ${gameState.character.name}`);
+    if (gameState.character.backstory) {
+      sections.push(`Backstory: ${gameState.character.backstory.substring(0, 300)}...`);
+    }
     if (gameState.character.revelations && gameState.character.revelations.length > 0) {
       sections.push('Existing Revelations:');
       gameState.character.revelations.forEach((rev: any) => {
