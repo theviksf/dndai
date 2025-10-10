@@ -75,7 +75,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
               imageUrl={character.imageUrl}
               entityType="character"
               onClick={() => setDetailSheetOpen(true)}
-              className="w-20 h-20 flex-shrink-0 ring-2 ring-primary/30"
+              className="w-20 h-20 flex-shrink-0"
             />
             
             {/* Character Name & Details */}
@@ -297,7 +297,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 imageUrl={location?.imageUrl}
                 entityType="location"
                 onClick={() => setLocationDetailSheetOpen(true)}
-                className="w-14 h-14 flex-shrink-0 ring-2 ring-primary/30"
+                className="w-20 h-20 flex-shrink-0"
               />
               <div className="flex flex-col min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 mb-0.5">
