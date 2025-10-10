@@ -47,6 +47,26 @@ Uses specialized LLMs for different tasks:
 **Context Management**: Primary LLM receives a condensed context (history, messages, stats, state) for coherence and cost reduction.
 **System Prompts**: All agent prompts are customizable in settings, with defaults in `/prompts/`.
 
+### NPC-to-Companion Migration System
+
+When an NPC joins the party as a companion, the system automatically migrates their data to prevent duplication and preserve continuity:
+
+**Migration Process**:
+1. **Detection**: When the parser adds a new companion, the system checks if an NPC exists with the same name (case-insensitive) or ID
+2. **Data Preservation**: If a matching NPC is found, all their data is migrated to the companion:
+   - **imageUrl**: AI-generated portrait preserved
+   - **backstory**: Generated backstory preserved
+   - **revelations**: Discovered revelations preserved
+   - **id**: Entity ID maintained for continuity
+3. **Field Mapping**: NPC fields are intelligently mapped to companion equivalents:
+   - `role` → `class` (e.g., "Merchant" → "Merchant")
+   - `description` → `appearance` (fallback if appearance not set)
+   - `relationship` (numeric -3 to +3) → relationship text ("Hostile", "Unfriendly", "Neutral", "Friendly", "Ally")
+4. **Cleanup**: The NPC is automatically removed from the `encounteredCharacters` list after migration
+5. **Duplication Prevention**: When adding NPCs, the system checks if they're already companions and skips adding them
+
+**Benefits**: Players see NPCs only once (either in NPCs tab or Party tab), with all generated content (images, backstories, revelations) preserved when they join the party. No redundant AI generation needed.
+
 ### Data Storage Solutions
 
 **IndexedDB Storage (Primary)**: All game data stored in browser IndexedDB (Dexie.js) for capacity and performance. Each game has a unique `sessionId` in the URL. Supports multi-session management, migration from localStorage, and UI for storage display. Base64 image data is sanitized, only R2 URLs are persisted.
