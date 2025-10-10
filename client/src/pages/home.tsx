@@ -132,10 +132,14 @@ export default function Home() {
             }
           }
           
+          // Set turnSnapshots both in state and in gameState
+          const snapshotsFromDB = sessionData.turnSnapshots || [];
+          migratedState.turnSnapshots = snapshotsFromDB;
+          
           setGameState(migratedState);
           setConfig(migrateParserPrompt(migrateConfig(sessionData.gameConfig)));
           setCostTracker(sessionData.costTracker || createDefaultCostTracker());
-          setTurnSnapshots(sessionData.turnSnapshots);
+          setTurnSnapshots(snapshotsFromDB);
           setIsGameStarted(sessionData.isGameStarted);
           setDbLoaded(true);
         } else {
@@ -670,13 +674,13 @@ export default function Home() {
       console.log('[DB] Companions:', sanitizedState.companions?.length || 0);
       console.log('[DB] NPCs:', sanitizedState.encounteredCharacters?.length || 0);
       
-      // Save to IndexedDB
+      // Save to IndexedDB (use gameState.turnSnapshots, not the separate state variable)
       await saveSessionData({
         sessionId,
         gameState: sanitizedState,
         gameConfig: config,
         costTracker,
-        turnSnapshots,
+        turnSnapshots: sanitizedState.turnSnapshots || [],
         isGameStarted,
         lastUpdated: Date.now(),
       });
@@ -855,16 +859,15 @@ export default function Home() {
     // Exclude turnSnapshots from the snapshot to avoid circular reference
     const { turnSnapshots: _, ...stateToSave } = gameState;
     
-    // Create a copy without images to save localStorage space
-    // (base64 images can be 100KB+ each and quickly exceed quota)
+    // Create a copy without images to save storage space
+    // Only R2 URLs should be stored, not base64 images
     const stateWithoutImages = JSON.parse(JSON.stringify(stateToSave));
     
-    // Remove imageUrl from character
+    // Remove imageUrl from all entities (will be preserved in main game state, just not in snapshots)
     if (stateWithoutImages.character?.imageUrl) {
       delete stateWithoutImages.character.imageUrl;
     }
     
-    // Remove imageUrl from companions
     if (stateWithoutImages.companions) {
       stateWithoutImages.companions = stateWithoutImages.companions.map((c: any) => {
         const { imageUrl, ...rest } = c;
@@ -872,7 +875,6 @@ export default function Home() {
       });
     }
     
-    // Remove imageUrl from NPCs
     if (stateWithoutImages.encounteredCharacters) {
       stateWithoutImages.encounteredCharacters = stateWithoutImages.encounteredCharacters.map((npc: any) => {
         const { imageUrl, ...rest } = npc;
@@ -880,12 +882,10 @@ export default function Home() {
       });
     }
     
-    // Remove imageUrl from location
     if (stateWithoutImages.location?.imageUrl) {
       delete stateWithoutImages.location.imageUrl;
     }
     
-    // Remove imageUrl from businesses
     if (stateWithoutImages.businesses) {
       stateWithoutImages.businesses = stateWithoutImages.businesses.map((b: any) => {
         const { imageUrl, ...rest } = b;
@@ -893,7 +893,6 @@ export default function Home() {
       });
     }
     
-    // Remove imageUrl from previousLocations
     if (stateWithoutImages.previousLocations) {
       stateWithoutImages.previousLocations = stateWithoutImages.previousLocations.map((loc: any) => {
         const { imageUrl, ...rest } = loc;
@@ -901,20 +900,9 @@ export default function Home() {
       });
     }
     
-    // Limit debug log to last 30 entries and remove base64 images from image logs
+    // Limit debug log to last 30 entries
     if (stateWithoutImages.debugLog && Array.isArray(stateWithoutImages.debugLog)) {
-      stateWithoutImages.debugLog = stateWithoutImages.debugLog
-        .slice(-30)
-        .map((log: any) => {
-          // For image logs, remove the base64 data from imageUrl to save space
-          if (log.type === 'image' && log.imageUrl?.startsWith('data:image')) {
-            return {
-              ...log,
-              imageUrl: '[base64 image removed from snapshot]'
-            };
-          }
-          return log;
-        });
+      stateWithoutImages.debugLog = stateWithoutImages.debugLog.slice(-30);
     }
     
     const snapshot: TurnSnapshot = {
@@ -923,43 +911,19 @@ export default function Home() {
       timestamp: Date.now(),
     };
     
+    // Update both the separate state AND gameState.turnSnapshots
     setTurnSnapshots(prev => {
-      // Keep only the last 10 snapshots to prevent unbounded growth
       const newSnapshots = [...prev, snapshot].slice(-10);
-      
-      try {
-        localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(newSnapshots));
-      } catch (e: any) {
-        if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-          console.warn('localStorage quota exceeded, clearing old snapshots');
-          toast({
-            title: "Storage quota exceeded",
-            description: "Undo history being reduced to save space. Consider starting a new session.",
-            variant: "destructive",
-          });
-          // If quota exceeded, keep only the last 3 snapshots and try again
-          const minimalSnapshots = newSnapshots.slice(-3);
-          try {
-            localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(minimalSnapshots));
-            return minimalSnapshots;
-          } catch (e2) {
-            // If still failing, clear all snapshots and continue without undo
-            console.error('Failed to save snapshots even after cleanup, disabling undo');
-            toast({
-              title: "Storage full - Undo disabled",
-              description: "Your browser storage is completely full. Undo feature is now disabled. Start a new session to fix this.",
-              variant: "destructive",
-            });
-            localStorage.removeItem(getSessionStorageKey('turnSnapshots', sessionId));
-            return [];
-          }
-        }
-        // For non-quota errors, log but don't show toast to user
-        console.error('Error saving snapshots:', e);
-      }
-      
       return newSnapshots;
     });
+    
+    // Also update gameState.turnSnapshots so it gets saved to IndexedDB
+    setGameState(prev => ({
+      ...prev,
+      turnSnapshots: [...prev.turnSnapshots, snapshot].slice(-10),
+    }));
+    
+    console.log('[SNAPSHOT] Created snapshot, total snapshots:', Math.min((gameState.turnSnapshots?.length || 0) + 1, 10));
   };
 
   const handleUndo = () => {
@@ -976,10 +940,10 @@ export default function Home() {
     const latestSnapshot = turnSnapshots[turnSnapshots.length - 1];
     const remainingSnapshots = turnSnapshots.slice(0, -1);
 
-    // Restore state from snapshot (add back turnSnapshots field)
+    // Restore state from snapshot (add back turnSnapshots field with remaining snapshots)
     const restoredState = {
       ...latestSnapshot.state,
-      turnSnapshots: [],  // Will be managed by setTurnSnapshots below
+      turnSnapshots: remainingSnapshots,
     };
     
     // Migrate updatedTabs from Set (which becomes {}) to array
@@ -995,34 +959,13 @@ export default function Home() {
     // Update snapshots array
     setTurnSnapshots(remainingSnapshots);
 
-    // Update session-scoped localStorage with restored data
-    try {
-      // Exclude imageUrl when saving character to localStorage
-      const { imageUrl, ...characterWithoutImage } = restoredState.character;
-      localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
-      localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(remainingSnapshots));
-      
-      toast({
-        title: "Turn undone",
-        description: "Restored to previous state",
-      });
-    } catch (error) {
-      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-        console.warn('localStorage quota exceeded when restoring turn');
-        toast({
-          title: "Turn undone (Storage Warning)",
-          description: "State restored in memory, but storage is full. Changes won't persist after page reload. Start a new session to fix this.",
-          variant: "destructive",
-        });
-      } else {
-        console.error('Failed to save restored state:', error);
-        toast({
-          title: "Turn undone (Storage Warning)",
-          description: "State restored but may not persist after page reload.",
-          variant: "destructive",
-        });
-      }
-    }
+    // Save the restored state to IndexedDB (no localStorage needed)
+    saveGameStateToStorage(restoredState);
+    
+    toast({
+      title: "Turn undone",
+      description: "Restored to previous state",
+    });
   };
 
   const handleExport = (includeApiKey: boolean) => {
@@ -1154,45 +1097,23 @@ export default function Home() {
           costTracker: migrateCostTracker(snapshot.costTracker),
         }));
         
+        // Add snapshots to migrated state so they get saved to IndexedDB
+        migratedState.turnSnapshots = migratedSnapshots;
+        
         // Restore all data with migrations applied
         setGameState(migratedState);
         setConfig(migratedConfig);
         setCostTracker(migratedCostTracker);
         setTurnSnapshots(migratedSnapshots);
+        setIsGameStarted(true);
         
-        // Update session-scoped localStorage with migrated data
-        try {
-          // Exclude imageUrl when saving character to localStorage
-          const { imageUrl, ...characterWithoutImage } = migratedState.character;
-          localStorage.setItem(getSessionStorageKey('gameCharacter', sessionId), JSON.stringify(characterWithoutImage));
-          localStorage.setItem(getSessionStorageKey('gameConfig', sessionId), JSON.stringify(migratedConfig));
-          localStorage.setItem(getSessionStorageKey('turnSnapshots', sessionId), JSON.stringify(migratedSnapshots));
-          localStorage.setItem(getSessionStorageKey('isGameStarted', sessionId), 'true');
-          setIsGameStarted(true);
-          
-          toast({
-            title: "Game Loaded",
-            description: `Successfully imported ${file.name}`,
-          });
-        } catch (storageError) {
-          // Even if localStorage fails, the state is already set in memory
-          setIsGameStarted(true);
-          
-          if (storageError instanceof DOMException && (storageError.name === 'QuotaExceededError' || storageError.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-            toast({
-              title: "Game Loaded (Storage Warning)",
-              description: "Game loaded successfully, but storage is full. Some data may not persist on page reload. Consider starting a new session.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Game Loaded (Storage Warning)",
-              description: "Game loaded successfully, but some data may not persist. Consider starting a new session.",
-              variant: "destructive",
-            });
-          }
-          console.error('Failed to save imported data to localStorage:', storageError);
-        }
+        // Save to IndexedDB (no localStorage needed)
+        await saveGameStateToStorage(migratedState);
+        
+        toast({
+          title: "Game Loaded",
+          description: `Successfully imported ${file.name}`,
+        });
       } catch (error: any) {
         toast({
           title: "Import Failed",
