@@ -253,6 +253,7 @@ export type GameConfig = {
   parserLLM: string;
   backstoryLLM: string;
   revelationsLLM: string;
+  loreLLM: string;
   difficulty: 'easy' | 'normal' | 'hard' | 'deadly';
   narrativeStyle: 'concise' | 'balanced' | 'detailed' | 'verbose';
   autoSave: boolean;
@@ -263,9 +264,11 @@ export type GameConfig = {
   locationImagePrompt: string;
   backstorySystemPrompt: string;
   revelationsSystemPrompt: string;
+  loreSystemPrompt: string;
   autoGenerateImages: boolean;
   autoGenerateBackstories: boolean;
   autoGenerateRevelations: boolean;
+  autoGenerateLore: boolean;
 };
 
 export type OpenRouterModel = {
