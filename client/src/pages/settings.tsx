@@ -49,7 +49,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
     }
   };
 
-  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'revelations') => {
+  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'revelations' | 'lore') => {
     const defaults = await loadDefaultPrompts();
     if (!defaults) return;
 
@@ -60,6 +60,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
       imageLocation: 'locationImagePrompt',
       backstory: 'backstorySystemPrompt',
       revelations: 'revelationsSystemPrompt',
+      lore: 'loreSystemPrompt',
     };
 
     const field = fieldMap[promptType] as keyof GameConfig;
@@ -390,6 +391,36 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                     </Select>
                   </div>
 
+                  {/* Lore LLM */}
+                  <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                    <label className="block text-sm font-semibold text-foreground">
+                      Lore LLM <span className="text-primary">(World Lore Generation)</span>
+                    </label>
+                    <Select 
+                      value={localConfig.loreLLM} 
+                      onValueChange={(value) => setLocalConfig(prev => ({ ...prev, loreLLM: value }))}
+                    >
+                      <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-lore-llm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(() => {
+                          let filteredModels = models.filter(model => 
+                            model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                          );
+                          if (modelSortBy === 'name') {
+                            filteredModels = [...filteredModels].sort((a, b) => a.name.localeCompare(b.name));
+                          }
+                          return filteredModels.map(model => (
+                            <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                            </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Cost Estimate */}
                   <div className="bg-accent/10 border-2 border-accent rounded-md p-4 glow-effect">
                     <div className="flex items-center justify-between">
@@ -627,6 +658,35 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   data-testid="textarea-revelations-prompt"
                 />
               </div>
+
+              {/* Lore Prompt */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Lore Prompt <span className="text-primary">(World Lore Generation)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('lore')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-lore-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  System prompt for generating comprehensive world lore with geography, history, factions, and relationships
+                </p>
+                <Textarea
+                  value={localConfig.loreSystemPrompt}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, loreSystemPrompt: e.target.value }))}
+                  rows={10}
+                  className="font-mono text-xs bg-input border-border"
+                  data-testid="textarea-lore-prompt"
+                />
+              </div>
             </TabsContent>
 
             {/* Game Settings Tab */}
@@ -714,6 +774,18 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   checked={localConfig.autoGenerateRevelations} 
                   onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoGenerateRevelations: checked }))}
                   data-testid="switch-auto-track-revelations"
+                />
+              </div>
+
+              <div className="flex items-center justify-between bg-muted/30 border border-border rounded-md p-4">
+                <div>
+                  <div className="text-sm font-medium text-foreground">Auto-generate World Lore</div>
+                  <div className="text-xs text-muted-foreground">Automatically generate comprehensive world lore after visiting first location</div>
+                </div>
+                <Switch 
+                  checked={localConfig.autoGenerateLore} 
+                  onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoGenerateLore: checked }))}
+                  data-testid="switch-auto-generate-lore"
                 />
               </div>
             </TabsContent>
