@@ -15,7 +15,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const promptsDir = join(process.cwd(), 'prompts');
       
-      // Load prompts with fallback for revelations (newer prompt that might not exist)
+      // Load prompts with fallback for revelations and lore (newer prompts that might not exist)
       const [primary, parser, imageCharacter, imageLocation, backstory] = await Promise.all([
         readFile(join(promptsDir, 'primary.md'), 'utf-8'),
         readFile(join(promptsDir, 'parser.md'), 'utf-8'),
@@ -58,6 +58,24 @@ EXACT JSON FORMAT TO RETURN:
 }`;
       }
       
+      // Try to load lore, fallback to default if missing
+      let lore: string;
+      try {
+        lore = await readFile(join(promptsDir, 'lore.md'), 'utf-8');
+      } catch {
+        // Fallback to default lore prompt if file doesn't exist
+        lore = `You are a World Lore Generator for a D&D adventure game. Your mission is to create comprehensive world lore based on the current game context.
+
+# Output Format
+
+=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
+
+EXACT JSON FORMAT TO RETURN:
+{
+  "worldLore": "Your comprehensive world lore here (600-1000 words). Structure it with clear sections for World Genesis, Lore & History, Factions & Power, and Relational Geography."
+}`;
+      }
+      
       res.json({
         primary,
         parser,
@@ -65,6 +83,7 @@ EXACT JSON FORMAT TO RETURN:
         imageLocation,
         backstory,
         revelations,
+        lore,
       });
     } catch (error: any) {
       res.status(500).json({ error: `Failed to load default prompts: ${error.message}` });
@@ -87,11 +106,12 @@ EXACT JSON FORMAT TO RETURN:
         imageLocation: 'image-location.md',
         backstory: 'backstory.md',
         revelations: 'revelations.md',
+        lore: 'lore.md',
       };
 
       const filename = fileMap[promptType];
       if (!filename) {
-        return res.status(400).json({ error: 'Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation, backstory, revelations' });
+        return res.status(400).json({ error: 'Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation, backstory, revelations, lore' });
       }
 
       const promptsDir = join(process.cwd(), 'prompts');
