@@ -95,6 +95,9 @@ export default function SettingsWrapper() {
         parserSystemPrompt: defaultPrompts.parser,
         characterImagePrompt: defaultPrompts.imageCharacter,
         locationImagePrompt: defaultPrompts.imageLocation,
+        backstorySystemPrompt: defaultPrompts.backstory,
+        revelationsSystemPrompt: defaultPrompts.revelations,
+        loreSystemPrompt: defaultPrompts.lore,
       }));
       setIsNewSession(false);
     }
