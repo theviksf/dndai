@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { Heart, Coins, MapPin, Zap, Shield, Calendar, Star, Sparkles } from 'lucide-react';
+import { Heart, Coins, MapPin, Zap, Shield, Calendar, Star, Sparkles, Globe } from 'lucide-react';
 import type { GameCharacter, StatusEffect, GameStateData, Location } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { EntityImageCard } from '@/components/entity-image-card';
 import { EntityDetailSheet } from '@/components/entity-detail-sheet';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import worldmapImage from '@assets/../prompts/images/worldmap.jpg';
 
 interface CharacterStatsBarProps {
   character: GameCharacter;
@@ -13,6 +18,7 @@ interface CharacterStatsBarProps {
   location: GameStateData['location'];
   turnCount: number;
   businesses?: GameStateData['businesses'];
+  worldBackstory?: string;
   onUpdate?: (updates: Partial<GameStateData>) => void;
   onRefreshImage?: (entityType: 'character' | 'location', entityId?: string) => Promise<void>;
 }
@@ -22,9 +28,10 @@ function getModifier(score: number): string {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
-export default function CharacterStatsBar({ character, statusEffects, location, turnCount, businesses = [], onUpdate, onRefreshImage }: CharacterStatsBarProps) {
+export default function CharacterStatsBar({ character, statusEffects, location, turnCount, businesses = [], worldBackstory, onUpdate, onRefreshImage }: CharacterStatsBarProps) {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [locationDetailSheetOpen, setLocationDetailSheetOpen] = useState(false);
+  const [worldDetailSheetOpen, setWorldDetailSheetOpen] = useState(false);
   const [isRefreshingImage, setIsRefreshingImage] = useState(false);
   const [isRefreshingLocationImage, setIsRefreshingLocationImage] = useState(false);
   const hpPercentage = (character.hp / character.maxHp) * 100;
@@ -332,6 +339,18 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 ) : null}
               </div>
             </div>
+
+            {/* World Map Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setWorldDetailSheetOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 h-auto bg-primary/10 border-primary/30 hover:bg-primary/20"
+              data-testid="button-world-map"
+            >
+              <Globe className="w-4 h-4 text-primary" />
+              <span className="text-xs font-medium">World Map</span>
+            </Button>
           </div>
         </div>
 
@@ -462,6 +481,53 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
           } : undefined}
         />
       )}
+
+      {/* World Detail Sheet */}
+      <Sheet open={worldDetailSheetOpen} onOpenChange={setWorldDetailSheetOpen}>
+        <SheetContent side="bottom" className="h-[90vh] max-w-[1400px] mx-auto">
+          <SheetHeader className="pb-6">
+            <SheetTitle className="flex items-center gap-3 text-2xl font-serif">
+              <Globe className="w-6 h-6" />
+              World Lore
+            </SheetTitle>
+            <SheetDescription>
+              Explore the rich history, geography, and factions of the world
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100%-120px)] overflow-auto">
+            {/* Left: World Map Image */}
+            <div className="lg:w-1/2 flex-shrink-0">
+              <div className="relative aspect-square w-full max-w-[600px] mx-auto border-4 border-border rounded-xl overflow-hidden shadow-2xl">
+                <img 
+                  src={worldmapImage} 
+                  alt="World Map" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Right: World Lore Content */}
+            <div className="lg:w-1/2 flex-1 overflow-auto">
+              {worldBackstory ? (
+                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {worldBackstory}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                  <p className="text-muted-foreground italic">
+                    World lore will be generated after you visit your first location in the adventure.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

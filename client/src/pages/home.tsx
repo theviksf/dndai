@@ -1391,6 +1391,7 @@ export default function Home() {
         location={gameState.location}
         turnCount={gameState.turnCount}
         businesses={gameState.businesses || []}
+        worldBackstory={gameState.worldBackstory}
         onUpdate={updateGameState}
         onRefreshImage={refreshEntityImage}
       />
