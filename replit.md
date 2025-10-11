@@ -70,6 +70,19 @@ When an NPC joins the party as a companion, the system automatically migrates th
 ### Data Storage Solutions
 
 **IndexedDB Storage (Primary)**: All game data stored in browser IndexedDB (Dexie.js) for capacity and performance. Each game has a unique `sessionId` in the URL. Supports multi-session management, migration from localStorage, and UI for storage display. Base64 image data is sanitized, only R2 URLs are persisted.
+
+**Snapshot System (Undo/Rollback)**: Turn snapshots stored in IndexedDB for game state restoration. Clicking "Undo" opens a dialog showing all available snapshots (newest to oldest), each displaying:
+- Turn count badge (e.g., "2 turns ago")
+- Timestamp of snapshot creation
+- Narrative preview (first 80 characters of last DM message)
+- Snapshot size in KB/MB
+
+Players can select any snapshot to restore the game to that exact point. All newer snapshots are automatically removed upon restoration. Snapshots are optimized for storage by:
+- Removing all imageUrl fields (R2 URLs preserved in main game state)
+- Limiting debug logs to last 30 entries
+- Keeping maximum 10 snapshots (oldest auto-pruned)
+- Storing state, costTracker, and timestamp for each snapshot
+
 **Image Storage (Cloudflare R2)**: AI-generated images stored in Cloudflare R2 using AWS S3-compatible API to prevent local storage quota issues. Uses structured filenames for identification and session tracking. R2 credentials are stored in Replit secrets.
 
 ## External Dependencies
