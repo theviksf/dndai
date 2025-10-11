@@ -359,6 +359,7 @@ export default function Home() {
   const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
   const [turnSnapshots, setTurnSnapshots] = useState<TurnSnapshot[]>([]);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
   const fileInputRef = useState<HTMLInputElement | null>(null)[0];
 
   // Fetch OpenRouter models (always enabled - backend will use fallback key if needed)
@@ -926,6 +927,27 @@ export default function Home() {
     console.log('[SNAPSHOT] Created snapshot, total snapshots:', Math.min((gameState.turnSnapshots?.length || 0) + 1, 10));
   };
 
+  // Calculate snapshot size in bytes
+  const getSnapshotSize = (snapshot: TurnSnapshot): number => {
+    return new Blob([JSON.stringify(snapshot)]).size;
+  };
+
+  // Get narrative label for snapshot
+  const getSnapshotLabel = (snapshot: TurnSnapshot): string => {
+    const history = snapshot.state.narrativeHistory;
+    if (!history || history.length === 0) return 'Game Start';
+    
+    // Find the last DM message
+    const lastDMMessage = [...history].reverse().find(msg => msg.type === 'dm');
+    if (lastDMMessage) {
+      // Take first 80 characters of the narrative
+      const text = lastDMMessage.content.substring(0, 80);
+      return text + (lastDMMessage.content.length > 80 ? '...' : '');
+    }
+    
+    return 'Turn ' + history.length;
+  };
+
   const handleUndo = () => {
     if (turnSnapshots.length === 0) {
       toast({
@@ -936,13 +958,19 @@ export default function Home() {
       return;
     }
 
-    // Pop the latest snapshot
-    const latestSnapshot = turnSnapshots[turnSnapshots.length - 1];
-    const remainingSnapshots = turnSnapshots.slice(0, -1);
+    // Open snapshot selection dialog
+    setShowSnapshotDialog(true);
+  };
 
-    // Restore state from snapshot (add back turnSnapshots field with remaining snapshots)
+  const restoreToSnapshot = (snapshotIndex: number) => {
+    if (snapshotIndex < 0 || snapshotIndex >= turnSnapshots.length) return;
+
+    const selectedSnapshot = turnSnapshots[snapshotIndex];
+    const remainingSnapshots = turnSnapshots.slice(0, snapshotIndex);
+
+    // Restore state from snapshot
     const restoredState = {
-      ...latestSnapshot.state,
+      ...selectedSnapshot.state,
       turnSnapshots: remainingSnapshots,
     };
     
@@ -953,18 +981,22 @@ export default function Home() {
     
     setGameState(restoredState);
 
-    // Restore cost tracker (with migration for backwards compatibility)
-    setCostTracker(migrateCostTracker(latestSnapshot.costTracker));
+    // Restore cost tracker
+    setCostTracker(migrateCostTracker(selectedSnapshot.costTracker));
 
     // Update snapshots array
     setTurnSnapshots(remainingSnapshots);
 
-    // Save the restored state to IndexedDB (no localStorage needed)
+    // Save the restored state to IndexedDB
     saveGameStateToStorage(restoredState);
     
+    // Close dialog
+    setShowSnapshotDialog(false);
+    
+    const turnsUndone = turnSnapshots.length - snapshotIndex;
     toast({
-      title: "Turn undone",
-      description: "Restored to previous state",
+      title: "Restored to snapshot",
+      description: `Undid ${turnsUndone} turn${turnsUndone > 1 ? 's' : ''}`,
     });
   };
 
@@ -1436,6 +1468,71 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Snapshot Selection Dialog */}
+      <Dialog open={showSnapshotDialog} onOpenChange={setShowSnapshotDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Restore to Snapshot</DialogTitle>
+            <DialogDescription>
+              Select a snapshot to restore your game to that point. Newer snapshots are at the top.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+            {turnSnapshots.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No snapshots available
+              </div>
+            ) : (
+              // Reverse to show newest first
+              [...turnSnapshots].reverse().map((snapshot, reverseIndex) => {
+                const actualIndex = turnSnapshots.length - 1 - reverseIndex;
+                const size = getSnapshotSize(snapshot);
+                const label = getSnapshotLabel(snapshot);
+                const timestamp = new Date(snapshot.timestamp);
+                const turnsAgo = turnSnapshots.length - actualIndex;
+                
+                return (
+                  <Card 
+                    key={actualIndex}
+                    className="cursor-pointer transition-all hover:border-primary hover:bg-accent/50"
+                    onClick={() => restoreToSnapshot(actualIndex)}
+                    data-testid={`snapshot-card-${actualIndex}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base font-medium flex items-center gap-2">
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              {turnsAgo} turn{turnsAgo > 1 ? 's' : ''} ago
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {timestamp.toLocaleTimeString()}
+                            </span>
+                          </CardTitle>
+                          <CardDescription className="mt-2 line-clamp-2">
+                            {label}
+                          </CardDescription>
+                        </div>
+                        <div className="text-xs text-muted-foreground text-right whitespace-nowrap">
+                          <div className="font-mono bg-muted px-2 py-1 rounded">
+                            {formatBytes(size)}
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowSnapshotDialog(false)} data-testid="button-cancel-snapshot">
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Load Game Dialog */}
       <Dialog open={isLoadGameOpen} onOpenChange={setIsLoadGameOpen}>
