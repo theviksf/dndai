@@ -129,7 +129,7 @@ export type Revelation = {
 export type DebugLogEntry = {
   id: string;
   timestamp: number;
-  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations';
+  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations' | 'lore';
   prompt: string;
   response: string;
   model: string;
@@ -309,6 +309,7 @@ export type CostTracker = {
   lastTurnImageCost: number;
   revelationsCost?: number;
   lastTurnRevelationsCost?: number;
+  loreCost?: number;
 };
 
 // Database tables

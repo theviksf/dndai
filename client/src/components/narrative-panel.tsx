@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
 import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
+import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 
 interface NarrativePanelProps {
   gameState: GameStateData;
@@ -1034,6 +1035,68 @@ export default function NarrativePanel({
               return freshState;
             });
           }
+
+          // Generate world lore if needed (first location visited)
+          setGameState(freshState => {
+            if (config.autoGenerateLore && needsWorldLoreGeneration(freshState)) {
+              generateWorldLore({
+                gameState: freshState,
+                config,
+              }).then(loreResult => {
+                // Update cost tracker with lore cost
+                if (loreResult.usage) {
+                  const loreModel = models.find(m => m.id === config.loreLLM);
+                  if (loreModel) {
+                    const loreCost = 
+                      (loreResult.usage.prompt_tokens * parseFloat(loreModel.pricing.prompt)) +
+                      (loreResult.usage.completion_tokens * parseFloat(loreModel.pricing.completion));
+                    
+                    setCostTracker(prev => ({
+                      ...prev,
+                      loreCost: (prev.loreCost || 0) + loreCost,
+                      sessionCost: prev.sessionCost + loreCost,
+                    }));
+                  }
+                }
+
+                // Add debug log
+                if (loreResult.debugLogEntry) {
+                  setGameState(prev => ({
+                    ...prev,
+                    debugLog: [...(prev.debugLog || []), loreResult.debugLogEntry!],
+                  }));
+                }
+
+                // Update game state with world lore
+                if (loreResult.worldLore) {
+                  setGameState(prev => ({
+                    ...prev,
+                    worldBackstory: loreResult.worldLore || undefined,
+                  }));
+
+                  // Create notification about world lore generation
+                  const notificationMessage = {
+                    id: `lore-notification-${Date.now()}`,
+                    type: 'dm' as const,
+                    content: `🌍 *The world lore has been generated! Click the World Map button to explore the rich history and geography of this realm.*`,
+                    timestamp: Date.now(),
+                  };
+                  
+                  setGameState(prev => ({
+                    ...prev,
+                    narrativeHistory: [...prev.narrativeHistory, notificationMessage],
+                  }));
+
+                  console.log('[LORE] World lore generated and added to game state');
+                }
+              }).catch(error => {
+                console.error('[LORE] Error generating world lore:', error);
+              });
+            }
+            
+            // Return state unchanged - lore updates happen in nested setGameState calls
+            return freshState;
+          });
         }, 10);
       }
 

@@ -368,6 +368,92 @@ EXACT JSON FORMAT TO RETURN:
     }
   });
 
+  // World Lore generation endpoint
+  app.post('/api/generate-lore', async (req, res) => {
+    try {
+      const { systemPrompt, context, gameState, model, apiKey } = req.body;
+      const key = apiKey || OPENROUTER_API_KEY;
+      
+      if (!key) {
+        return res.status(400).json({ error: 'API key required' });
+      }
+      
+      // Build the full prompt with game context
+      const fullPrompt = `${systemPrompt}\n\n# Current Game Context\n\n${context}\n\nGenerate comprehensive world lore based on the current game context. Remember to return ONLY raw JSON with a "worldLore" field.`;
+      
+      console.log('[LORE GEN] Generating world lore using model', model);
+      
+      // Call OpenRouter
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'HTTP-Referer': req.headers.referer || 'http://localhost:5000',
+          'X-Title': 'D&D Adventure Game',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model || 'deepseek/deepseek-chat-v3.1',
+          messages: [
+            {
+              role: 'user',
+              content: fullPrompt
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.7,
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[LORE GEN] OpenRouter API error:', errorData);
+        return res.status(response.status).json({
+          error: `OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`,
+          fullPrompt,
+          rawResponse: JSON.stringify(errorData, null, 2)
+        });
+      }
+      
+      const data = await response.json();
+      const rawContent = data.choices[0].message.content;
+      
+      console.log('[LORE GEN] Raw response:', rawContent.substring(0, 200));
+      
+      // Parse JSON response with multiple fallback strategies
+      let parsedData;
+      try {
+        // Try to extract JSON from code fences if present
+        const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || 
+                          rawContent.match(/(\{[\s\S]*\})/);
+        const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
+        parsedData = JSON.parse(jsonStr);
+      } catch (parseError) {
+        console.error('[LORE GEN] Failed to parse JSON:', parseError);
+        return res.status(500).json({
+          error: 'Failed to parse lore JSON from LLM response',
+          fullPrompt,
+          rawResponse: rawContent
+        });
+      }
+      
+      res.json({
+        worldLore: parsedData.worldLore || null,
+        usage: data.usage,
+        model: data.model,
+        fullPrompt,
+        rawResponse: rawContent
+      });
+    } catch (error: any) {
+      console.error('[LORE GEN] Error:', error.message);
+      res.status(500).json({ 
+        error: error.message,
+        fullPrompt: req.body.systemPrompt || 'Prompt not available',
+        rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+      });
+    }
+  });
+
   // Revelations tracking endpoint
   app.post('/api/chat/revelations', async (req, res) => {
     try {
