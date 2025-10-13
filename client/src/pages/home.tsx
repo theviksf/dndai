@@ -968,11 +968,72 @@ export default function Home() {
     const selectedSnapshot = turnSnapshots[snapshotIndex];
     const remainingSnapshots = turnSnapshots.slice(0, snapshotIndex);
 
-    // Restore state from snapshot
+    // Restore state from snapshot, but preserve imageUrls from current state
     const restoredState = {
       ...selectedSnapshot.state,
       turnSnapshots: remainingSnapshots,
     };
+    
+    // Preserve imageUrls from current game state (they were removed from snapshots to save space)
+    if (gameState.character?.imageUrl && restoredState.character) {
+      restoredState.character = { ...restoredState.character, imageUrl: gameState.character.imageUrl };
+    }
+    
+    // Preserve location imageUrl, but only if it's the same location (match by name since current location has no ID)
+    if (restoredState.location) {
+      if (gameState.location?.name === restoredState.location.name && gameState.location?.imageUrl) {
+        // Same location - use current imageUrl
+        restoredState.location = { ...restoredState.location, imageUrl: gameState.location.imageUrl };
+      } else if (gameState.previousLocations) {
+        // Different location - look for it in previousLocations (match by ID if available, then name)
+        const matchingPrevLocation = gameState.previousLocations.find(
+          loc => (loc.id && loc.id === (restoredState.location as any).id) || loc.name === restoredState.location.name
+        );
+        if (matchingPrevLocation?.imageUrl) {
+          restoredState.location = { ...restoredState.location, imageUrl: matchingPrevLocation.imageUrl };
+        }
+      }
+    }
+    
+    // Preserve companion imageUrls by ID
+    if (restoredState.companions && gameState.companions) {
+      restoredState.companions = restoredState.companions.map(companion => {
+        const currentCompanion = gameState.companions.find(c => c.id === companion.id);
+        return currentCompanion?.imageUrl 
+          ? { ...companion, imageUrl: currentCompanion.imageUrl }
+          : companion;
+      });
+    }
+    
+    // Preserve NPC imageUrls by ID
+    if (restoredState.encounteredCharacters && gameState.encounteredCharacters) {
+      restoredState.encounteredCharacters = restoredState.encounteredCharacters.map(npc => {
+        const currentNpc = gameState.encounteredCharacters.find(n => n.id === npc.id);
+        return currentNpc?.imageUrl 
+          ? { ...npc, imageUrl: currentNpc.imageUrl }
+          : npc;
+      });
+    }
+    
+    // Preserve business imageUrls by ID
+    if (restoredState.businesses && gameState.businesses) {
+      restoredState.businesses = restoredState.businesses.map(business => {
+        const currentBusiness = gameState.businesses.find(b => b.id === business.id);
+        return currentBusiness?.imageUrl 
+          ? { ...business, imageUrl: currentBusiness.imageUrl }
+          : business;
+      });
+    }
+    
+    // Preserve previous location imageUrls by name (since they might not have IDs)
+    if (restoredState.previousLocations && gameState.previousLocations) {
+      restoredState.previousLocations = restoredState.previousLocations.map(loc => {
+        const currentLoc = gameState.previousLocations.find(l => l.name === loc.name);
+        return currentLoc?.imageUrl 
+          ? { ...loc, imageUrl: currentLoc.imageUrl }
+          : loc;
+      });
+    }
     
     // Migrate updatedTabs from Set (which becomes {}) to array
     if (restoredState.updatedTabs && !Array.isArray(restoredState.updatedTabs)) {
