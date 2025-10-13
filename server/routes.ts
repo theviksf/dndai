@@ -750,7 +750,7 @@ EXACT JSON FORMAT TO RETURN:
           .replace(/\[name\]/g, entityData.name || 'unnamed')
           .replace(/\[hair_color\]/g, entityData.hairColor || 'dark')
           .replace(/\[body_type\]/g, entityData.bodyType || 'average')
-          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.description || entityData.appearance || entityData.personality || 'determined expression');
+          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || 'determined expression');
       } else if (entityType === 'location' || entityType === 'business') {
         filledPrompt = filledPrompt
           .replace(/\[location_name\]/g, entityData.name || 'unknown location')
