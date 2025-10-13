@@ -362,11 +362,16 @@ export default function NarrativePanel({
         narrativeHistory: [...prev.narrativeHistory, playerMessage],
       }));
 
-      // Call Primary LLM - send parsed recaps + last 3 back-and-forth exchanges + all stats for context
-      // Last 3 exchanges = 6 messages (player, DM, player, DM, player, DM)
-      // Take from existing history (before adding current player message)
+      // Call Primary LLM with COMPLETE context:
+      // - World Lore (worldBackstory)
+      // - All entity backstories & revelations (in companions, NPCs, locations, quests, businesses)
+      // - Summarized history (parsedRecaps)
+      // - Recent conversations (last 3 exchanges = 6 messages)
+      // - Full game state (character, inventory, spells, etc.)
       const recentMessages = gameState.narrativeHistory.slice(-6);
       const context = {
+        // World lore (generated after first turn)
+        worldLore: gameState.worldBackstory || null,
         // Character stats
         character: gameState.character,
         // Current game state
