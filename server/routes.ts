@@ -743,15 +743,15 @@ EXACT JSON FORMAT TO RETURN:
       
       if (entityType === 'character' || entityType === 'companion' || entityType === 'npc') {
         filledPrompt = filledPrompt
-          .replace(/\[age\]/g, entityData.age || 'unknown')
-          .replace(/\[sex\]/g, entityData.sex || 'unknown')
-          .replace(/\[race\]/g, entityData.race || 'unknown')
-          .replace(/\[class\]/g, entityData.class || 'adventurer')
-          .replace(/\[name\]/g, entityData.name || 'unnamed')
-          .replace(/\[hair_color\]/g, entityData.hairColor || 'dark')
-          .replace(/\[outfit\]/g, entityData.outfit || 'standard adventuring gear')
-          .replace(/\[body_type\]/g, entityData.bodyType || 'average')
-          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || 'determined expression');
+          .replace(/\[age\]/g, entityData.age || '')
+          .replace(/\[sex\]/g, entityData.sex || '')
+          .replace(/\[race\]/g, entityData.race || '')
+          .replace(/\[class\]/g, entityData.class || '')
+          .replace(/\[name\]/g, entityData.name || '')
+          .replace(/\[hair_color\]/g, entityData.hairColor || '')
+          .replace(/\[outfit\]/g, entityData.outfit || '')
+          .replace(/\[body_type\]/g, entityData.bodyType || '')
+          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || '');
       } else if (entityType === 'location' || entityType === 'business') {
         filledPrompt = filledPrompt
           .replace(/\[location_name\]/g, entityData.name || 'unknown location')
