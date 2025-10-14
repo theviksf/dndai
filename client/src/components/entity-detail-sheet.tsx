@@ -500,6 +500,18 @@ export function EntityDetailSheet({
             <span className="text-foreground text-base">{char.hairColor || 'Not specified'}</span>
           )}
         </div>
+        <div className="flex items-baseline gap-2">
+          <span className="font-serif font-semibold text-foreground min-w-[100px]">Outfit:</span>
+          {onUpdate ? (
+            <InlineEdit
+              value={(char as any).outfit || ''}
+              onSave={(value) => onUpdate({ outfit: String(value) } as any)}
+              inputClassName="h-7 text-base"
+            />
+          ) : (
+            <span className="text-foreground text-base">{(char as any).outfit || 'Not specified'}</span>
+          )}
+        </div>
         {'level' in char && (
           <div className="flex items-baseline gap-2">
             <span className="font-serif font-semibold text-foreground min-w-[100px]">Level:</span>
