@@ -924,7 +924,8 @@ export default function Home() {
       turnSnapshots: [...prev.turnSnapshots, snapshot].slice(-10),
     }));
     
-    console.log('[SNAPSHOT] Created snapshot, total snapshots:', Math.min((gameState.turnSnapshots?.length || 0) + 1, 10));
+    const snapshotTurn = stateWithoutImages.turnCount || 0;
+    console.log(`[SNAPSHOT] Created snapshot for Turn ${snapshotTurn}, total snapshots:`, Math.min((gameState.turnSnapshots?.length || 0) + 1, 10));
   };
 
   // Calculate snapshot size in bytes
@@ -967,6 +968,10 @@ export default function Home() {
 
     const selectedSnapshot = turnSnapshots[snapshotIndex];
     const remainingSnapshots = turnSnapshots.slice(0, snapshotIndex);
+    
+    console.log(`[SNAPSHOT RESTORE] Restoring snapshot at index ${snapshotIndex} (Turn ${selectedSnapshot.state.turnCount})`);
+    console.log(`[SNAPSHOT RESTORE] Current turn: ${gameState.turnCount}, Target turn: ${selectedSnapshot.state.turnCount}`);
+    console.log(`[SNAPSHOT RESTORE] Total snapshots before: ${turnSnapshots.length}, Remaining after: ${remainingSnapshots.length}`);
 
     // Restore state from snapshot, but preserve imageUrls from current state
     const restoredState = {
@@ -1054,10 +1059,15 @@ export default function Home() {
     // Close dialog
     setShowSnapshotDialog(false);
     
-    const turnsUndone = turnSnapshots.length - snapshotIndex;
+    const restoredTurn = selectedSnapshot.state.turnCount || 0;
+    const currentTurn = gameState.turnCount || 0;
+    const turnsUndone = currentTurn - restoredTurn;
+    
     toast({
-      title: "Restored to snapshot",
-      description: `Undid ${turnsUndone} turn${turnsUndone > 1 ? 's' : ''}`,
+      title: "Restored to Turn " + restoredTurn,
+      description: turnsUndone > 0 
+        ? `Undid ${turnsUndone} turn${turnsUndone !== 1 ? 's' : ''}`
+        : 'Game restored',
     });
   };
 
@@ -1552,7 +1562,9 @@ export default function Home() {
                 const size = getSnapshotSize(snapshot);
                 const label = getSnapshotLabel(snapshot);
                 const timestamp = new Date(snapshot.timestamp);
-                const turnsAgo = turnSnapshots.length - actualIndex;
+                const snapshotTurn = snapshot.state.turnCount || 0;
+                const currentTurn = gameState.turnCount || 0;
+                const turnsAgo = currentTurn - snapshotTurn;
                 
                 return (
                   <Card 
@@ -1565,9 +1577,14 @@ export default function Home() {
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-base font-medium flex items-center gap-2">
-                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                              {turnsAgo} turn{turnsAgo > 1 ? 's' : ''} ago
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded font-semibold">
+                              Turn {snapshotTurn}
                             </span>
+                            {turnsAgo > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                ({turnsAgo} turn{turnsAgo !== 1 ? 's' : ''} ago)
+                              </span>
+                            )}
                             <span className="text-xs text-muted-foreground">
                               {timestamp.toLocaleTimeString()}
                             </span>
