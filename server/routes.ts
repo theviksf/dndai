@@ -749,6 +749,7 @@ EXACT JSON FORMAT TO RETURN:
           .replace(/\[class\]/g, entityData.class || 'adventurer')
           .replace(/\[name\]/g, entityData.name || 'unnamed')
           .replace(/\[hair_color\]/g, entityData.hairColor || 'dark')
+          .replace(/\[outfit\]/g, entityData.outfit || 'standard adventuring gear')
           .replace(/\[body_type\]/g, entityData.bodyType || 'average')
           .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || 'determined expression');
       } else if (entityType === 'location' || entityType === 'business') {
