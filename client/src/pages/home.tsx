@@ -44,6 +44,9 @@ export default function Home() {
   // Ref to always have latest gameState (avoids stale closures)
   const gameStateRef = useRef<GameStateData | null>(null);
   
+  // Debounce timer ref for save operations
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Initialize with defaults - will load from DB asynchronously
   const [gameState, setGameState] = useState<GameStateData>(createDefaultGameState);
   const [config, setConfig] = useState<GameConfig>(createDefaultConfig);
@@ -696,6 +699,30 @@ export default function Home() {
       });
     }
   };
+  
+  // Debounced version for entity edits (prevents UI freezes)
+  const debouncedSave = (stateToSave?: GameStateData) => {
+    // Clear existing timer
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    
+    // Set new timer to save after 500ms of no changes
+    saveTimerRef.current = setTimeout(() => {
+      saveGameStateToStorage(stateToSave);
+      saveTimerRef.current = null;
+    }, 500);
+  };
+  
+  // Flush pending saves on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveGameStateToStorage();
+      }
+    };
+  }, []);
 
   const updateGameState = (updates: Partial<GameStateData>) => {
     let updatedState: GameStateData;
@@ -738,9 +765,10 @@ export default function Home() {
       return newState;
     });
     
-    // Save after state update - pass the fresh state
+    // Save after state update using debounced save to prevent UI freezes
+    // Only debounce for entity edits - immediate narrative/debugLog saves handled by useEffect
     if (updates.character || updates.inventory || updates.quests || updates.companions || updates.encounteredCharacters || updates.location) {
-      saveGameStateToStorage(updatedState);
+      debouncedSave(updatedState);
     }
   };
 
