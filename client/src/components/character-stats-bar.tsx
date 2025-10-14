@@ -316,7 +316,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                     </Badge>
                   )}
                 </div>
-                <span className="text-sm font-bold text-primary truncate" data-testid="text-location">
+                <span className="text-sm font-bold text-primary break-words" data-testid="text-location">
                   {onUpdate ? (
                     <InlineEdit
                       value={location?.name || 'Unknown'}
@@ -328,12 +328,12 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                   )}
                 </span>
                 {location?.hierarchy && (location.hierarchy.city || location.hierarchy.district) ? (
-                  <span className="text-xs text-muted-foreground truncate">
+                  <span className="text-xs text-muted-foreground break-words line-clamp-2">
                     {location.hierarchy.district && `${location.hierarchy.district}, `}
                     {location.hierarchy.city || ''}
                   </span>
                 ) : location?.description ? (
-                  <span className="text-xs text-muted-foreground truncate">
+                  <span className="text-xs text-muted-foreground break-words line-clamp-2">
                     {location.description}
                   </span>
                 ) : null}
