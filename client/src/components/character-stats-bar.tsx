@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import worldmapImage from '@assets/../prompts/images/worldmap.jpg';
 
 interface CharacterStatsBarProps {
   character: GameCharacter;
@@ -498,14 +497,14 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
           </SheetHeader>
           
           <div className="flex flex-col lg:flex-row gap-6 h-[calc(100%-120px)] overflow-auto">
-            {/* Left: World Map Image */}
+            {/* Left: World Map Placeholder */}
             <div className="lg:w-1/2 flex-shrink-0">
-              <div className="relative aspect-square w-full max-w-[600px] mx-auto border-4 border-border rounded-xl overflow-hidden shadow-2xl">
-                <img 
-                  src={worldmapImage} 
-                  alt="World Map" 
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative aspect-square w-full max-w-[600px] mx-auto border-4 border-border rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 dark:from-amber-950 dark:via-yellow-950 dark:to-amber-900 flex items-center justify-center">
+                <div className="text-center p-8">
+                  <Globe className="w-24 h-24 mx-auto mb-4 text-amber-700 dark:text-amber-300" />
+                  <p className="text-lg font-serif text-amber-800 dark:text-amber-200">World Map</p>
+                  <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">Explore the realm through your adventures</p>
+                </div>
               </div>
             </div>
 

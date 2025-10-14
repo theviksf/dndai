@@ -515,7 +515,20 @@ export default function Home() {
 
   const handleClearAllSaves = async () => {
     try {
+      // Clear IndexedDB
       await deleteAllSessions();
+      
+      // Clear all localStorage keys for game configs
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('gameConfig_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      console.log('[CLEAR ALL] Removed', keysToRemove.length, 'localStorage configs');
+      
       toast({
         title: "All saves cleared",
         description: "All saved game sessions have been deleted from storage.",
