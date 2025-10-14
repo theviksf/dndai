@@ -37,9 +37,9 @@ Preferred communication style: Simple, everyday language.
 
 Uses specialized LLMs for different tasks:
 - **Primary LLM (Narrative Agent)**: Generates rich narrative responses (200-400 words) in Markdown using comprehensive game context.
-- **Parser LLM (State Extraction Agent)**: Extracts structured game state updates from narrative responses (character details including hair color, inventory, quests, etc.) and generates history recaps. Extracts hair color when mentioned in narratives.
+- **Parser LLM (State Extraction Agent)**: Extracts structured game state updates from narrative responses (character details including hair color and outfit, inventory, quests, etc.) and generates history recaps. Extracts hair color and outfit when mentioned in narratives.
 - **Revelations Agent**: Identifies and extracts backstory revelations from narrative for entities, tracks when they are discovered, and provides in-game notifications and debug logging.
-- **Image Agent**: Generates AI images for characters, NPCs, companions, and locations using Google's Gemini 2.5 Flash Image Preview via OpenRouter.
+- **Image Agent**: Generates AI images for characters, NPCs, companions, and locations using Google's Gemini 2.5 Flash Image Preview via OpenRouter. Character images include appearance details such as race, age, sex, hair color, outfit, and class.
 - **Backstory Agent**: Generates structured backstories for NPCs, companions, quests, and locations.
 **Execution Flow**: Player action → Primary LLM streams narrative → Parser LLM updates game state → Revelations Agent tracks reveals → Image Agent generates visuals → Backstory Agent creates context → Cost tracking updates.
 **Streaming**: Primary LLM uses SSE; others use standard request/response.
