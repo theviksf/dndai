@@ -747,10 +747,13 @@ EXACT JSON FORMAT TO RETURN:
           .replace(/\[sex\]/g, entityData.sex || '')
           .replace(/\[race\]/g, entityData.race || '')
           .replace(/\[class\]/g, entityData.class || '')
+          .replace(/\[role\]/g, entityData.role || '')
           .replace(/\[name\]/g, entityData.name || '')
           .replace(/\[hair_color\]/g, entityData.hairColor || '')
           .replace(/\[outfit\]/g, entityData.outfit || '')
           .replace(/\[body_type\]/g, entityData.bodyType || '')
+          .replace(/\[appearance\]/g, entityData.appearance || entityData.personality || '')
+          .replace(/\[description\]/g, entityData.description || '')
           .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || '');
       } else if (entityType === 'location' || entityType === 'business') {
         filledPrompt = filledPrompt
