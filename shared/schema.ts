@@ -69,6 +69,7 @@ export type Companion = {
   age: string;
   sex: string;
   hairColor?: string;
+  outfit?: string;
   class: string;
   level: number;
   appearance: string;
@@ -87,6 +88,7 @@ export type EncounteredCharacter = {
   age: string;
   sex: string;
   hairColor?: string;
+  outfit?: string;
   role: string;
   location: string;
   appearance: string;
