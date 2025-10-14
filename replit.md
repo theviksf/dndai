@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 - **CharacterStatsBar**: Modern, organized stats display with D&D-themed design, responsive layout.
 - **NarrativePanel**: Displays AI-generated story (Markdown), includes action input.
 - **GameInfoTabs**: Tabbed interface for game elements with notification badges and detailed views (e.g., Spells with filtering, NPCs with relationship status).
-- **EntityDetailSheet**: Wide modal for detailed views of NPCs, companions, quests, locations, and businesses, featuring in-place editing, revelatory displays with turn badges, and optimized character stats.
+- **EntityDetailSheet**: Wide modal for detailed views of NPCs, companions, quests, locations, and businesses, featuring in-place editing, revelatory displays with turn badges, and optimized character stats. Image refresh updates are synchronized via useEffect (GameInfoTabs) and key-based re-rendering (CharacterStatsBar) to display new images immediately without closing the sheet.
 - **Header Navigation**: Cost Tracker, Save Game, and Game Menu with logical sections for game actions, data management, and system settings.
 **Routing Logic**: Smart navigation for smooth user experience.
 
