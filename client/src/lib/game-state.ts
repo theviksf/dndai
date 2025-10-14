@@ -335,25 +335,25 @@ export function createDefaultGameState(): GameStateData {
   };
 }
 
-export const DEFAULT_CHARACTER_IMAGE_PROMPT = JSON.stringify({
-  "style": "Detailed digital painting, heroic fantasy concept art, highly rendered, strong rim lighting, vibrant colors, high contrast, cinematic quality, reminiscent of modern D&D book illustrations. No magical halos, glowing runes, or ethereal writing around the character.",
-  "framing": "1:1 aspect ratio, **EXTREME CLOSE-UP WAIST-UP PORTRAIT**, subject slightly off-center, confident and dynamic pose, **DIRECTLY LOOKING AT VIEWER/CAMERA with intense gaze, no deviation.** **Absolutely no visible legs or lower body below the waist; the bottom edge of the image must be at or above the natural waistline.**",
-  "char": {
-    "description": "A [age]-year-old [sex] [race] with [hair_color] hair, a [body_type] build, wearing [outfit], and works as a [class]. They are [brief description of expression/specific gear/personality trait].",
-    "background": "Subtle thematic background in lower part of the image, placing them in a relevant village, city, or natural environment. Background should be out of focus."
-  }
-}, null, 2);
+export const DEFAULT_CHARACTER_IMAGE_PROMPT = `Create a detailed digital painting in heroic fantasy concept art style with highly rendered details, strong rim lighting, vibrant colors, high contrast, and cinematic quality reminiscent of modern D&D book illustrations. No magical halos, glowing runes, or ethereal writing around the character.
 
-export const DEFAULT_LOCATION_IMAGE_PROMPT = JSON.stringify({
-  "style": "Detailed fantasy landscape painting, epic environmental concept art, atmospheric perspective, dramatic lighting, rich colors, high detail, cinematic composition, reminiscent of classic D&D location art. Natural and realistic, no magical effects or fantasy creatures unless explicitly mentioned.",
-  "framing": "1:1 aspect ratio, wide establishing shot, balanced composition with clear focal point, sense of depth and scale.",
-  "location": {
-    "description": "[location_name]: [location_description]. Key features: [notable landmarks or characteristics].",
-    "atmosphere": "Capture the mood and feeling of the location - whether it's mysterious, welcoming, dangerous, or serene.",
-    "time_of_day": "Consider lighting based on narrative context - dawn, midday, dusk, or night.",
-    "details": "Include architectural elements, natural features, weather conditions, and any activity that brings the location to life."
-  }
-}, null, 2);
+FRAMING: 1:1 aspect ratio, EXTREME CLOSE-UP WAIST-UP PORTRAIT with subject slightly off-center in a confident and dynamic pose. The character must be DIRECTLY LOOKING AT VIEWER/CAMERA with an intense gaze, no deviation. Absolutely no visible legs or lower body below the waist; the bottom edge of the image must be at or above the natural waistline.
+
+CHARACTER: A [age]-year-old [sex] [race] with [hair_color] hair, a [body_type] build, wearing [outfit], and works as a [class]. They are [brief description of expression/specific gear/personality trait].
+
+BACKGROUND: Subtle thematic background in lower part of the image, placing them in a relevant village, city, or natural environment. Background should be out of focus.`;
+
+export const DEFAULT_LOCATION_IMAGE_PROMPT = `Create a detailed fantasy landscape painting in epic environmental concept art style with atmospheric perspective, dramatic lighting, rich colors, high detail, and cinematic composition reminiscent of classic D&D location art. Natural and realistic, no magical effects or fantasy creatures unless explicitly mentioned.
+
+FRAMING: 1:1 aspect ratio, wide establishing shot with balanced composition, clear focal point, and a strong sense of depth and scale.
+
+LOCATION: [location_name]: [location_description]. Key features: [notable landmarks or characteristics].
+
+ATMOSPHERE: Capture the mood and feeling of the location - whether it's mysterious, welcoming, dangerous, or serene.
+
+TIME OF DAY: Consider lighting based on narrative context - dawn, midday, dusk, or night.
+
+DETAILS: Include architectural elements, natural features, weather conditions, and any activity that brings the location to life.`;
 
 export function createDefaultConfig(): GameConfig {
   return {
