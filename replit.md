@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 - **CharacterStatsBar**: Modern, organized stats display with D&D-themed design, responsive layout.
 - **NarrativePanel**: Displays AI-generated story (Markdown), includes action input.
 - **GameInfoTabs**: Tabbed interface for game elements with notification badges and detailed views (e.g., Spells with filtering, NPCs with relationship status).
-- **EntityDetailSheet**: Wide modal for detailed views of NPCs, companions, quests, locations, and businesses, featuring in-place editing, revelatory displays with turn badges, and optimized character stats. Image refresh updates are synchronized via useEffect (GameInfoTabs) and key-based re-rendering (CharacterStatsBar) to display new images immediately without closing the sheet.
+- **EntityDetailSheet**: Wide modal for detailed views of NPCs, companions, quests, locations, and businesses, featuring in-place editing, revelatory displays with turn badges, and optimized character stats. Image refresh updates are synchronized via useEffect (GameInfoTabs) and key-based re-rendering (CharacterStatsBar) to display new images immediately without closing the sheet. NPC status displays as colored badges (green "Alive" with heart icon, red "Dead" with skull icon) and relationship shows descriptive labels (Neutral, Friendly, Hostile, etc.) with appropriate colors instead of raw numbers.
 - **Header Navigation**: Cost Tracker, Save Game, and Game Menu with logical sections for game actions, data management, and system settings.
 **Routing Logic**: Smart navigation for smooth user experience.
 
@@ -37,7 +37,7 @@ Preferred communication style: Simple, everyday language.
 
 Uses specialized LLMs for different tasks:
 - **Primary LLM (Narrative Agent)**: Generates rich narrative responses (200-400 words) in Markdown using comprehensive game context.
-- **Parser LLM (State Extraction Agent)**: Extracts structured game state updates from narrative responses (character details, inventory, quests, etc.) and generates history recaps.
+- **Parser LLM (State Extraction Agent)**: Extracts structured game state updates from narrative responses (character details including hair color, inventory, quests, etc.) and generates history recaps. Extracts hair color when mentioned in narratives.
 - **Revelations Agent**: Identifies and extracts backstory revelations from narrative for entities, tracks when they are discovered, and provides in-game notifications and debug logging.
 - **Image Agent**: Generates AI images for characters, NPCs, companions, and locations using Google's Gemini 2.5 Flash Image Preview via OpenRouter.
 - **Backstory Agent**: Generates structured backstories for NPCs, companions, quests, and locations.
