@@ -742,16 +742,63 @@ EXACT JSON FORMAT TO RETURN:
       let filledPrompt = promptTemplate;
       
       if (entityType === 'character' || entityType === 'companion' || entityType === 'npc') {
+        // Build a smart description based on available fields
+        const parts = [];
+        
+        // Age and sex (usually present)
+        if (entityData.age && entityData.sex) {
+          parts.push(`A ${entityData.age}-year-old ${entityData.sex}`);
+        } else if (entityData.age) {
+          parts.push(`Age ${entityData.age}`);
+        } else if (entityData.sex) {
+          parts.push(`A ${entityData.sex}`);
+        }
+        
+        // Race (characters and companions have this, NPCs don't)
+        if (entityData.race) {
+          parts.push(entityData.race);
+        }
+        
+        // Hair color
+        if (entityData.hairColor) {
+          parts.push(`with ${entityData.hairColor} hair`);
+        }
+        
+        // Body type (if it exists)
+        if (entityData.bodyType) {
+          parts.push(`${entityData.bodyType} build`);
+        }
+        
+        // Outfit
+        if (entityData.outfit) {
+          parts.push(`wearing ${entityData.outfit}`);
+        }
+        
+        // Class/Role - NPCs have 'role', others have 'class'
+        const classOrRole = entityData.class || entityData.role;
+        if (classOrRole) {
+          parts.push(`works as a ${classOrRole}`);
+        }
+        
+        const smartDescription = parts.length > 0 ? parts.join(', ') + '.' : '';
+        
+        // Add appearance/description/personality
+        const additionalDetails = entityData.appearance || entityData.description || entityData.personality || '';
+        const fullDescription = [smartDescription, additionalDetails].filter(Boolean).join(' ');
+        
+        // Replace placeholders
         filledPrompt = filledPrompt
           .replace(/\[age\]/g, entityData.age || '')
           .replace(/\[sex\]/g, entityData.sex || '')
           .replace(/\[race\]/g, entityData.race || '')
-          .replace(/\[class\]/g, entityData.class || '')
+          .replace(/\[class\]/g, entityData.class || entityData.role || '')
           .replace(/\[name\]/g, entityData.name || '')
           .replace(/\[hair_color\]/g, entityData.hairColor || '')
           .replace(/\[outfit\]/g, entityData.outfit || '')
           .replace(/\[body_type\]/g, entityData.bodyType || '')
-          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || '');
+          // Replace the full description pattern with our smart description
+          .replace(/"description":\s*"[^"]*"/g, `"description": "${fullDescription}"`)
+          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, fullDescription);
       } else if (entityType === 'location' || entityType === 'business') {
         filledPrompt = filledPrompt
           .replace(/\[location_name\]/g, entityData.name || 'unknown location')
