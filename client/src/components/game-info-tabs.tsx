@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -66,12 +66,41 @@ export default function GameInfoTabs({
     setDetailSheetOpen(true);
   };
 
+  // Sync detailEntity with updated props when sheet is open
+  useEffect(() => {
+    if (!detailSheetOpen || !detailEntity) return;
+    
+    // Find and update the entity from the latest prop arrays
+    if (detailEntityType === 'companion') {
+      const updated = companions.find(c => c.id === (detailEntity as Companion).id);
+      if (updated && updated.imageUrl !== (detailEntity as Companion).imageUrl) {
+        setDetailEntity(updated);
+      }
+    } else if (detailEntityType === 'npc') {
+      const updated = encounteredCharacters.find(c => c.id === (detailEntity as EncounteredCharacter).id);
+      if (updated && updated.imageUrl !== (detailEntity as EncounteredCharacter).imageUrl) {
+        setDetailEntity(updated);
+      }
+    } else if (detailEntityType === 'location') {
+      const updated = previousLocations.find(loc => loc.id === (detailEntity as PreviousLocation).id);
+      if (updated && updated.imageUrl !== (detailEntity as PreviousLocation).imageUrl) {
+        setDetailEntity(updated);
+      }
+    } else if (detailEntityType === 'business') {
+      const updated = businesses.find(b => b.id === (detailEntity as Business).id);
+      if (updated && updated.imageUrl !== (detailEntity as Business).imageUrl) {
+        setDetailEntity(updated);
+      }
+    }
+  }, [detailSheetOpen, companions, encounteredCharacters, previousLocations, businesses, detailEntity, detailEntityType]);
+
   const handleRefreshImage = async () => {
     if (!onRefreshImage || !detailEntity || detailEntityType === 'quest') return;
     setIsRefreshingImage(true);
     try {
       const entityId = 'id' in detailEntity ? detailEntity.id : undefined;
       await onRefreshImage(detailEntityType, entityId);
+      // detailEntity will be updated by the useEffect watching prop arrays
     } finally {
       setIsRefreshingImage(false);
     }

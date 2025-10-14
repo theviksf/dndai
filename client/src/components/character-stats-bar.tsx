@@ -454,6 +454,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
       
       {/* Character Detail Sheet */}
       <EntityDetailSheet
+        key={`character-${character.imageUrl || 'no-image'}`}
         open={detailSheetOpen}
         onOpenChange={setDetailSheetOpen}
         entity={character}
@@ -470,6 +471,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
       {/* Location Detail Sheet */}
       {location && (
         <EntityDetailSheet
+          key={`location-${location.imageUrl || 'no-image'}`}
           open={locationDetailSheetOpen}
           onOpenChange={setLocationDetailSheetOpen}
           entity={location}
