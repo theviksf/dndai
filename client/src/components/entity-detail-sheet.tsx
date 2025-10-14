@@ -810,57 +810,38 @@ export function EntityDetailSheet({
         {'status' in char && entityType === 'npc' && (
           <div className="flex items-baseline gap-2">
             <span className="font-serif font-semibold text-foreground min-w-[100px]">Status:</span>
-            {onUpdate ? (
-              <InlineEdit
-                value={char.status || 'alive'}
-                onSave={(value) => onUpdate({ status: String(value) } as any)}
-                inputClassName="h-7 text-base"
-              />
-            ) : (
-              <Badge 
-                variant={char.status === 'alive' ? 'default' : 'destructive'}
-                className={`${
-                  char.status === 'alive'
-                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600' 
-                    : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-                } text-white font-bold px-3 py-1 text-sm flex items-center gap-1.5`}
-              >
-                {char.status === 'alive' ? (
-                  <><Heart className="w-4 h-4" /> Alive</>
-                ) : (
-                  <><Skull className="w-4 h-4" /> Dead</>
-                )}
-              </Badge>
-            )}
+            <Badge 
+              variant={char.status === 'alive' ? 'default' : 'destructive'}
+              className={`${
+                char.status === 'alive'
+                  ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600' 
+                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
+              } text-white font-bold px-3 py-1 text-sm flex items-center gap-1.5`}
+            >
+              {char.status === 'alive' ? (
+                <><Heart className="w-4 h-4" /> Alive</>
+              ) : (
+                <><Skull className="w-4 h-4" /> Dead</>
+              )}
+            </Badge>
           </div>
         )}
         {'relationship' in char && entityType === 'npc' && (
           <div className="flex items-baseline gap-2">
             <span className="font-serif font-semibold text-foreground min-w-[100px]">Relationship:</span>
-            {onUpdate ? (
-              <InlineEdit
-                value={typeof char.relationship === 'number' ? char.relationship : 0}
-                onSave={(value) => onUpdate({ relationship: Number(value) } as any)}
-                type="number"
-                min={-3}
-                max={3}
-                inputClassName="h-7 text-base w-20"
-              />
-            ) : (
-              (() => {
-                const rel = typeof char.relationship === 'number' ? char.relationship : 0;
-                const relDisplay = getRelationshipDisplay(rel);
-                return (
-                  <Badge 
-                    variant="outline"
-                    className={`${relDisplay.textColor} border-current font-bold px-3 py-1 text-sm`}
-                    title={relDisplay.description}
-                  >
-                    {relDisplay.label}
-                  </Badge>
-                );
-              })()
-            )}
+            {(() => {
+              const rel = typeof char.relationship === 'number' ? char.relationship : 0;
+              const relDisplay = getRelationshipDisplay(rel);
+              return (
+                <Badge 
+                  variant="outline"
+                  className={`${relDisplay.textColor} border-current font-bold px-3 py-1 text-sm`}
+                  title={relDisplay.description}
+                >
+                  {relDisplay.label}
+                </Badge>
+              );
+            })()}
           </div>
         )}
       </div>
