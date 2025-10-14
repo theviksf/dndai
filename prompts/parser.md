@@ -33,7 +33,7 @@ EXACT JSON FORMAT TO RETURN:
 {
   "stateUpdates": {
     // Only include fields that actually changed (omit fields with no changes)
-    // String fields: "name", "race", "class", "age", "sex" 
+    // String fields: "name", "race", "class", "age", "sex", "hairColor" 
     // Number fields: "level", "hp", "maxHp", "gold", "xp", "nextLevelXp"
     // Object field: "attributes" with properties: "str", "dex", "con", "int", "wis", "cha" (all numbers)
     // Object field: "location" with properties: "name" (string), "description" (string)
