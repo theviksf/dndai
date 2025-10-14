@@ -742,64 +742,6 @@ EXACT JSON FORMAT TO RETURN:
       let filledPrompt = promptTemplate;
       
       if (entityType === 'character' || entityType === 'companion' || entityType === 'npc') {
-        // Build character description dynamically to avoid awkward blanks
-        const parts: string[] = [];
-        
-        // Start with age and sex if available
-        if (entityData.age && entityData.sex) {
-          parts.push(`A ${entityData.age}-year-old ${entityData.sex}`);
-        } else if (entityData.age) {
-          parts.push(`A ${entityData.age}-year-old`);
-        } else if (entityData.sex) {
-          parts.push(`A ${entityData.sex}`);
-        }
-        
-        // Add race if available
-        if (entityData.race) {
-          if (parts.length > 0) {
-            parts[parts.length - 1] += ` ${entityData.race}`;
-          } else {
-            parts.push(`A ${entityData.race}`);
-          }
-        }
-        
-        // Add hair color
-        if (entityData.hairColor) {
-          parts.push(`with ${entityData.hairColor} hair`);
-        }
-        
-        // Add body type
-        if (entityData.bodyType) {
-          parts.push(`a ${entityData.bodyType} build`);
-        }
-        
-        // Add outfit
-        if (entityData.outfit) {
-          parts.push(`wearing ${entityData.outfit}`);
-        }
-        
-        // Add class/role
-        if (entityData.class) {
-          parts.push(`works as a ${entityData.class}`);
-        }
-        
-        // Construct the description sentence
-        let description = '';
-        if (parts.length > 0) {
-          description = parts[0];
-          for (let i = 1; i < parts.length; i++) {
-            description += ', ' + parts[i];
-          }
-          description += '.';
-        }
-        
-        // Add appearance/description
-        const details = entityData.appearance || entityData.description || entityData.personality || '';
-        if (details) {
-          description += (description ? ' ' : '') + details + (details.endsWith('.') ? '' : '.');
-        }
-        
-        // Replace the placeholder description in the template
         filledPrompt = filledPrompt
           .replace(/\[age\]/g, entityData.age || '')
           .replace(/\[sex\]/g, entityData.sex || '')
@@ -809,8 +751,7 @@ EXACT JSON FORMAT TO RETURN:
           .replace(/\[hair_color\]/g, entityData.hairColor || '')
           .replace(/\[outfit\]/g, entityData.outfit || '')
           .replace(/\[body_type\]/g, entityData.bodyType || '')
-          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || '')
-          .replace(/"description":\s*"[^"]*"/g, `"description": "${description}"`);
+          .replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || '');
       } else if (entityType === 'location' || entityType === 'business') {
         filledPrompt = filledPrompt
           .replace(/\[location_name\]/g, entityData.name || 'unknown location')
