@@ -49,7 +49,7 @@ function sanitizeForFilename(str: string): string {
 
 /**
  * Generate filename for character images
- * Format: char_[age]-[sex]-[race]-[job]-[mood]_[sessionId]_[timestamp].jpg
+ * Format: char_[age]-[sex]-[race]-[job]-[mood]_[sessionId]_[timestamp].png
  */
 export function generateCharacterFilename(metadata: CharacterImageMetadata): string {
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
@@ -61,13 +61,13 @@ export function generateCharacterFilename(metadata: CharacterImageMetadata): str
     sanitizeForFilename(metadata.mood || 'NA'),
   ];
   
-  const filename = `char_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
+  const filename = `char_${parts.join('-')}_${metadata.sessionId}_${timestamp}.png`;
   return filename;
 }
 
 /**
  * Generate filename for location images
- * Format: loc_[environment]-[timeOfDay]-[weather]-[region]-[vibe]_[sessionId]_[timestamp].jpg
+ * Format: loc_[environment]-[timeOfDay]-[weather]-[region]-[vibe]_[sessionId]_[timestamp].png
  */
 export function generateLocationFilename(metadata: LocationImageMetadata): string {
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
@@ -79,13 +79,13 @@ export function generateLocationFilename(metadata: LocationImageMetadata): strin
     sanitizeForFilename(metadata.vibe || 'NA'),
   ];
   
-  const filename = `loc_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
+  const filename = `loc_${parts.join('-')}_${metadata.sessionId}_${timestamp}.png`;
   return filename;
 }
 
 /**
  * Generate filename for business images
- * Format: biz_[name]-[type]_[sessionId]_[timestamp].jpg
+ * Format: biz_[name]-[type]_[sessionId]_[timestamp].png
  */
 export function generateBusinessFilename(metadata: BusinessImageMetadata): string {
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]; // Format: 20251005T221030
@@ -94,7 +94,7 @@ export function generateBusinessFilename(metadata: BusinessImageMetadata): strin
     sanitizeForFilename(metadata.type || 'shop'),
   ];
   
-  const filename = `biz_${parts.join('-')}_${metadata.sessionId}_${timestamp}.jpg`;
+  const filename = `biz_${parts.join('-')}_${metadata.sessionId}_${timestamp}.png`;
   return filename;
 }
 
@@ -113,7 +113,7 @@ export async function uploadImageToR2(
     Bucket: R2_BUCKET_NAME,
     Key: filename,
     Body: buffer,
-    ContentType: 'image/jpeg',
+    ContentType: 'image/png',
   });
 
   await s3Client.send(command);
