@@ -842,11 +842,17 @@ EXACT JSON FORMAT TO RETURN:
           
           if (statusData.status === 'COMPLETED') {
             jobComplete = true;
-            // Extract image URL from output
-            if (statusData.output && statusData.output.image_url) {
-              imageUrl = statusData.output.image_url;
-            } else if (statusData.output && typeof statusData.output === 'string') {
-              imageUrl = statusData.output;
+            // Extract base64 image from RunPod response
+            // RunPod Flux returns: { output: { images: [{ type: "base64", data: "..." }] } }
+            if (statusData.output?.images && Array.isArray(statusData.output.images) && statusData.output.images.length > 0) {
+              const imageData = statusData.output.images[0].data;
+              // Handle base64 with or without data URI prefix
+              if (imageData.startsWith('data:image')) {
+                imageUrl = imageData;
+              } else {
+                // Add data URI prefix for PNG format
+                imageUrl = `data:image/png;base64,${imageData}`;
+              }
             }
             model = 'flux-1.1-schnell';
             usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
