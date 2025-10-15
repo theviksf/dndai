@@ -267,6 +267,7 @@ export type GameConfig = {
   backstorySystemPrompt: string;
   revelationsSystemPrompt: string;
   loreSystemPrompt: string;
+  imageProvider: 'flux' | 'gemini';
   autoGenerateImages: boolean;
   autoGenerateBackstories: boolean;
   autoGenerateRevelations: boolean;

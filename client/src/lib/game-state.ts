@@ -373,6 +373,7 @@ export function createDefaultConfig(): GameConfig {
     backstorySystemPrompt: BACKSTORY_SYSTEM_PROMPT,
     revelationsSystemPrompt: REVELATIONS_SYSTEM_PROMPT,
     loreSystemPrompt: LORE_SYSTEM_PROMPT,
+    imageProvider: 'flux',
     autoGenerateImages: false,
     autoGenerateBackstories: true,
     autoGenerateRevelations: true,
@@ -409,6 +410,7 @@ export function migrateConfig(config: any): GameConfig {
     // Ensure new image fields exist
     characterImagePrompt: config.characterImagePrompt || defaults.characterImagePrompt,
     locationImagePrompt: config.locationImagePrompt || defaults.locationImagePrompt,
+    imageProvider: config.imageProvider || defaults.imageProvider,
     autoGenerateImages: config.autoGenerateImages ?? defaults.autoGenerateImages,
     // Ensure new backstory fields exist
     backstoryLLM: config.backstoryLLM || defaults.backstoryLLM,
