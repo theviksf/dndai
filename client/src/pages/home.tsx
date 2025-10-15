@@ -140,7 +140,9 @@ export default function Home() {
           migratedState.turnSnapshots = snapshotsFromDB;
           
           setGameState(migratedState);
-          setConfig(migrateParserPrompt(migrateConfig(sessionData.gameConfig)));
+          const migratedConfig = await migrateConfig(sessionData.gameConfig);
+          const finalConfig = await migrateParserPrompt(migratedConfig);
+          setConfig(finalConfig);
           setCostTracker(sessionData.costTracker || createDefaultCostTracker());
           setTurnSnapshots(snapshotsFromDB);
           setIsGameStarted(sessionData.isGameStarted);
@@ -210,7 +212,9 @@ export default function Home() {
             
             if (savedConfig) {
               try {
-                migratedConfig = migrateParserPrompt(migrateConfig(JSON.parse(savedConfig)));
+                const parsedConfig = JSON.parse(savedConfig);
+                const tempConfig = await migrateConfig(parsedConfig);
+                migratedConfig = await migrateParserPrompt(tempConfig);
               } catch (error) {
                 console.error('[DB] Failed to parse localStorage config:', error);
               }
@@ -438,7 +442,9 @@ export default function Home() {
         try {
           const sessionData = await getSessionData(sessionId);
           if (sessionData) {
-            setConfig(migrateParserPrompt(migrateConfig(sessionData.gameConfig)));
+            const migratedConfig = await migrateConfig(sessionData.gameConfig);
+            const finalConfig = await migrateParserPrompt(migratedConfig);
+            setConfig(finalConfig);
             setCostTracker(sessionData.costTracker || createDefaultCostTracker());
             setIsGameStarted(sessionData.isGameStarted);
             setTurnSnapshots(sessionData.turnSnapshots);
@@ -738,7 +744,7 @@ export default function Home() {
   }, []);
 
   const updateGameState = (updates: Partial<GameStateData>) => {
-    let updatedState: GameStateData;
+    let updatedState!: GameStateData; // Definite assignment assertion - will be set in callback
     
     setGameState(prev => {
       const newState = {
@@ -1227,7 +1233,8 @@ export default function Home() {
         const migratedState = migrateGameState(importData.gameState);
         
         // Migrate config (parser prompt migration)
-        const migratedConfig = migrateParserPrompt(importData.config);
+        const tempConfig = await migrateConfig(importData.config);
+        const migratedConfig = await migrateParserPrompt(tempConfig);
         
         // Migrate cost tracker
         const migratedCostTracker = importData.costTracker 

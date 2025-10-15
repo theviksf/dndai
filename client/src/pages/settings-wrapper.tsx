@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultConfig, migrateParserPrompt, migrateConfig } from '@/lib/game-state';
+import { createDefaultConfig, migrateParserPrompt, migrateConfig, loadDefaultPromptsFromAPI } from '@/lib/game-state';
 import { getSessionIdFromUrl, getSessionStorageKey, generateSessionId, setSessionIdInUrl, buildSessionUrl } from '@/lib/session';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import SettingsPage from '@/pages/settings';
@@ -12,6 +12,7 @@ export default function SettingsWrapper() {
   const [, setLocation] = useLocation();
   const [sessionId, setSessionId] = useState<string>(() => getSessionIdFromUrl() || '');
   const [isNewSession, setIsNewSession] = useState(false);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const { toast } = useToast();
   
   // Ensure session ID exists - create one if missing
@@ -26,56 +27,57 @@ export default function SettingsWrapper() {
     }
   }, []);
   
-  // Reload config from localStorage when component mounts
-  useEffect(() => {
-    const currentSessionId = getSessionIdFromUrl();
-    if (!currentSessionId) return;
-    
-    console.log('[SETTINGS] Loading config for session:', currentSessionId);
-    
-    try {
-      const storageKey = getSessionStorageKey('gameConfig', currentSessionId);
-      const savedConfig = localStorage.getItem(storageKey);
-      console.log('[SETTINGS] Loaded from localStorage key:', storageKey, 'value exists:', !!savedConfig);
-      
-      if (savedConfig) {
-        const loadedConfig = JSON.parse(savedConfig);
-        console.log('[SETTINGS] Loaded config primaryLLM:', loadedConfig.primaryLLM);
-        const migratedConfig = migrateConfig(loadedConfig);
-        const finalConfig = migrateParserPrompt(migratedConfig);
-        console.log('[SETTINGS] Final config primaryLLM:', finalConfig.primaryLLM);
-        setConfig(finalConfig);
-      }
-    } catch (error) {
-      console.error('Failed to reload config from localStorage:', error);
-    }
-  }, []); // Run only on mount
+  const [config, setConfig] = useState<GameConfig>(createDefaultConfig);
   
-  const [config, setConfig] = useState<GameConfig>(() => {
-    const initialSessionId = getSessionIdFromUrl() || '';
-    if (!initialSessionId) {
-      return createDefaultConfig();
-    }
-    
-    try {
-      // Try to load config from session-scoped localStorage
-      const savedConfig = localStorage.getItem(getSessionStorageKey('gameConfig', initialSessionId));
-      if (!savedConfig) {
-        setIsNewSession(true);
-        return createDefaultConfig();
+  // Load config from localStorage when component mounts
+  useEffect(() => {
+    const loadConfig = async () => {
+      const currentSessionId = getSessionIdFromUrl();
+      if (!currentSessionId) return;
+      
+      console.log('[SETTINGS] Loading config for session:', currentSessionId);
+      
+      try {
+        const storageKey = getSessionStorageKey('gameConfig', currentSessionId);
+        const savedConfig = localStorage.getItem(storageKey);
+        console.log('[SETTINGS] Loaded from localStorage key:', storageKey, 'value exists:', !!savedConfig);
+        
+        if (savedConfig) {
+          const loadedConfig = JSON.parse(savedConfig);
+          console.log('[SETTINGS] Loaded config primaryLLM:', loadedConfig.primaryLLM);
+          const migratedConfig = await migrateConfig(loadedConfig);
+          const finalConfig = await migrateParserPrompt(migratedConfig);
+          console.log('[SETTINGS] Final config primaryLLM:', finalConfig.primaryLLM);
+          setConfig(finalConfig);
+          setConfigLoaded(true);
+        } else {
+          // No saved config - this is a new session, load defaults from API
+          setIsNewSession(true);
+          const defaults = await loadDefaultPromptsFromAPI();
+          if (defaults) {
+            setConfig(prev => ({
+              ...prev,
+              dmSystemPrompt: defaults.primary,
+              parserSystemPrompt: defaults.parser,
+              characterImagePrompt: defaults.imageCharacter,
+              locationImagePrompt: defaults.imageLocation,
+              backstorySystemPrompt: defaults.backstory,
+              revelationsSystemPrompt: defaults.revelations,
+              loreSystemPrompt: defaults.lore,
+            }));
+          }
+          setConfigLoaded(true);
+        }
+      } catch (error) {
+        console.error('Failed to reload config from localStorage:', error);
+        setConfigLoaded(true);
       }
-      const loadedConfig = JSON.parse(savedConfig);
-      const migratedConfig = migrateConfig(loadedConfig);
-      return migrateParserPrompt(migratedConfig);
-    } catch (error) {
-      console.error('Failed to load config from localStorage:', error);
-      // If loading fails, return default config
-      setIsNewSession(true);
-      return createDefaultConfig();
-    }
-  });
+    };
+    
+    loadConfig();
+  }, []); // Run only on mount
 
-  // Fetch default prompts from .md files for new sessions
+  // Fetch default prompts from .md files for new sessions (fallback)
   const { data: defaultPrompts } = useQuery({
     queryKey: ['/api/prompts/defaults'],
     queryFn: async () => {
@@ -83,12 +85,12 @@ export default function SettingsWrapper() {
       if (!response.ok) throw new Error('Failed to fetch default prompts');
       return response.json();
     },
-    enabled: isNewSession,
+    enabled: isNewSession && !configLoaded,
   });
 
   // Update config with prompts from .md files when they're loaded for new sessions
   useEffect(() => {
-    if (isNewSession && defaultPrompts) {
+    if (isNewSession && defaultPrompts && !configLoaded) {
       setConfig(prev => ({
         ...prev,
         dmSystemPrompt: defaultPrompts.primary,
@@ -99,71 +101,81 @@ export default function SettingsWrapper() {
         revelationsSystemPrompt: defaultPrompts.revelations,
         loreSystemPrompt: defaultPrompts.lore,
       }));
+      setConfigLoaded(true);
       setIsNewSession(false);
     }
-  }, [isNewSession, defaultPrompts]);
+  }, [isNewSession, defaultPrompts, configLoaded]);
 
-  // Fetch OpenRouter models (always enabled - backend will use fallback key if needed)
-  const { data: models, refetch: refetchModels } = useQuery<OpenRouterModel[]>({
-    queryKey: ['/api/models', config.openRouterApiKey],
-    queryFn: () => fetchOpenRouterModels(config.openRouterApiKey),
-  });
+  const [llmModels, setLlmModels] = useState<OpenRouterModel[]>([]);
 
-  const handleConfigSave = (newConfig: GameConfig) => {
-    const currentSessionId = sessionId || getSessionIdFromUrl();
-    if (!currentSessionId) {
-      console.error('No session ID available');
-      toast({
-        title: "Error saving settings",
-        description: "No active session found. Please refresh the page and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    console.log('[SETTINGS] Saving config with primaryLLM:', newConfig.primaryLLM);
-    
-    try {
-      // Save to session-scoped localStorage
-      const storageKey = getSessionStorageKey('gameConfig', currentSessionId);
-      localStorage.setItem(storageKey, JSON.stringify(newConfig));
-      console.log('[SETTINGS] Saved to localStorage key:', storageKey);
-      
-      // Update state AFTER successful save
-      setConfig(newConfig);
-      
-      toast({
-        title: "Settings saved",
-        description: "Your settings have been updated successfully.",
-      });
-      
-      // Navigate back to home with session ID
-      setLocation(buildSessionUrl('/', currentSessionId));
-    } catch (error) {
-      // Handle localStorage quota exceeded error
-      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const models = await fetchOpenRouterModels();
+        setLlmModels(models);
+      } catch (error) {
+        console.error('Failed to load LLM models:', error);
         toast({
-          title: "Storage quota exceeded",
-          description: "Your browser storage is full. Try clearing old game sessions or starting a new session with the 'New Game' button.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error saving settings",
-          description: "Failed to save settings. Please try again.",
+          title: "Failed to load models",
+          description: "Could not fetch available LLM models",
           variant: "destructive",
         });
       }
-      console.error('Failed to save config:', error);
+    };
+    loadModels();
+  }, [toast]);
+
+  const handleSave = (newConfig: GameConfig) => {
+    if (!sessionId) {
+      console.error('[SETTINGS] No session ID available for saving');
+      return;
+    }
+    
+    setConfig(newConfig);
+    const storageKey = getSessionStorageKey('gameConfig', sessionId);
+    localStorage.setItem(storageKey, JSON.stringify(newConfig));
+    console.log('[SETTINGS] Saved config to localStorage key:', storageKey);
+    
+    // Use browser navigation to go to home instead of wouter (avoids re-render issues)
+    const homeUrl = buildSessionUrl('/', sessionId);
+    window.location.href = homeUrl;
+  };
+
+  const handleRefreshModels = async () => {
+    try {
+      const models = await fetchOpenRouterModels();
+      setLlmModels(models);
+      toast({
+        title: "Models refreshed",
+        description: "Successfully loaded latest models from OpenRouter",
+      });
+    } catch (error) {
+      console.error('Failed to refresh models:', error);
+      toast({
+        title: "Refresh failed",
+        description: "Could not refresh LLM models",
+        variant: "destructive",
+      });
     }
   };
 
+  // Show loading while config is being loaded
+  if (!configLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <div className="text-lg text-muted-foreground">Loading settings...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <SettingsPage
-      config={config}
-      onSave={handleConfigSave}
-      models={models || []}
-      onRefreshModels={() => refetchModels()}
+    <SettingsPage 
+      config={config} 
+      models={llmModels} 
+      onSave={handleSave}
+      onRefreshModels={handleRefreshModels}
     />
   );
 }
