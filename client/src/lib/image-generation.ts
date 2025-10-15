@@ -29,13 +29,26 @@ export async function generateEntityImage({
   const timestamp = Date.now();
   const id = `image-${timestamp}-${nanoid(6)}`;
   const isLocationEntity = entityType === 'location' || entityType === 'business';
-  const promptTemplate = isLocationEntity 
+  let promptTemplate = isLocationEntity 
     ? config.locationImagePrompt 
     : config.characterImagePrompt;
   
-  // Config should always have prompts loaded from API - no fallback needed
+  // Fallback to loading defaults from API if prompts are empty
   if (!promptTemplate || promptTemplate.trim() === '') {
-    throw new Error(`Image prompt not loaded for ${isLocationEntity ? 'location' : 'character'}`);
+    try {
+      const response = await fetch('/api/prompts/defaults');
+      if (response.ok) {
+        const defaults = await response.json();
+        promptTemplate = isLocationEntity ? defaults.imageLocation : defaults.imageCharacter;
+      }
+    } catch (error) {
+      console.error('Failed to load default image prompts:', error);
+    }
+    
+    // If still empty after fallback, throw error
+    if (!promptTemplate || promptTemplate.trim() === '') {
+      throw new Error(`Image prompt not loaded for ${isLocationEntity ? 'location' : 'character'}`);
+    }
   }
   
   try {
