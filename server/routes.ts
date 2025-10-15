@@ -16,66 +16,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const promptsDir = join(process.cwd(), 'prompts');
       
-      // Load prompts with fallback for revelations and lore (newer prompts that might not exist)
-      const [primary, parser, imageCharacter, imageLocation, backstory] = await Promise.all([
+      // Load all prompts from markdown files
+      const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore] = await Promise.all([
         readFile(join(promptsDir, 'primary.md'), 'utf-8'),
         readFile(join(promptsDir, 'parser.md'), 'utf-8'),
         readFile(join(promptsDir, 'image-character.md'), 'utf-8'),
         readFile(join(promptsDir, 'image-location.md'), 'utf-8'),
         readFile(join(promptsDir, 'backstory.md'), 'utf-8'),
+        readFile(join(promptsDir, 'revelations.md'), 'utf-8'),
+        readFile(join(promptsDir, 'lore.md'), 'utf-8'),
       ]);
-      
-      // Try to load revelations, fallback to default if missing
-      let revelations: string;
-      try {
-        revelations = await readFile(join(promptsDir, 'revelations.md'), 'utf-8');
-      } catch {
-        // Fallback to default revelations prompt if file doesn't exist
-        revelations = `You are a revelations tracker for a D&D adventure game. Your role is to identify when elements of an entity's backstory are revealed to the player character during the narrative.
-
-# Mission
-Analyze the DM's narrative response and extract revelations - specific backstory elements that became known to the player.
-
-**CRITICAL RULE**: You can ONLY extract a revelation if:
-1. The entity has an existing backstory in the game context
-2. The revealed information connects to that backstory
-3. The information hasn't already been recorded in existing revelations
-
-# Output Format
-
-=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
-
-EXACT JSON FORMAT TO RETURN:
-{
-  "revelations": [
-    {
-      "entityType": "character" | "companion" | "npc" | "location",
-      "entityId": "entity_id_or_character",
-      "entityName": "Entity Name",
-      "text": "Specific revelation text extracted from the narrative",
-      "revealedAtTurn": 5
-    }
-  ]
-}`;
-      }
-      
-      // Try to load lore, fallback to default if missing
-      let lore: string;
-      try {
-        lore = await readFile(join(promptsDir, 'lore.md'), 'utf-8');
-      } catch {
-        // Fallback to default lore prompt if file doesn't exist
-        lore = `You are a World Lore Generator for a D&D adventure game. Your mission is to create comprehensive world lore based on the current game context.
-
-# Output Format
-
-=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
-
-EXACT JSON FORMAT TO RETURN:
-{
-  "worldLore": "Your comprehensive world lore here (600-1000 words). Structure it with clear sections for World Genesis, Lore & History, Factions & Power, and Relational Geography."
-}`;
-      }
       
       res.json({
         primary,
