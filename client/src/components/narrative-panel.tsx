@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
 import { callLLM, callLLMStream } from '@/lib/openrouter';
-import { DM_SYSTEM_PROMPT, PARSER_SYSTEM_PROMPT } from '@/lib/game-state';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';

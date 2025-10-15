@@ -29,14 +29,13 @@ export async function generateEntityImage({
   const timestamp = Date.now();
   const id = `image-${timestamp}-${nanoid(6)}`;
   const isLocationEntity = entityType === 'location' || entityType === 'business';
-  let promptTemplate = isLocationEntity 
+  const promptTemplate = isLocationEntity 
     ? config.locationImagePrompt 
     : config.characterImagePrompt;
   
-  // Fallback to defaults if prompt template is empty or undefined
+  // Config should always have prompts loaded from API - no fallback needed
   if (!promptTemplate || promptTemplate.trim() === '') {
-    const { DEFAULT_CHARACTER_IMAGE_PROMPT, DEFAULT_LOCATION_IMAGE_PROMPT } = await import('@/lib/game-state');
-    promptTemplate = isLocationEntity ? DEFAULT_LOCATION_IMAGE_PROMPT : DEFAULT_CHARACTER_IMAGE_PROMPT;
+    throw new Error(`Image prompt not loaded for ${isLocationEntity ? 'location' : 'character'}`);
   }
   
   try {
