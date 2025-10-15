@@ -543,6 +543,28 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                 />
               </div>
 
+              {/* Image Provider Selection */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <label className="block text-sm font-semibold text-foreground">
+                  Image Provider <span className="text-primary">(Image Generation)</span>
+                </label>
+                <Select
+                  value={localConfig.imageProvider}
+                  onValueChange={(value: 'flux' | 'gemini') => setLocalConfig(prev => ({ ...prev, imageProvider: value }))}
+                >
+                  <SelectTrigger className="w-full" data-testid="select-image-provider">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="flux" data-testid="option-flux">Flux 1.1 Schnell (RunPod) - 512x512 PNG</SelectItem>
+                    <SelectItem value="gemini" data-testid="option-gemini">Gemini 2.5 Flash (OpenRouter) - Variable size</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose between Flux 1.1 Schnell (fast, consistent 512x512 PNG) or Gemini 2.5 Flash (variable resolution)
+                </p>
+              </div>
+
               {/* Character Image Prompt */}
               <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
                 <div className="flex items-center justify-between">
