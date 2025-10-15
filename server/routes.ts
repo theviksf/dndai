@@ -842,17 +842,28 @@ EXACT JSON FORMAT TO RETURN:
           
           if (statusData.status === 'COMPLETED') {
             jobComplete = true;
-            // Extract base64 image from RunPod response
-            // RunPod Flux returns: { output: { images: [{ type: "base64", data: "..." }] } }
-            if (statusData.output?.images && Array.isArray(statusData.output.images) && statusData.output.images.length > 0) {
-              const imageData = statusData.output.images[0].data;
-              // Handle base64 with or without data URI prefix
-              if (imageData.startsWith('data:image')) {
-                imageUrl = imageData;
-              } else {
-                // Add data URI prefix for PNG format
-                imageUrl = `data:image/png;base64,${imageData}`;
+            
+            // Extract image URL from RunPod response
+            // RunPod Flux returns: { output: { cost: number, image_url: "https://..." } }
+            if (statusData.output?.image_url) {
+              const runPodImageUrl = statusData.output.image_url;
+              console.log('[IMAGE GEN] RunPod image URL:', runPodImageUrl);
+              
+              // Fetch the image from RunPod and convert to base64
+              try {
+                const imageResponse = await fetch(runPodImageUrl);
+                if (!imageResponse.ok) {
+                  throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+                }
+                const imageBuffer = await imageResponse.arrayBuffer();
+                const base64Image = Buffer.from(imageBuffer).toString('base64');
+                imageUrl = `data:image/png;base64,${base64Image}`;
+                console.log('[IMAGE GEN] Successfully fetched and converted image to base64');
+              } catch (fetchError: any) {
+                console.error('[IMAGE GEN] Failed to fetch RunPod image:', fetchError.message);
               }
+            } else {
+              console.error('[IMAGE GEN] No image_url in RunPod output:', JSON.stringify(statusData.output, null, 2).substring(0, 500));
             }
             model = 'flux-1.1-schnell';
             usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
