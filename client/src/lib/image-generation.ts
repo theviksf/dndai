@@ -46,6 +46,7 @@ export async function generateEntityImage({
       entityType,
       apiKey: config.openRouterApiKey,
       sessionId,
+      provider: config.imageProvider || 'flux',
     });
 
     if (!response.ok) {
