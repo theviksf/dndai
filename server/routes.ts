@@ -7,6 +7,7 @@ import { readFile, writeFile, copyFile } from "fs/promises";
 import { join } from "path";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || "";
+const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || "";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -710,22 +711,34 @@ EXACT JSON FORMAT TO RETURN:
 
   app.post('/api/generate-image', async (req, res) => {
     try {
-      const { entityType, entity, promptTemplate, apiKey, sessionId } = req.body;
+      const { entityType, entity, promptTemplate, apiKey, sessionId, provider = 'flux' } = req.body;
       const entityData = entity;
       
-      const key = apiKey || OPENROUTER_API_KEY;
+      const openRouterKey = apiKey || OPENROUTER_API_KEY;
+      const runPodKey = RUNPOD_API_KEY;
       
       console.log('[IMAGE GEN] Request:', {
         entityType,
         entityName: entityData?.name,
-        hasApiKey: !!key,
+        provider,
+        hasOpenRouterKey: !!openRouterKey,
+        hasRunPodKey: !!runPodKey,
         promptTemplateLength: promptTemplate?.length
       });
       
-      if (!key) {
-        console.error('[IMAGE GEN] Error: No API key provided');
+      // Validate API keys based on provider
+      if (provider === 'flux' && !runPodKey) {
+        console.error('[IMAGE GEN] Error: No RunPod API key available for Flux provider');
         return res.status(400).json({ 
-          error: 'API key required',
+          error: 'RunPod API key required for Flux image generation',
+          filledPrompt: promptTemplate || 'No template provided'
+        });
+      }
+      
+      if (provider === 'gemini' && !openRouterKey) {
+        console.error('[IMAGE GEN] Error: No OpenRouter API key available for Gemini provider');
+        return res.status(400).json({ 
+          error: 'OpenRouter API key required for Gemini image generation',
           filledPrompt: promptTemplate || 'No template provided'
         });
       }
@@ -764,117 +777,213 @@ EXACT JSON FORMAT TO RETURN:
       
       console.log('[IMAGE GEN] Filled prompt:', filledPrompt.substring(0, 200) + '...');
       
-      // Call OpenRouter with Gemini image model
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'HTTP-Referer': req.headers.referer || 'http://localhost:5000',
-          'X-Title': 'D&D Adventure Game',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash-image-preview',
-          messages: [
-            {
-              role: 'user',
-              content: filledPrompt
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 0.9,
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('[IMAGE GEN] OpenRouter API error:', errorData);
-        return res.status(response.status).json({
-          error: `OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`,
-          filledPrompt,
-          rawResponse: JSON.stringify(errorData, null, 2)
-        });
-      }
-      
-      const data = await response.json();
-      console.log('[IMAGE GEN] OpenRouter response:', {
-        model: data.model,
-        hasChoices: !!data.choices,
-        choicesLength: data.choices?.length,
-        messageContentType: typeof data.choices?.[0]?.message?.content,
-        isContentArray: Array.isArray(data.choices?.[0]?.message?.content),
-        usage: data.usage
-      });
-      
-      // Extract image URL from response
-      // Gemini image models can return images in multiple formats
       let imageUrl = null;
-      const message = data.choices[0].message;
+      let usage = null;
+      let model = '';
       
-      // First check if there's a separate images array (Gemini 2.5 flash preview format)
-      if (message.images && Array.isArray(message.images) && message.images.length > 0) {
-        const firstImage = message.images[0];
-        if (firstImage.image_url?.url) {
-          imageUrl = firstImage.image_url.url;
-        } else if (firstImage.url) {
-          imageUrl = firstImage.url;
-        }
-      }
-      
-      // If no image found in images array, check content (older format)
-      if (!imageUrl) {
-        const content = message.content;
+      if (provider === 'flux') {
+        // Call RunPod Flux 1.1 Schnell API
+        console.log('[IMAGE GEN] Using Flux 1.1 Schnell via RunPod');
         
-        // Check if content is an array (for image models)
-        if (Array.isArray(content)) {
-          // Look for Gemini's output_image type or standard image_url type
-          const imageContent = content.find((item: any) => 
-            item.type === 'output_image' || item.type === 'image_url'
-          );
-          if (imageContent) {
-            // Handle multiple formats:
-            // 1. URL in image_url.url (OpenRouter standard)
-            // 2. Direct url property
-            // 3. Base64 in image_base64 (Gemini preview model)
-            if (imageContent.image_url?.url) {
-              imageUrl = imageContent.image_url.url;
-            } else if (imageContent.url) {
-              imageUrl = imageContent.url;
-            } else if (imageContent.image_base64) {
-              // Convert base64 to data URL
-              imageUrl = `data:image/png;base64,${imageContent.image_base64}`;
+        const runPodResponse = await fetch('https://api.runpod.ai/v2/black-forest-labs-flux-1-schnell/run', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${runPodKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            input: {
+              prompt: filledPrompt,
+              seed: -1,
+              num_inference_steps: 4,
+              guidance: 7,
+              negative_prompt: "",
+              image_format: "png",
+              width: 512,
+              height: 512
+            }
+          })
+        });
+        
+        if (!runPodResponse.ok) {
+          const errorData = await runPodResponse.json();
+          console.error('[IMAGE GEN] RunPod API error:', errorData);
+          return res.status(runPodResponse.status).json({
+            error: `RunPod API error: ${errorData.error || 'Unknown error'}`,
+            filledPrompt,
+            rawResponse: JSON.stringify(errorData, null, 2)
+          });
+        }
+        
+        const runPodData = await runPodResponse.json();
+        console.log('[IMAGE GEN] RunPod response:', {
+          status: runPodData.status,
+          id: runPodData.id
+        });
+        
+        // RunPod returns a job ID, need to poll for the result
+        const jobId = runPodData.id;
+        let jobComplete = false;
+        let attempts = 0;
+        const maxAttempts = 30; // 30 seconds max wait
+        
+        while (!jobComplete && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+          attempts++;
+          
+          const statusResponse = await fetch(`https://api.runpod.ai/v2/black-forest-labs-flux-1-schnell/status/${jobId}`, {
+            headers: {
+              'Authorization': `Bearer ${runPodKey}`
+            }
+          });
+          
+          const statusData = await statusResponse.json();
+          console.log(`[IMAGE GEN] RunPod job status (attempt ${attempts}):`, statusData.status);
+          
+          if (statusData.status === 'COMPLETED') {
+            jobComplete = true;
+            // Extract image URL from output
+            if (statusData.output && statusData.output.image_url) {
+              imageUrl = statusData.output.image_url;
+            } else if (statusData.output && typeof statusData.output === 'string') {
+              imageUrl = statusData.output;
+            }
+            model = 'flux-1.1-schnell';
+            usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+          } else if (statusData.status === 'FAILED') {
+            console.error('[IMAGE GEN] RunPod job failed:', statusData.error);
+            return res.status(500).json({
+              error: `RunPod job failed: ${statusData.error || 'Unknown error'}`,
+              filledPrompt,
+              rawResponse: JSON.stringify(statusData, null, 2)
+            });
+          }
+        }
+        
+        if (!jobComplete) {
+          console.error('[IMAGE GEN] RunPod job timeout after', attempts, 'attempts');
+          return res.status(504).json({
+            error: 'RunPod job timeout - image generation took too long',
+            filledPrompt
+          });
+        }
+      } else {
+        // Call OpenRouter with Gemini image model
+        console.log('[IMAGE GEN] Using Gemini 2.5 Flash via OpenRouter');
+        
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openRouterKey}`,
+            'HTTP-Referer': req.headers.referer || 'http://localhost:5000',
+            'X-Title': 'D&D Adventure Game',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash-image-preview',
+            messages: [
+              {
+                role: 'user',
+                content: filledPrompt
+              }
+            ],
+            max_tokens: 1000,
+            temperature: 0.9,
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('[IMAGE GEN] OpenRouter API error:', errorData);
+          return res.status(response.status).json({
+            error: `OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`,
+            filledPrompt,
+            rawResponse: JSON.stringify(errorData, null, 2)
+          });
+        }
+        
+        const data = await response.json();
+        console.log('[IMAGE GEN] OpenRouter response:', {
+          model: data.model,
+          hasChoices: !!data.choices,
+          choicesLength: data.choices?.length,
+          messageContentType: typeof data.choices?.[0]?.message?.content,
+          isContentArray: Array.isArray(data.choices?.[0]?.message?.content),
+          usage: data.usage
+        });
+        
+        model = data.model || 'google/gemini-2.5-flash-image-preview';
+        usage = data.usage;
+        
+        // Extract image URL from response
+        // Gemini image models can return images in multiple formats
+        const message = data.choices[0].message;
+        
+        // First check if there's a separate images array (Gemini 2.5 flash preview format)
+        if (message.images && Array.isArray(message.images) && message.images.length > 0) {
+          const firstImage = message.images[0];
+          if (firstImage.image_url?.url) {
+            imageUrl = firstImage.image_url.url;
+          } else if (firstImage.url) {
+            imageUrl = firstImage.url;
+          }
+        }
+        
+        // If no image found in images array, check content (older format)
+        if (!imageUrl) {
+          const content = message.content;
+          
+          // Check if content is an array (for image models)
+          if (Array.isArray(content)) {
+            // Look for Gemini's output_image type or standard image_url type
+            const imageContent = content.find((item: any) => 
+              item.type === 'output_image' || item.type === 'image_url'
+            );
+            if (imageContent) {
+              // Handle multiple formats:
+              // 1. URL in image_url.url (OpenRouter standard)
+              // 2. Direct url property
+              // 3. Base64 in image_base64 (Gemini preview model)
+              if (imageContent.image_url?.url) {
+                imageUrl = imageContent.image_url.url;
+              } else if (imageContent.url) {
+                imageUrl = imageContent.url;
+              } else if (imageContent.image_base64) {
+                // Convert base64 to data URL
+                imageUrl = `data:image/png;base64,${imageContent.image_base64}`;
+              }
+            }
+          } else if (typeof content === 'string') {
+            // Some models may return a URL directly in text or base64
+            const urlMatch = content.match(/https?:\/\/[^\s]+/);
+            if (urlMatch) {
+              imageUrl = urlMatch[0];
+            } else if (content.startsWith('data:image')) {
+              // Handle base64 image data
+              imageUrl = content;
             }
           }
-        } else if (typeof content === 'string') {
-          // Some models may return a URL directly in text or base64
-          const urlMatch = content.match(/https?:\/\/[^\s]+/);
-          if (urlMatch) {
-            imageUrl = urlMatch[0];
-          } else if (content.startsWith('data:image')) {
-            // Handle base64 image data
-            imageUrl = content;
-          }
         }
-      }
-      
-      // Log if no image URL was found for debugging
-      if (!imageUrl) {
-        console.error('[IMAGE GEN] Failed to extract image URL from response');
         
-        // Sanitize response even on failure to prevent base64 bloat
+        // Sanitize response to remove ALL base64 image data
         const sanitizedData = sanitizeImageResponse(data);
         
-        res.json({
-          imageUrl: null,
-          usage: data.usage,
-          model: data.model,
-          filledPrompt,
-          rawResponse: JSON.stringify(sanitizedData, null, 2)
-        });
-        return;
+        // Log if no image URL was found for debugging
+        if (!imageUrl) {
+          console.error('[IMAGE GEN] Failed to extract image URL from response');
+          
+          res.json({
+            imageUrl: null,
+            usage: data.usage,
+            model: data.model,
+            filledPrompt,
+            rawResponse: JSON.stringify(sanitizedData, null, 2)
+          });
+          return;
+        }
+        
+        console.log('[IMAGE GEN] Successfully extracted image URL:', imageUrl.substring(0, 100) + '...');
       }
-      
-      console.log('[IMAGE GEN] Successfully extracted image URL:', imageUrl.substring(0, 100) + '...');
       
       // Upload image to Cloudflare R2
       let r2ImageUrl = null;
@@ -921,15 +1030,11 @@ EXACT JSON FORMAT TO RETURN:
         r2ImageUrl = null;
       }
       
-      // Sanitize response to remove ALL base64 image data
-      const sanitizedData = sanitizeImageResponse(data);
-      
       res.json({
         imageUrl: r2ImageUrl,
-        usage: data.usage,
-        model: data.model,
-        filledPrompt,
-        rawResponse: JSON.stringify(sanitizedData, null, 2)
+        usage: usage,
+        model: model,
+        filledPrompt
       });
     } catch (error: any) {
       console.error('[IMAGE GEN] Error:', error.message);
