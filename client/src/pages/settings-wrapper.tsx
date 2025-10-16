@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultConfig, migrateParserPrompt, migrateConfig, loadDefaultPromptsFromAPI } from '@/lib/game-state';
+import { createDefaultConfig, migrateConfig, loadDefaultPromptsFromAPI } from '@/lib/game-state';
 import { getSessionIdFromUrl, generateSessionId, setSessionIdInUrl, buildSessionUrl } from '@/lib/session';
 import { getSessionData, saveSessionData } from '@/lib/db';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
@@ -43,9 +43,8 @@ export default function SettingsWrapper() {
         if (sessionData && sessionData.gameConfig) {
           console.log('[SETTINGS] Loaded config from IndexedDB');
           const migratedConfig = await migrateConfig(sessionData.gameConfig);
-          const finalConfig = await migrateParserPrompt(migratedConfig);
-          console.log('[SETTINGS] Config primaryLLM:', finalConfig.primaryLLM);
-          setConfig(finalConfig);
+          console.log('[SETTINGS] Config primaryLLM:', migratedConfig.primaryLLM);
+          setConfig(migratedConfig);
           setConfigLoaded(true);
         } else {
           // No saved config - this is a new session, load defaults from API
