@@ -1125,6 +1125,7 @@ export default function Home() {
         config: includeApiKey ? JSON.parse(JSON.stringify(config)) : { ...JSON.parse(JSON.stringify(config)), openRouterApiKey: '' },
         costTracker: JSON.parse(JSON.stringify(costTracker)),
         turnSnapshots: JSON.parse(JSON.stringify(turnSnapshots)),
+        isGameStarted: isGameStarted,
       };
 
       // Convert to JSON
@@ -1252,7 +1253,7 @@ export default function Home() {
         setConfig(migratedConfig);
         setCostTracker(migratedCostTracker);
         setTurnSnapshots(migratedSnapshots);
-        setIsGameStarted(true);
+        setIsGameStarted(importData.isGameStarted ?? true);
         
         // Save to IndexedDB (no localStorage needed)
         await saveGameStateToStorage(migratedState);
