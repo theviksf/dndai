@@ -322,8 +322,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Handle backstory: convert object to string if needed
+      let backstory = parsedData.backstory || null;
+      if (backstory && typeof backstory === 'object') {
+        // LLM returned object instead of string - convert to readable text
+        console.log('[BACKSTORY GEN] Converting object backstory to string');
+        backstory = Object.entries(backstory)
+          .map(([key, value]) => {
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return `**${label}**: ${value}`;
+          })
+          .join('\n\n');
+      }
+      
       res.json({
-        backstory: parsedData.backstory || null,
+        backstory,
         usage: data.usage,
         model: data.model,
         fullPrompt,
@@ -429,8 +442,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               value.forEach(item => {
                 if (typeof item === 'string') {
                   md += `- ${item}\n`;
+                } else if (typeof item === 'object' && item !== null) {
+                  // Convert object items to readable format
+                  const objStr = Object.entries(item)
+                    .map(([k, v]) => {
+                      const label = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      return `${label}: ${v}`;
+                    })
+                    .join(', ');
+                  md += `- ${objStr}\n`;
                 } else {
-                  md += `- ${JSON.stringify(item)}\n`;
+                  md += `- ${item}\n`;
                 }
               });
               md += '\n';
