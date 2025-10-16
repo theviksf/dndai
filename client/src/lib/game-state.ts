@@ -95,6 +95,11 @@ export function createDefaultConfig(): GameConfig {
 }
 
 export async function migrateParserPrompt(config: GameConfig): Promise<GameConfig> {
+  // Skip migration if config already has version marker (user has edited/saved after version system)
+  if ((config as any).promptsVersion === 1) {
+    return config;
+  }
+  
   if (!config.parserSystemPrompt) {
     return config;
   }
@@ -114,11 +119,15 @@ export async function migrateParserPrompt(config: GameConfig): Promise<GameConfi
       return {
         ...config,
         parserSystemPrompt: defaults.parser,
+        promptsVersion: 1 as any, // Mark as migrated
       };
     }
   }
   
-  return config;
+  return {
+    ...config,
+    promptsVersion: 1 as any, // Mark as current version
+  };
 }
 
 export async function migrateConfig(config: any): Promise<GameConfig> {
