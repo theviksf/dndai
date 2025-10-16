@@ -408,8 +408,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Handle worldLore: convert object to string if needed
+      let worldLore = parsedData.worldLore || null;
+      if (worldLore && typeof worldLore === 'object') {
+        // LLM returned object instead of string - convert to formatted markdown
+        console.log('[LORE GEN] Converting object worldLore to markdown string');
+        
+        // Recursively convert object to markdown with headers
+        const convertToMarkdown = (obj: any, level: number = 2): string => {
+          let md = '';
+          for (const [key, value] of Object.entries(obj)) {
+            const header = '#'.repeat(level);
+            const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              md += `${header} ${title}\n\n`;
+              md += convertToMarkdown(value, level + 1);
+            } else if (Array.isArray(value)) {
+              md += `${header} ${title}\n\n`;
+              value.forEach(item => {
+                if (typeof item === 'string') {
+                  md += `- ${item}\n`;
+                } else {
+                  md += `- ${JSON.stringify(item)}\n`;
+                }
+              });
+              md += '\n';
+            } else {
+              md += `**${title}**: ${value}\n\n`;
+            }
+          }
+          return md;
+        };
+        
+        worldLore = convertToMarkdown(worldLore);
+      }
+      
       res.json({
-        worldLore: parsedData.worldLore || null,
+        worldLore,
         usage: data.usage,
         model: data.model,
         fullPrompt,
