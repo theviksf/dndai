@@ -94,42 +94,6 @@ export function createDefaultConfig(): GameConfig {
   };
 }
 
-export async function migrateParserPrompt(config: GameConfig): Promise<GameConfig> {
-  // Skip migration if config already has version marker (user has edited/saved after version system)
-  if ((config as any).promptsVersion === 1) {
-    return config;
-  }
-  
-  if (!config.parserSystemPrompt) {
-    return config;
-  }
-  
-  const hasOldPrompt = 
-    config.parserSystemPrompt.includes('questUpdates') || 
-    !config.parserSystemPrompt.includes('companions') ||
-    !config.parserSystemPrompt.includes('encounteredCharacters') ||
-    !config.parserSystemPrompt.includes('spells') ||
-    !config.parserSystemPrompt.includes('businesses') ||
-    !config.parserSystemPrompt.includes('"status"');
-  
-  if (hasOldPrompt) {
-    console.log('Migrating old parser prompt to new comprehensive version');
-    const defaults = await loadDefaultPromptsFromAPI();
-    if (defaults) {
-      return {
-        ...config,
-        parserSystemPrompt: defaults.parser,
-        promptsVersion: 1 as any, // Mark as migrated
-      };
-    }
-  }
-  
-  return {
-    ...config,
-    promptsVersion: 1 as any, // Mark as current version
-  };
-}
-
 export async function migrateConfig(config: any): Promise<GameConfig> {
   const defaults = createDefaultConfig();
   
@@ -159,8 +123,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
     dmSystemPrompt: config.dmSystemPrompt || (prompts?.primary ?? defaults.dmSystemPrompt),
     parserSystemPrompt: config.parserSystemPrompt || (prompts?.parser ?? defaults.parserSystemPrompt),
-    promptsVersion: config.promptsVersion, // Preserve version marker to prevent unwanted migrations
-  } as GameConfig;
+  };
 }
 
 export function createDefaultCostTracker(): CostTracker {
