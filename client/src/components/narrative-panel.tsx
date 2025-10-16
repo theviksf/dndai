@@ -136,6 +136,8 @@ function validateAndCoerceParserData(data: any): any {
     if (char.class !== undefined) result.stateUpdates.class = String(char.class);
     if (char.age !== undefined) result.stateUpdates.age = String(char.age);
     if (char.sex !== undefined) result.stateUpdates.sex = String(char.sex);
+    if (char.hairColor !== undefined) result.stateUpdates.hairColor = String(char.hairColor);
+    if (char.outfit !== undefined) result.stateUpdates.outfit = String(char.outfit);
     
     // Coerce numeric fields with finite check
     if (char.level !== undefined) {
@@ -251,6 +253,8 @@ function validateAndCoerceParserData(data: any): any {
         race: c.race || 'Unknown',
         age: c.age || 'Unknown',
         sex: c.sex || 'Unknown',
+        hairColor: c.hairColor,
+        outfit: c.outfit,
         class: c.class || c.role || 'Unknown',
         level: typeof c.level === 'number' ? c.level : 1,
         appearance: c.appearance || c.description || 'No description',
@@ -276,6 +280,8 @@ function validateAndCoerceParserData(data: any): any {
           name: e.name || 'Unknown',
           age: e.age || 'Unknown',
           sex: e.sex || 'Unknown',
+          hairColor: e.hairColor,
+          outfit: e.outfit,
           role: e.role || 'NPC',
           location: e.location || 'Unknown',
           appearance: e.appearance || e.description || 'No description',

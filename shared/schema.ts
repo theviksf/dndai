@@ -151,6 +151,7 @@ export type GameCharacter = {
   age: string;
   sex: string;
   hairColor?: string;
+  outfit?: string;
   description: string;
   level: number;
   xp: number;
