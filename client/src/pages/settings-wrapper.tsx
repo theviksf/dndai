@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultConfig, migrateParserPrompt, migrateConfig, loadDefaultPromptsFromAPI } from '@/lib/game-state';
-import { getSessionIdFromUrl, getSessionStorageKey, generateSessionId, setSessionIdInUrl, buildSessionUrl } from '@/lib/session';
+import { getSessionIdFromUrl, generateSessionId, setSessionIdInUrl, buildSessionUrl } from '@/lib/session';
+import { getSessionData, saveSessionData } from '@/lib/db';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import SettingsPage from '@/pages/settings';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 export default function SettingsWrapper() {
   const [, setLocation] = useLocation();
   const [sessionId, setSessionId] = useState<string>(() => getSessionIdFromUrl() || '');
-  const [isNewSession, setIsNewSession] = useState(false);
   const [configLoaded, setConfigLoaded] = useState(false);
   const { toast } = useToast();
   
@@ -29,7 +28,7 @@ export default function SettingsWrapper() {
   
   const [config, setConfig] = useState<GameConfig>(createDefaultConfig);
   
-  // Load config from localStorage when component mounts
+  // Load config from IndexedDB when component mounts
   useEffect(() => {
     const loadConfig = async () => {
       const currentSessionId = getSessionIdFromUrl();
@@ -38,21 +37,19 @@ export default function SettingsWrapper() {
       console.log('[SETTINGS] Loading config for session:', currentSessionId);
       
       try {
-        const storageKey = getSessionStorageKey('gameConfig', currentSessionId);
-        const savedConfig = localStorage.getItem(storageKey);
-        console.log('[SETTINGS] Loaded from localStorage key:', storageKey, 'value exists:', !!savedConfig);
+        // Load from IndexedDB (same as home page)
+        const sessionData = await getSessionData(currentSessionId);
         
-        if (savedConfig) {
-          const loadedConfig = JSON.parse(savedConfig);
-          console.log('[SETTINGS] Loaded config primaryLLM:', loadedConfig.primaryLLM);
-          const migratedConfig = await migrateConfig(loadedConfig);
+        if (sessionData && sessionData.gameConfig) {
+          console.log('[SETTINGS] Loaded config from IndexedDB');
+          const migratedConfig = await migrateConfig(sessionData.gameConfig);
           const finalConfig = await migrateParserPrompt(migratedConfig);
-          console.log('[SETTINGS] Final config primaryLLM:', finalConfig.primaryLLM);
+          console.log('[SETTINGS] Config primaryLLM:', finalConfig.primaryLLM);
           setConfig(finalConfig);
           setConfigLoaded(true);
         } else {
           // No saved config - this is a new session, load defaults from API
-          setIsNewSession(true);
+          console.log('[SETTINGS] No saved config, loading defaults from API');
           const defaults = await loadDefaultPromptsFromAPI();
           if (defaults) {
             setConfig(prev => ({
@@ -69,42 +66,13 @@ export default function SettingsWrapper() {
           setConfigLoaded(true);
         }
       } catch (error) {
-        console.error('Failed to reload config from localStorage:', error);
+        console.error('Failed to load config from IndexedDB:', error);
         setConfigLoaded(true);
       }
     };
     
     loadConfig();
   }, []); // Run only on mount
-
-  // Fetch default prompts from .md files for new sessions (fallback)
-  const { data: defaultPrompts } = useQuery({
-    queryKey: ['/api/prompts/defaults'],
-    queryFn: async () => {
-      const response = await fetch('/api/prompts/defaults');
-      if (!response.ok) throw new Error('Failed to fetch default prompts');
-      return response.json();
-    },
-    enabled: isNewSession && !configLoaded,
-  });
-
-  // Update config with prompts from .md files when they're loaded for new sessions
-  useEffect(() => {
-    if (isNewSession && defaultPrompts && !configLoaded) {
-      setConfig(prev => ({
-        ...prev,
-        dmSystemPrompt: defaultPrompts.primary,
-        parserSystemPrompt: defaultPrompts.parser,
-        characterImagePrompt: defaultPrompts.imageCharacter,
-        locationImagePrompt: defaultPrompts.imageLocation,
-        backstorySystemPrompt: defaultPrompts.backstory,
-        revelationsSystemPrompt: defaultPrompts.revelations,
-        loreSystemPrompt: defaultPrompts.lore,
-      }));
-      setConfigLoaded(true);
-      setIsNewSession(false);
-    }
-  }, [isNewSession, defaultPrompts, configLoaded]);
 
   const [llmModels, setLlmModels] = useState<OpenRouterModel[]>([]);
 
@@ -125,20 +93,53 @@ export default function SettingsWrapper() {
     loadModels();
   }, [toast]);
 
-  const handleSave = (newConfig: GameConfig) => {
+  const handleSave = async (newConfig: GameConfig) => {
     if (!sessionId) {
       console.error('[SETTINGS] No session ID available for saving');
       return;
     }
     
-    setConfig(newConfig);
-    const storageKey = getSessionStorageKey('gameConfig', sessionId);
-    localStorage.setItem(storageKey, JSON.stringify(newConfig));
-    console.log('[SETTINGS] Saved config to localStorage key:', storageKey);
-    
-    // Use browser navigation to go to home instead of wouter (avoids re-render issues)
-    const homeUrl = buildSessionUrl('/', sessionId);
-    window.location.href = homeUrl;
+    try {
+      // Load current session data from IndexedDB
+      const sessionData = await getSessionData(sessionId);
+      
+      if (sessionData) {
+        // Update config in existing session data
+        console.log('[SETTINGS] Updating config in IndexedDB for session:', sessionId);
+        await saveSessionData({
+          ...sessionData,
+          gameConfig: newConfig,
+          lastUpdated: Date.now(),
+        });
+      } else {
+        // This shouldn't happen, but create new session data if needed
+        console.log('[SETTINGS] Creating new session data with config');
+        const { createDefaultGameState, createDefaultCostTracker } = await import('@/lib/game-state');
+        await saveSessionData({
+          sessionId,
+          gameState: createDefaultGameState(),
+          gameConfig: newConfig,
+          costTracker: createDefaultCostTracker(),
+          turnSnapshots: [],
+          isGameStarted: false,
+          lastUpdated: Date.now(),
+        });
+      }
+      
+      setConfig(newConfig);
+      console.log('[SETTINGS] Config saved successfully to IndexedDB');
+      
+      // Navigate to home
+      const homeUrl = buildSessionUrl('/', sessionId);
+      window.location.href = homeUrl;
+    } catch (error) {
+      console.error('[SETTINGS] Failed to save config:', error);
+      toast({
+        title: "Save failed",
+        description: "Could not save settings",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRefreshModels = async () => {
