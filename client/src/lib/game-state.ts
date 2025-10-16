@@ -132,7 +132,14 @@ export async function migrateParserPrompt(config: GameConfig): Promise<GameConfi
 
 export async function migrateConfig(config: any): Promise<GameConfig> {
   const defaults = createDefaultConfig();
-  const prompts = await loadDefaultPromptsFromAPI();
+  
+  // Check if any prompts are missing - only fetch from API if needed
+  const needsPrompts = !config.dmSystemPrompt || !config.parserSystemPrompt || 
+                       !config.characterImagePrompt || !config.locationImagePrompt ||
+                       !config.backstorySystemPrompt || !config.revelationsSystemPrompt ||
+                       !config.loreSystemPrompt;
+  
+  const prompts = needsPrompts ? await loadDefaultPromptsFromAPI() : null;
   
   return {
     ...defaults,
