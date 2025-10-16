@@ -159,7 +159,8 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
     dmSystemPrompt: config.dmSystemPrompt || (prompts?.primary ?? defaults.dmSystemPrompt),
     parserSystemPrompt: config.parserSystemPrompt || (prompts?.parser ?? defaults.parserSystemPrompt),
-  };
+    promptsVersion: config.promptsVersion, // Preserve version marker to prevent unwanted migrations
+  } as GameConfig;
 }
 
 export function createDefaultCostTracker(): CostTracker {
