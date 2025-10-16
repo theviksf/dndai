@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
-import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateParserPrompt, migrateConfig, migrateCostTracker } from '@/lib/game-state';
+import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateConfig, migrateCostTracker } from '@/lib/game-state';
 import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
 import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData, deleteAllSessions, getAllSessions, type SessionData } from '@/lib/db';
@@ -141,8 +141,7 @@ export default function Home() {
           
           setGameState(migratedState);
           const migratedConfig = await migrateConfig(sessionData.gameConfig);
-          const finalConfig = await migrateParserPrompt(migratedConfig);
-          setConfig(finalConfig);
+          setConfig(migratedConfig);
           setCostTracker(sessionData.costTracker || createDefaultCostTracker());
           setTurnSnapshots(snapshotsFromDB);
           setIsGameStarted(sessionData.isGameStarted);
@@ -213,8 +212,7 @@ export default function Home() {
             if (savedConfig) {
               try {
                 const parsedConfig = JSON.parse(savedConfig);
-                const tempConfig = await migrateConfig(parsedConfig);
-                migratedConfig = await migrateParserPrompt(tempConfig);
+                migratedConfig = await migrateConfig(parsedConfig);
               } catch (error) {
                 console.error('[DB] Failed to parse localStorage config:', error);
               }
@@ -443,8 +441,7 @@ export default function Home() {
           const sessionData = await getSessionData(sessionId);
           if (sessionData) {
             const migratedConfig = await migrateConfig(sessionData.gameConfig);
-            const finalConfig = await migrateParserPrompt(migratedConfig);
-            setConfig(finalConfig);
+            setConfig(migratedConfig);
             setCostTracker(sessionData.costTracker || createDefaultCostTracker());
             setIsGameStarted(sessionData.isGameStarted);
             setTurnSnapshots(sessionData.turnSnapshots);
@@ -1232,9 +1229,8 @@ export default function Home() {
         // Migrate main game state
         const migratedState = migrateGameState(importData.gameState);
         
-        // Migrate config (parser prompt migration)
-        const tempConfig = await migrateConfig(importData.config);
-        const migratedConfig = await migrateParserPrompt(tempConfig);
+        // Migrate config
+        const migratedConfig = await migrateConfig(importData.config);
         
         // Migrate cost tracker
         const migratedCostTracker = importData.costTracker 
