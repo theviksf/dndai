@@ -100,12 +100,6 @@ export default function SettingsWrapper() {
     }
     
     try {
-      // Mark config with version to prevent unnecessary migrations
-      const versionedConfig = {
-        ...newConfig,
-        promptsVersion: 1 as any, // Prevent migration on user-edited configs
-      };
-      
       // Load current session data from IndexedDB
       const sessionData = await getSessionData(sessionId);
       
@@ -114,7 +108,7 @@ export default function SettingsWrapper() {
         console.log('[SETTINGS] Updating config in IndexedDB for session:', sessionId);
         await saveSessionData({
           ...sessionData,
-          gameConfig: versionedConfig,
+          gameConfig: newConfig,
           lastUpdated: Date.now(),
         });
       } else {
@@ -124,7 +118,7 @@ export default function SettingsWrapper() {
         await saveSessionData({
           sessionId,
           gameState: createDefaultGameState(),
-          gameConfig: versionedConfig,
+          gameConfig: newConfig,
           costTracker: createDefaultCostTracker(),
           turnSnapshots: [],
           isGameStarted: false,
@@ -132,7 +126,7 @@ export default function SettingsWrapper() {
         });
       }
       
-      setConfig(versionedConfig);
+      setConfig(newConfig);
       console.log('[SETTINGS] Config saved successfully to IndexedDB');
       
       // Navigate to home
