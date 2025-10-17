@@ -407,11 +407,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse JSON response with multiple fallback strategies
       let parsedData;
       try {
-        // Try to extract JSON from code fences if present
-        const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || 
-                          rawContent.match(/(\{[\s\S]*\})/);
+        // Strategy 1: Extract from code fences
+        let jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+        
+        if (!jsonMatch) {
+          // Strategy 2: Find first complete JSON object using brace counting
+          const firstBrace = rawContent.indexOf('{');
+          if (firstBrace !== -1) {
+            let braceCount = 0;
+            let inString = false;
+            let escapeNext = false;
+            let endPos = -1;
+            
+            for (let i = firstBrace; i < rawContent.length; i++) {
+              const char = rawContent[i];
+              
+              if (escapeNext) {
+                escapeNext = false;
+                continue;
+              }
+              
+              if (char === '\\') {
+                escapeNext = true;
+                continue;
+              }
+              
+              if (char === '"') {
+                inString = !inString;
+                continue;
+              }
+              
+              if (!inString) {
+                if (char === '{') braceCount++;
+                if (char === '}') {
+                  braceCount--;
+                  if (braceCount === 0) {
+                    endPos = i + 1;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            if (endPos !== -1) {
+              jsonMatch = [null, rawContent.substring(firstBrace, endPos)];
+            }
+          }
+        }
+        
         const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
-        parsedData = JSON.parse(jsonStr);
+        
+        // Try to parse, with common error fixes on failure
+        try {
+          parsedData = JSON.parse(jsonStr);
+        } catch (e) {
+          // Attempt to fix common JSON errors
+          const fixed = jsonStr
+            .replace(/,\s*}/g, '}')  // Remove trailing commas before }
+            .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
+            .replace(/([^\\])'/g, "$1\"");  // Replace single quotes with double quotes
+          parsedData = JSON.parse(fixed);
+        }
       } catch (parseError) {
         console.error('[LORE GEN] Failed to parse JSON:', parseError);
         return res.status(500).json({
