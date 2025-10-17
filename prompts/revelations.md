@@ -49,18 +49,29 @@ Your response must be ONLY the JSON object below. Do NOT include:
 - Comments or notes
 - Any text that is not valid JSON
 
-EXACT JSON FORMAT TO RETURN:
+EXACT JSON FORMAT TO RETURN (FOLLOW THIS EXACTLY):
 {
   "revelations": [
     {
-      "entityType": "character" | "companion" | "npc" | "location",
-      "entityId": "entity_id_or_character",
-      "entityName": "Entity Name",
-      "text": "Specific revelation text extracted from the narrative",
+      "entityType": "character",
+      "entityId": "character",
+      "entityName": "Player Name",
+      "text": "Specific revelation text",
       "revealedAtTurn": 5
     }
   ]
 }
+
+REQUIRED FIELDS (DO NOT USE OTHER FIELD NAMES):
+- "entityType" (string): Must be exactly one of: "character", "companion", "npc", "location"
+- "entityId" (string): The ID of the entity from game context
+- "entityName" (string): The name of the entity
+- "text" (string): The revelation content
+- "revealedAtTurn" (number): Current turn number
+
+DO NOT USE THESE FIELD NAMES (they are wrong):
+- "id" or "type" or "content" or "source"
+- Use "entityType", "entityId", "text" instead
 
 # Entity Type Rules
 - **entityType: "character"** - Use when revelation is about the player character, entityId should be "character"

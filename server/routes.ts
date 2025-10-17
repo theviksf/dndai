@@ -611,8 +611,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Process revelations to map them to entities
+      const rawRevelations = parsedData.revelations || [];
+      const processedRevelations: any[] = [];
+      
+      rawRevelations.forEach((rev: any) => {
+        // Check if revelation already has correct format
+        if (rev.entityType && rev.entityId && rev.text) {
+          processedRevelations.push(rev);
+          return;
+        }
+        
+        // Handle old/wrong format from LLM - try to map based on type and content
+        const content = rev.content || rev.text || '';
+        const type = rev.type || '';
+        
+        // Try to extract entity from content using game state context
+        let entityType = null;
+        let entityId = null;
+        let entityName = null;
+        
+        // Check for location revelations
+        if (type.includes('location') || type.includes('geography')) {
+          if (gameState.location && content.includes(gameState.location.name)) {
+            entityType = 'location';
+            entityId = gameState.location.name;
+            entityName = gameState.location.name;
+          }
+        }
+        
+        // Check for business revelations
+        if (type.includes('business')) {
+          if (gameState.businesses && gameState.businesses.length > 0) {
+            const business = gameState.businesses.find((b: any) => 
+              content.toLowerCase().includes(b.name.toLowerCase())
+            );
+            if (business) {
+              entityType = 'business';
+              entityId = business.id;
+              entityName = business.name;
+            }
+          }
+        }
+        
+        // Check for NPC revelations
+        if (type.includes('relationship') || type.includes('character_trait')) {
+          if (gameState.encounteredCharacters && gameState.encounteredCharacters.length > 0) {
+            const npc = gameState.encounteredCharacters.find((n: any) => 
+              content.toLowerCase().includes(n.name.toLowerCase())
+            );
+            if (npc) {
+              entityType = 'npc';
+              entityId = npc.id;
+              entityName = npc.name;
+            }
+          }
+        }
+        
+        // Check for companion revelations
+        if (gameState.companions && gameState.companions.length > 0) {
+          const companion = gameState.companions.find((c: any) => 
+            content.toLowerCase().includes(c.name.toLowerCase())
+          );
+          if (companion) {
+            entityType = 'companion';
+            entityId = companion.id;
+            entityName = companion.name;
+          }
+        }
+        
+        // Check for character revelations
+        if (gameState.character && content.toLowerCase().includes(gameState.character.name.toLowerCase())) {
+          entityType = 'character';
+          entityId = 'character';
+          entityName = gameState.character.name;
+        }
+        
+        // If we found an entity match, add the revelation
+        if (entityType && entityId) {
+          processedRevelations.push({
+            entityType,
+            entityId,
+            entityName,
+            text: content,
+            revealedAtTurn: gameState.turnCount || 0
+          });
+        } else {
+          // Log unmatched revelations for debugging
+          console.log(`[REVELATIONS] Could not match revelation to entity: ${type} - ${content.substring(0, 50)}...`);
+        }
+      });
+      
       res.json({
-        revelations: parsedData.revelations || [],
+        revelations: processedRevelations,
         usage: data.usage,
         model: data.model,
         fullPrompt,
