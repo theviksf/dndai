@@ -1,0 +1,66 @@
+```json
+{
+    "revelations": [
+        {
+            "id": "rev_1",
+            "type": "location_detail",
+            "content": "The Tipsy Treant is a two-story timber-and-stone tavern/inn located just off the village square, a stone's throw from the old stone well in Oakhaven",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_2",
+            "type": "location_detail",
+            "content": "The Tipsy Treant offers food, drink, and lodging (5 rooms upstairs) at modest prices",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_3",
+            "type": "location_detail",
+            "content": "The tavern is known for its fine ale and Esrie's famous rabbit stew",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_4",
+            "type": "geography",
+            "content": "Oakhaven is located in The Greenfields region of The Silver Coast Kingdom",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_5",
+            "type": "geography",
+            "content": "Oakhaven Woods is located 0.5 km east of the tavern, and the blacksmith is 100m north",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_6",
+            "type": "relationship",
+            "content": "Esrie is Dax's ex-girlfriend and manages the tavern's day-to-day operations with efficiency",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_7",
+            "type": "character_trait",
+            "content": "Esrie has a sharp mind and knows Dax's restless nature well",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_8",
+            "type": "rumor",
+            "content": "There may be whispers about ruins in the woods near Oakhaven, though Esrie dismisses Old Man Hemlock's tales as unreliable",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_9",
+            "type": "business",
+            "content": "The tavern's revenue from last week is in the strongbox",
+            "source": "narrative"
+        },
+        {
+            "id": "rev_10",
+            "type": "party_status",
+            "content": "All party members (Thorne, Lyra, and Kaelen) are currently present at a corner table in the tavern",
+            "source": "narrative"
+        }
+    ]
+}
+```
