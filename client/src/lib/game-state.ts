@@ -98,31 +98,33 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
   const defaults = createDefaultConfig();
   
   // Check if any prompts are missing - only fetch from API if needed
-  const needsPrompts = !config.dmSystemPrompt || !config.parserSystemPrompt || 
-                       !config.characterImagePrompt || !config.locationImagePrompt ||
-                       !config.backstorySystemPrompt || !config.revelationsSystemPrompt ||
-                       !config.loreSystemPrompt;
+  // Use nullish coalescing to properly check for undefined/null (not empty strings)
+  const needsPrompts = config.dmSystemPrompt == null || config.parserSystemPrompt == null || 
+                       config.characterImagePrompt == null || config.locationImagePrompt == null ||
+                       config.backstorySystemPrompt == null || config.revelationsSystemPrompt == null ||
+                       config.loreSystemPrompt == null;
   
   const prompts = needsPrompts ? await loadDefaultPromptsFromAPI() : null;
   
   return {
     ...defaults,
     ...config,
-    characterImagePrompt: config.characterImagePrompt || (prompts?.imageCharacter ?? defaults.characterImagePrompt),
-    locationImagePrompt: config.locationImagePrompt || (prompts?.imageLocation ?? defaults.locationImagePrompt),
-    imageProvider: config.imageProvider || defaults.imageProvider,
+    // Use nullish coalescing (??) instead of OR (||) to preserve empty strings and falsy values
+    characterImagePrompt: config.characterImagePrompt ?? (prompts?.imageCharacter ?? defaults.characterImagePrompt),
+    locationImagePrompt: config.locationImagePrompt ?? (prompts?.imageLocation ?? defaults.locationImagePrompt),
+    imageProvider: config.imageProvider ?? defaults.imageProvider,
     autoGenerateImages: config.autoGenerateImages ?? defaults.autoGenerateImages,
-    backstoryLLM: config.backstoryLLM || defaults.backstoryLLM,
-    backstorySystemPrompt: config.backstorySystemPrompt || (prompts?.backstory ?? defaults.backstorySystemPrompt),
+    backstoryLLM: config.backstoryLLM ?? defaults.backstoryLLM,
+    backstorySystemPrompt: config.backstorySystemPrompt ?? (prompts?.backstory ?? defaults.backstorySystemPrompt),
     autoGenerateBackstories: config.autoGenerateBackstories ?? defaults.autoGenerateBackstories,
-    revelationsLLM: config.revelationsLLM || defaults.revelationsLLM,
-    revelationsSystemPrompt: config.revelationsSystemPrompt || (prompts?.revelations ?? defaults.revelationsSystemPrompt),
+    revelationsLLM: config.revelationsLLM ?? defaults.revelationsLLM,
+    revelationsSystemPrompt: config.revelationsSystemPrompt ?? (prompts?.revelations ?? defaults.revelationsSystemPrompt),
     autoGenerateRevelations: config.autoGenerateRevelations ?? defaults.autoGenerateRevelations,
-    loreLLM: config.loreLLM || defaults.loreLLM,
-    loreSystemPrompt: config.loreSystemPrompt || (prompts?.lore ?? defaults.loreSystemPrompt),
+    loreLLM: config.loreLLM ?? defaults.loreLLM,
+    loreSystemPrompt: config.loreSystemPrompt ?? (prompts?.lore ?? defaults.loreSystemPrompt),
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
-    dmSystemPrompt: config.dmSystemPrompt || (prompts?.primary ?? defaults.dmSystemPrompt),
-    parserSystemPrompt: config.parserSystemPrompt || (prompts?.parser ?? defaults.parserSystemPrompt),
+    dmSystemPrompt: config.dmSystemPrompt ?? (prompts?.primary ?? defaults.dmSystemPrompt),
+    parserSystemPrompt: config.parserSystemPrompt ?? (prompts?.parser ?? defaults.parserSystemPrompt),
   };
 }
 
