@@ -791,22 +791,63 @@ export default function NarrativePanel({
             // Merge NPCs - update existing ones or add new ones
             const mergedNPCs = [...existingNPCs];
             newNPCs.forEach((newNPC: any) => {
-              const existingIndex = mergedNPCs.findIndex(npc => npc.id === newNPC.id);
+              // Try multiple matching strategies to prevent duplicates:
+              // 1. Match by ID (exact)
+              // 2. Match by name (case-insensitive) - catches NPCs whose names were revealed
+              // 3. If name is generic (Unknown, Mysterious, etc.), match by role+location
+              
+              const npcNameLower = newNPC.name.toLowerCase();
+              const isGenericName = npcNameLower.includes('unknown') || 
+                                    npcNameLower.includes('mysterious') || 
+                                    npcNameLower.includes('stranger');
+              
+              let existingIndex = mergedNPCs.findIndex(npc => npc.id === newNPC.id);
+              
+              // If no ID match, try matching by name (for NPCs whose identity was revealed)
+              if (existingIndex < 0 && !isGenericName && newNPC.name !== 'Unknown') {
+                existingIndex = mergedNPCs.findIndex(npc => 
+                  npc.name.toLowerCase() === npcNameLower
+                );
+                if (existingIndex >= 0) {
+                  console.log(`[NPC DEDUP] Matched "${newNPC.name}" by name (ID changed from "${mergedNPCs[existingIndex].id}" to "${newNPC.id}")`);
+                }
+              }
+              
+              // If still no match and name is generic, try matching by role+location
+              if (existingIndex < 0 && isGenericName && newNPC.role && newNPC.location) {
+                existingIndex = mergedNPCs.findIndex(npc => 
+                  npc.name.toLowerCase().includes('unknown') &&
+                  npc.role === newNPC.role &&
+                  npc.location === newNPC.location
+                );
+                if (existingIndex >= 0) {
+                  console.log(`[NPC DEDUP] Matched generic NPC by role+location: ${newNPC.role} at ${newNPC.location}`);
+                }
+              }
               
               // Check if this NPC is already a companion (prevent duplication)
               const isCompanion = currentCompanions.some(comp => 
                 comp.id === newNPC.id || 
-                comp.name.toLowerCase() === newNPC.name.toLowerCase()
+                comp.name.toLowerCase() === npcNameLower
               );
               
               if (isCompanion) {
                 console.log(`[MIGRATION] Skipping NPC "${newNPC.name}" - already a companion`);
               } else if (existingIndex >= 0) {
-                // Update existing NPC
-                mergedNPCs[existingIndex] = { ...mergedNPCs[existingIndex], ...newNPC };
+                // Update existing NPC, preserving important fields like imageUrl, backstory, revelations
+                mergedNPCs[existingIndex] = { 
+                  ...mergedNPCs[existingIndex], 
+                  ...newNPC,
+                  // Preserve these fields if they exist in the old NPC
+                  imageUrl: newNPC.imageUrl || mergedNPCs[existingIndex].imageUrl,
+                  backstory: newNPC.backstory || mergedNPCs[existingIndex].backstory,
+                  revelations: mergedNPCs[existingIndex].revelations || newNPC.revelations,
+                };
+                console.log(`[NPC UPDATE] Updated existing NPC "${newNPC.name}" (id: ${newNPC.id})`);
               } else {
                 // Add new NPC
                 mergedNPCs.push(newNPC);
+                console.log(`[NPC ADD] Added new NPC "${newNPC.name}" (id: ${newNPC.id})`);
               }
             });
             updated.encounteredCharacters = mergedNPCs;
