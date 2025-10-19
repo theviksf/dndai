@@ -9,8 +9,11 @@ import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnaps
 import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData, deleteAllSessions, getAllSessions, type SessionData } from '@/lib/db';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
-import GameInfoTabs from '@/components/game-info-tabs';
 import DebugLogViewer from '@/components/debug-log-viewer';
+import { IconRail, type PanelKey } from '@/components/icon-rail';
+import { InfoDrawer } from '@/components/info-drawer';
+import { EntityDetailSheet } from '@/components/entity-detail-sheet';
+import type { Companion, EncounteredCharacter, PreviousLocation, Business, Quest } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
@@ -56,6 +59,13 @@ export default function Home() {
   // Load Game dialog state
   const [isLoadGameOpen, setIsLoadGameOpen] = useState(false);
   const [savedSessions, setSavedSessions] = useState<SessionData[]>([]);
+  
+  // New UI state - icon rail and drawer
+  const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
+  const [detailEntity, setDetailEntity] = useState<Companion | EncounteredCharacter | PreviousLocation | Business | Quest | null>(null);
+  const [detailEntityType, setDetailEntityType] = useState<'companion' | 'npc' | 'location' | 'business' | 'quest'>('companion');
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  const [isRefreshingImage, setIsRefreshingImage] = useState(false);
 
   // Fetch default prompts from .md files for new sessions
   const { data: defaultPrompts } = useQuery({
@@ -372,6 +382,21 @@ export default function Home() {
     queryKey: ['/api/models', config.openRouterApiKey],
     queryFn: () => fetchOpenRouterModels(config.openRouterApiKey),
   });
+
+  // Calculate badges for icon rail
+  const badges = useMemo<Record<PanelKey, boolean>>(() => {
+    const updatedTabs = gameState.updatedTabs || [];
+    return {
+      inventory: updatedTabs.includes('inventory'),
+      spells: updatedTabs.includes('spells'),
+      locations: updatedTabs.includes('locations'),
+      businesses: updatedTabs.includes('businesses'),
+      quests: updatedTabs.includes('quests'),
+      companions: updatedTabs.includes('companions'),
+      npcs: updatedTabs.includes('encounters'),
+      history: updatedTabs.includes('history'),
+    };
+  }, [gameState.updatedTabs]);
 
   // Save game mutation
   const saveMutation = useMutation({
@@ -896,6 +921,111 @@ export default function Home() {
         description: error.message || 'Failed to generate image',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Handler for opening entity detail sheet
+  const handleEntityClick = (entity: any, type: 'companion' | 'npc' | 'location' | 'business' | 'quest') => {
+    setDetailEntity(entity);
+    setDetailEntityType(type);
+    setDetailSheetOpen(true);
+  };
+
+  // Handler for panel change - clear badge when panel is opened
+  const handlePanelChange = (panel: PanelKey | null) => {
+    setActivePanel(panel);
+    
+    if (panel) {
+      // Clear badge for the selected panel
+      const badgeMapping: Record<PanelKey, string> = {
+        inventory: 'inventory',
+        spells: 'spells',
+        locations: 'locations',
+        businesses: 'businesses',
+        quests: 'quests',
+        companions: 'companions',
+        npcs: 'encounters',
+        history: 'history',
+      };
+      
+      const tabId = badgeMapping[panel];
+      if (tabId) {
+        setGameState(prev => ({
+          ...prev,
+          updatedTabs: (prev.updatedTabs || []).filter(tab => tab !== tabId)
+        }));
+      }
+    }
+  };
+
+  // Handler for refreshing image from entity detail sheet
+  const handleDetailRefreshImage = async () => {
+    if (!detailEntity || detailEntityType === 'quest') return;
+    setIsRefreshingImage(true);
+    try {
+      const entityId = 'id' in detailEntity ? detailEntity.id : undefined;
+      await refreshEntityImage(detailEntityType, entityId);
+    } finally {
+      setIsRefreshingImage(false);
+    }
+  };
+
+  // Sync detailEntity with updated props when sheet is open
+  useEffect(() => {
+    if (!detailSheetOpen || !detailEntity) return;
+    
+    // Find and update the entity from the latest game state
+    if (detailEntityType === 'companion') {
+      const updated = gameState.companions.find(c => c.id === (detailEntity as Companion).id);
+      if (updated && updated.imageUrl !== (detailEntity as Companion).imageUrl) {
+        setDetailEntity(updated);
+      }
+    } else if (detailEntityType === 'npc') {
+      const updated = gameState.encounteredCharacters.find(c => c.id === (detailEntity as EncounteredCharacter).id);
+      if (updated && updated.imageUrl !== (detailEntity as EncounteredCharacter).imageUrl) {
+        setDetailEntity(updated);
+      }
+    } else if (detailEntityType === 'location') {
+      const updated = gameState.previousLocations.find(loc => loc.id === (detailEntity as PreviousLocation).id);
+      if (updated && updated.imageUrl !== (detailEntity as PreviousLocation).imageUrl) {
+        setDetailEntity(updated);
+      }
+    } else if (detailEntityType === 'business') {
+      const updated = gameState.businesses.find(b => b.id === (detailEntity as Business).id);
+      if (updated && updated.imageUrl !== (detailEntity as Business).imageUrl) {
+        setDetailEntity(updated);
+      }
+    }
+  }, [detailSheetOpen, gameState.companions, gameState.encounteredCharacters, gameState.previousLocations, gameState.businesses, detailEntity, detailEntityType]);
+
+  // Handler for updating entity from detail sheet
+  const handleDetailUpdate = (updates: Partial<Companion | EncounteredCharacter | Business>) => {
+    if (!detailEntity) return;
+    
+    if (detailEntityType === 'companion') {
+      const index = gameState.companions.findIndex(c => c.id === (detailEntity as Companion).id);
+      if (index !== -1) {
+        const updated = [...gameState.companions];
+        updated[index] = { ...updated[index], ...updates } as Companion;
+        updateGameState({ companions: updated });
+        setDetailEntity(updated[index]);
+      }
+    } else if (detailEntityType === 'npc') {
+      const index = gameState.encounteredCharacters.findIndex(c => c.id === (detailEntity as EncounteredCharacter).id);
+      if (index !== -1) {
+        const updated = [...gameState.encounteredCharacters];
+        updated[index] = { ...updated[index], ...updates } as EncounteredCharacter;
+        updateGameState({ encounteredCharacters: updated });
+        setDetailEntity(updated[index]);
+      }
+    } else if (detailEntityType === 'business') {
+      const index = gameState.businesses.findIndex(b => b.id === (detailEntity as Business).id);
+      if (index !== -1) {
+        const updated = [...gameState.businesses];
+        updated[index] = { ...updated[index], ...updates } as Business;
+        updateGameState({ businesses: updated });
+        setDetailEntity(updated[index]);
+      }
     }
   };
 
@@ -1512,45 +1642,50 @@ export default function Home() {
         onRefreshImage={refreshEntityImage}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 max-w-[1920px] mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 h-full">
-          <div className="lg:col-span-7">
-            <NarrativePanel 
-              gameState={gameState}
-              setGameState={setGameState}
-              saveGameState={saveGameStateToStorage}
-              config={config}
-              costTracker={costTracker}
-              setCostTracker={setCostTracker}
-              models={models || []}
-              createSnapshot={createSnapshot}
-              sessionId={sessionId}
-            />
-          </div>
-          <div className="lg:col-span-5">
-            <GameInfoTabs 
-              inventory={gameState.inventory} 
-              quests={gameState.quests} 
-              spells={gameState.spells || []}
-              companions={gameState.companions || []} 
-              encounteredCharacters={gameState.encounteredCharacters || []} 
-              businesses={gameState.businesses || []}
-              history={gameState.parsedRecaps || []} 
-              previousLocations={gameState.previousLocations || []}
-              updatedTabs={gameState.updatedTabs}
-              onUpdate={updateGameState}
-              onTabChange={(tabId) => {
-                setGameState(prev => ({
-                  ...prev,
-                  updatedTabs: (prev.updatedTabs || []).filter(tab => tab !== tabId)
-                }));
-              }}
-              onRefreshImage={refreshEntityImage}
-            />
-          </div>
+      {/* Main Content - New Layout with Icon Rail */}
+      <div className="flex-1 max-w-[1920px] mx-auto w-full flex">
+        {/* Chat Area (Narrative Panel) */}
+        <div className="flex-1 p-4">
+          <NarrativePanel 
+            gameState={gameState}
+            setGameState={setGameState}
+            saveGameState={saveGameStateToStorage}
+            config={config}
+            costTracker={costTracker}
+            setCostTracker={setCostTracker}
+            models={models || []}
+            createSnapshot={createSnapshot}
+            sessionId={sessionId}
+          />
         </div>
+
+        {/* Info Drawer (Slides in from right) */}
+        <InfoDrawer
+          activePanel={activePanel}
+          onClose={() => setActivePanel(null)}
+          gameState={gameState}
+          onUpdate={updateGameState}
+          onEntityClick={handleEntityClick}
+        />
+
+        {/* Icon Rail (Always visible on right edge) */}
+        <IconRail
+          activePanel={activePanel}
+          onPanelChange={handlePanelChange}
+          badges={badges}
+        />
       </div>
+
+      {/* Entity Detail Sheet */}
+      <EntityDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        entity={detailEntity}
+        entityType={detailEntityType}
+        onRefresh={handleDetailRefreshImage}
+        isRefreshing={isRefreshingImage}
+        onUpdate={handleDetailUpdate}
+      />
 
       {/* Debug Log Viewer */}
       <DebugLogViewer
