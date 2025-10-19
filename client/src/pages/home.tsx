@@ -93,6 +93,17 @@ export default function Home() {
     }
   }, [isNewSession, defaultPrompts, config]);
 
+  // Apply UI scale based on config
+  useEffect(() => {
+    const scale = config.uiScale === 'compact' ? '80%' : '100%';
+    document.documentElement.style.fontSize = scale;
+    
+    // Cleanup function to reset on unmount
+    return () => {
+      document.documentElement.style.fontSize = '';
+    };
+  }, [config.uiScale]);
+
   // Load data from IndexedDB on mount, with automatic localStorage migration
   useEffect(() => {
     const loadFromDB = async () => {

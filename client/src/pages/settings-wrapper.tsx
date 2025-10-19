@@ -75,6 +75,17 @@ export default function SettingsWrapper() {
 
   const [llmModels, setLlmModels] = useState<OpenRouterModel[]>([]);
 
+  // Apply UI scale based on config
+  useEffect(() => {
+    const scale = config.uiScale === 'compact' ? '80%' : '100%';
+    document.documentElement.style.fontSize = scale;
+    
+    // Cleanup function to reset on unmount
+    return () => {
+      document.documentElement.style.fontSize = '';
+    };
+  }, [config.uiScale]);
+
   useEffect(() => {
     const loadModels = async () => {
       try {

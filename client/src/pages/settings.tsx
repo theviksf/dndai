@@ -33,6 +33,12 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
     setLocalConfig(config);
   }, [config]);
 
+  // Apply UI scale immediately when changed (preview)
+  useEffect(() => {
+    const scale = localConfig.uiScale === 'compact' ? '80%' : '100%';
+    document.documentElement.style.fontSize = scale;
+  }, [localConfig.uiScale]);
+
   const loadDefaultPrompts = async () => {
     try {
       const response = await fetch('/api/prompts/defaults');
@@ -746,6 +752,22 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                       <SelectItem value="balanced">Balanced</SelectItem>
                       <SelectItem value="detailed">Detailed</SelectItem>
                       <SelectItem value="verbose">Verbose</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">UI Scale</label>
+                  <Select 
+                    value={localConfig.uiScale} 
+                    onValueChange={(value: any) => setLocalConfig(prev => ({ ...prev, uiScale: value }))}
+                  >
+                    <SelectTrigger className="w-full bg-input border-border" data-testid="select-ui-scale">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compact">Compact (80%)</SelectItem>
+                      <SelectItem value="comfortable">Comfortable (100%)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

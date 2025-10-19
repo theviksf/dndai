@@ -91,6 +91,7 @@ export function createDefaultConfig(): GameConfig {
     autoGenerateBackstories: true,
     autoGenerateRevelations: true,
     autoGenerateLore: true,
+    uiScale: 'compact',
   };
 }
 
@@ -125,6 +126,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
     dmSystemPrompt: config.dmSystemPrompt ?? (prompts?.primary ?? defaults.dmSystemPrompt),
     parserSystemPrompt: config.parserSystemPrompt ?? (prompts?.parser ?? defaults.parserSystemPrompt),
+    uiScale: config.uiScale ?? defaults.uiScale,
   };
 }
 

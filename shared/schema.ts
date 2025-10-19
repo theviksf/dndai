@@ -273,6 +273,7 @@ export type GameConfig = {
   autoGenerateBackstories: boolean;
   autoGenerateRevelations: boolean;
   autoGenerateLore: boolean;
+  uiScale: 'compact' | 'comfortable';
 };
 
 export type OpenRouterModel = {
