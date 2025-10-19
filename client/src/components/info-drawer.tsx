@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import type { GameStateData } from '@shared/schema';
 import {
   InventoryPanel,
@@ -13,6 +14,7 @@ import {
   HistoryPanel
 } from './info-panels';
 import type { PanelKey } from './icon-rail';
+import { useEffect, useState } from 'react';
 
 interface InfoDrawerProps {
   activePanel: PanelKey | null;
@@ -34,6 +36,18 @@ const PANEL_TITLES: Record<PanelKey, string> = {
 };
 
 export function InfoDrawer({ activePanel, onClose, gameState, onUpdate, onEntityClick }: InfoDrawerProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   if (!activePanel) return null;
 
   const renderPanel = () => {
@@ -59,6 +73,23 @@ export function InfoDrawer({ activePanel, onClose, gameState, onUpdate, onEntity
     }
   };
 
+  // Mobile: use Sheet component
+  if (isMobile) {
+    return (
+      <Sheet open={!!activePanel} onOpenChange={() => onClose()}>
+        <SheetContent side="right" className="w-full sm:w-96">
+          <SheetHeader>
+            <SheetTitle>{PANEL_TITLES[activePanel]}</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            {renderPanel()}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: use sliding drawer
   return (
     <div 
       className="w-80 border-l border-border bg-background flex flex-col animate-in slide-in-from-right-full duration-200"
