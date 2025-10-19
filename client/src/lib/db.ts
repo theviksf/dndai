@@ -249,3 +249,114 @@ export async function getStorageEstimate(): Promise<{ usage: number; quota: numb
   }
   return { usage: 0, quota: 0 };
 }
+
+// Helper to calculate size of an object in bytes
+function getObjectSize(obj: any): number {
+  const jsonString = JSON.stringify(obj);
+  return new Blob([jsonString]).size;
+}
+
+export interface StorageBreakdown {
+  totalUncompressed: number;
+  totalCompressed: number;
+  compressionRatio: number;
+  components: {
+    gameState: {
+      total: number;
+      character: number;
+      location: number;
+      previousLocations: number;
+      inventory: number;
+      spells: number;
+      statusEffects: number;
+      quests: number;
+      companions: number;
+      encounteredCharacters: number;
+      businesses: number;
+      narrativeHistory: number;
+      parsedRecaps: number;
+      debugLog: number;
+      worldBackstory: number;
+      other: number;
+    };
+    gameConfig: number;
+    costTracker: number;
+    turnSnapshots: {
+      total: number;
+      count: number;
+      averageSize: number;
+      breakdown: Array<{
+        turn: number;
+        size: number;
+        timestamp: number;
+      }>;
+    };
+  };
+}
+
+export async function analyzeStorageBreakdown(sessionId: string): Promise<StorageBreakdown | null> {
+  const sessionData = await getSessionData(sessionId);
+  if (!sessionData) return null;
+
+  const { gameState, gameConfig, costTracker, turnSnapshots } = sessionData;
+
+  // Calculate sizes for each gameState component
+  const gameStateBreakdown = {
+    character: getObjectSize(gameState.character),
+    location: getObjectSize(gameState.location),
+    previousLocations: getObjectSize(gameState.previousLocations),
+    inventory: getObjectSize(gameState.inventory),
+    spells: getObjectSize(gameState.spells),
+    statusEffects: getObjectSize(gameState.statusEffects),
+    quests: getObjectSize(gameState.quests),
+    companions: getObjectSize(gameState.companions),
+    encounteredCharacters: getObjectSize(gameState.encounteredCharacters),
+    businesses: getObjectSize(gameState.businesses),
+    narrativeHistory: getObjectSize(gameState.narrativeHistory),
+    parsedRecaps: getObjectSize(gameState.parsedRecaps),
+    debugLog: getObjectSize(gameState.debugLog || []),
+    worldBackstory: getObjectSize(gameState.worldBackstory || ''),
+    other: 0
+  };
+
+  const gameStateTotal = getObjectSize(gameState);
+  const knownGameStateSize = Object.values(gameStateBreakdown).reduce((sum, size) => sum + size, 0);
+  gameStateBreakdown.other = Math.max(0, gameStateTotal - knownGameStateSize);
+
+  // Calculate sizes for snapshots
+  const snapshotBreakdown = turnSnapshots.map((snapshot, idx) => ({
+    turn: turnSnapshots.length - idx,
+    size: getObjectSize(snapshot),
+    timestamp: snapshot.timestamp
+  }));
+
+  const snapshotsTotal = getObjectSize(turnSnapshots);
+  const avgSnapshotSize = turnSnapshots.length > 0 ? snapshotsTotal / turnSnapshots.length : 0;
+
+  // Calculate total sizes
+  const { sessionId: _, lastUpdated: __, ...dataToMeasure } = sessionData;
+  const totalUncompressed = getObjectSize(dataToMeasure);
+  const compressedData = LZString.compressToUTF16(JSON.stringify(dataToMeasure));
+  const totalCompressed = new Blob([compressedData]).size;
+  const compressionRatio = totalUncompressed > 0 ? (1 - totalCompressed / totalUncompressed) * 100 : 0;
+
+  return {
+    totalUncompressed,
+    totalCompressed,
+    compressionRatio,
+    components: {
+      gameState: {
+        total: gameStateTotal,
+        ...gameStateBreakdown
+      },
+      gameConfig: getObjectSize(gameConfig),
+      costTracker: getObjectSize(costTracker),
+      turnSnapshots: {
+        total: snapshotsTotal,
+        count: turnSnapshots.length,
+        averageSize: avgSnapshotSize,
+        breakdown: snapshotBreakdown
+      }
+    }
+  };
+}
