@@ -14,15 +14,30 @@ Preferred communication style: Simple, everyday language.
 
 **Technology Stack**: React with TypeScript, Vite, Wouter for routing, Shadcn UI (Radix UI + Tailwind CSS) for a D&D-themed design.
 **State Management**: React hooks for local state, TanStack Query for server state.
+
+**Layout Architecture**: The main game interface uses a three-panel layout maximizing chat space:
+- **Chat Area (Narrative Panel)**: Flexible space taking majority of screen, displays AI-generated story and action input
+- **Icon Rail**: Fixed 60px sidebar on right edge with icons for 8 sections (inventory, spells, locations, businesses, quests, companions, NPCs, history) and animated notification badges
+- **Info Drawer**: 320px sliding panel from right showing selected section content; on mobile (<1024px) switches to bottom Sheet component
+
 **Key Components**:
-- **Home page**: Main game interface with character stats, narrative, and tabbed info (inventory, spells, quests, etc.).
-- **Settings page**: LLM configuration, API key input, custom prompt editing, and game settings (auto-save, image generation).
-- **Character Creation page**: Multi-step character generation with optional `.ogl` file import.
-- **CharacterStatsBar**: Modern, organized stats display with D&D-themed design, responsive layout.
-- **NarrativePanel**: Displays AI-generated story (Markdown), includes action input.
-- **GameInfoTabs**: Tabbed interface for game elements with notification badges and detailed views (e.g., Spells with filtering, NPCs with relationship status).
-- **EntityDetailSheet**: Wide modal for detailed views of NPCs, companions, quests, locations, and businesses, featuring in-place editing, revelatory displays with turn badges, and optimized character stats. Image refresh updates are synchronized via useEffect (GameInfoTabs) and key-based re-rendering (CharacterStatsBar) to display new images immediately without closing the sheet. NPC status displays as colored badges (green "Alive" with heart icon, red "Dead" with skull icon) and relationship shows descriptive labels (Neutral, Friendly, Hostile, etc.) with appropriate colors instead of raw numbers.
-- **Header Navigation**: Cost Tracker, Save Game, and Game Menu with logical sections for game actions, data management, and system settings.
+- **Home page**: Main game interface with character stats bar (top), narrative panel (center), icon rail (right edge), and expandable info drawer
+- **Settings page**: LLM configuration, API key input, custom prompt editing, and game settings (auto-save, image generation)
+- **Character Creation page**: Multi-step character generation with optional `.ogl` file import
+- **CharacterStatsBar**: Modern, organized stats display with D&D-themed design, responsive layout
+- **NarrativePanel**: Displays AI-generated story (Markdown), includes action input
+- **IconRail**: Navigation sidebar with 8 section icons, badge notifications, and toggle behavior
+- **InfoDrawer**: Sliding drawer (desktop) or Sheet (mobile) rendering selected panel content
+- **Info Panels**: 8 modular components (InventoryPanel, SpellsPanel, LocationsPanel, BusinessesPanel, QuestsPanel, CompanionsPanel, NPCsPanel, HistoryPanel) with consistent interfaces
+- **EntityDetailSheet**: Wide modal for detailed views of NPCs, companions, quests, locations, and businesses, featuring in-place editing, revelatory displays with turn badges, and optimized character stats. Image refresh updates are synchronized via useEffect and key-based re-rendering to display new images immediately without closing the sheet. NPC status displays as colored badges (green "Alive" with heart icon, red "Dead" with skull icon) and relationship shows descriptive labels (Neutral, Friendly, Hostile, etc.) with appropriate colors instead of raw numbers
+- **Header Navigation**: Cost Tracker, Save Game, and Game Menu with logical sections for game actions, data management, and system settings
+
+**Interaction Patterns**:
+- Clicking icon opens drawer with that section's content; clicking same icon again closes drawer (toggle)
+- Badge notifications appear when `gameState.updatedTabs` includes section updates; cleared when drawer opens
+- Responsive behavior: desktop uses sliding drawer, mobile uses Sheet component
+- ESC key or outside click closes drawer
+
 **Routing Logic**: Smart navigation for smooth user experience.
 
 ### Backend Architecture
