@@ -228,8 +228,9 @@ export async function getAllSessions(): Promise<SessionData[]> {
         } as SessionData);
       } else {
         // Legacy uncompressed record
-        console.log('[DB GET ALL] Found legacy uncompressed session:', record.sessionId);
-        sessions.push(record as any as SessionData);
+        const legacyRecord = record as any;
+        console.log('[DB GET ALL] Found legacy uncompressed session:', legacyRecord.sessionId);
+        sessions.push(legacyRecord as SessionData);
       }
     } catch (error) {
       console.error('[DB GET ALL] Error loading session:', record.sessionId, error);
