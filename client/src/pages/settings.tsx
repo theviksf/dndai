@@ -6,11 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { GameConfig, OpenRouterModel } from '@shared/schema';
 import { RECOMMENDED_CONFIGS, estimateTurnCost } from '@/lib/openrouter';
 import { getSessionIdFromUrl } from '@/lib/session';
-import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText, RefreshCw, ArrowLeft, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { Cpu, Key, Settings2, Sparkles, Scale, DollarSign, FlaskConical, FileText, RefreshCw, ArrowLeft, RotateCcw, Eye, EyeOff, Database, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { analyzeStorageBreakdown, type StorageBreakdown } from '@/lib/db';
 
 interface SettingsPageProps {
   config: GameConfig;
@@ -27,6 +29,9 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
   const [useDevKey, setUseDevKey] = useState(!config.openRouterApiKey);
   const [modelSortBy, setModelSortBy] = useState<'date' | 'name'>('date');
   const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const [storageBreakdown, setStorageBreakdown] = useState<StorageBreakdown | null>(null);
+  const [loadingStorage, setLoadingStorage] = useState(false);
+  const [storageExpanded, setStorageExpanded] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -111,6 +116,47 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
   const handleSaveApiKey = () => {
     onSave(localConfig);
     onRefreshModels();
+  };
+
+  const loadStorageBreakdown = async () => {
+    const sessionId = getSessionIdFromUrl();
+    if (!sessionId) {
+      toast({
+        title: "No session found",
+        description: "Please start a game first to analyze storage.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingStorage(true);
+    try {
+      const breakdown = await analyzeStorageBreakdown(sessionId);
+      setStorageBreakdown(breakdown);
+      if (!breakdown) {
+        toast({
+          title: "No data found",
+          description: "No game data found for this session.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error analyzing storage",
+        description: "Could not analyze storage breakdown.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingStorage(false);
+    }
+  };
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   };
 
   return (
@@ -831,6 +877,123 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, autoGenerateLore: checked }))}
                   data-testid="switch-auto-generate-lore"
                 />
+              </div>
+
+              {/* Storage Analysis */}
+              <div className="bg-accent/10 border-2 border-accent rounded-md p-4 glow-effect">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5 text-accent" />
+                    <span className="text-sm font-semibold text-foreground">Storage Analysis</span>
+                  </div>
+                  <Button
+                    onClick={loadStorageBreakdown}
+                    disabled={loadingStorage}
+                    variant="outline"
+                    size="sm"
+                    data-testid="button-analyze-storage"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${loadingStorage ? 'animate-spin' : ''}`} />
+                    {loadingStorage ? 'Analyzing...' : 'Analyze Storage'}
+                  </Button>
+                </div>
+
+                {storageBreakdown && (
+                  <div className="space-y-4">
+                    {/* Summary */}
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-background/50 rounded p-3">
+                        <div className="text-xs text-muted-foreground">Uncompressed</div>
+                        <div className="text-lg font-bold text-accent" data-testid="text-storage-uncompressed">
+                          {formatBytes(storageBreakdown.totalUncompressed)}
+                        </div>
+                      </div>
+                      <div className="bg-background/50 rounded p-3">
+                        <div className="text-xs text-muted-foreground">Compressed</div>
+                        <div className="text-lg font-bold text-accent" data-testid="text-storage-compressed">
+                          {formatBytes(storageBreakdown.totalCompressed)}
+                        </div>
+                      </div>
+                      <div className="bg-background/50 rounded p-3">
+                        <div className="text-xs text-muted-foreground">Compression</div>
+                        <div className="text-lg font-bold text-accent" data-testid="text-storage-compression">
+                          {storageBreakdown.compressionRatio.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detailed Breakdown */}
+                    <Collapsible open={storageExpanded} onOpenChange={setStorageExpanded}>
+                      <CollapsibleTrigger className="w-full" data-testid="button-toggle-storage-details">
+                        <div className="flex items-center justify-between p-2 bg-background/30 rounded hover:bg-background/50 transition-colors">
+                          <span className="text-sm font-medium">Detailed Breakdown</span>
+                          <ChevronDown className={`w-4 h-4 transition-transform ${storageExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2 space-y-3">
+                        {/* Game State Breakdown */}
+                        <div className="bg-background/30 rounded p-3">
+                          <div className="text-sm font-medium mb-2 flex items-center justify-between">
+                            <span>Game State</span>
+                            <span className="text-accent">{formatBytes(storageBreakdown.components.gameState.total)}</span>
+                          </div>
+                          <div className="space-y-1 text-xs">
+                            {Object.entries(storageBreakdown.components.gameState).map(([key, value]) => {
+                              if (key === 'total') return null;
+                              return (
+                                <div key={key} className="flex justify-between text-muted-foreground" data-testid={`text-storage-gamestate-${key}`}>
+                                  <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                  <span>{formatBytes(value)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Other Components */}
+                        <div className="bg-background/30 rounded p-3">
+                          <div className="space-y-1 text-xs">
+                            <div className="flex justify-between" data-testid="text-storage-config">
+                              <span className="text-muted-foreground">Game Config</span>
+                              <span className="text-accent">{formatBytes(storageBreakdown.components.gameConfig)}</span>
+                            </div>
+                            <div className="flex justify-between" data-testid="text-storage-cost">
+                              <span className="text-muted-foreground">Cost Tracker</span>
+                              <span className="text-accent">{formatBytes(storageBreakdown.components.costTracker)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Snapshots */}
+                        <div className="bg-background/30 rounded p-3">
+                          <div className="text-sm font-medium mb-2 flex items-center justify-between">
+                            <span>Turn Snapshots ({storageBreakdown.components.turnSnapshots.count})</span>
+                            <span className="text-accent">{formatBytes(storageBreakdown.components.turnSnapshots.total)}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            Average: {formatBytes(storageBreakdown.components.turnSnapshots.averageSize)}
+                          </div>
+                          {storageBreakdown.components.turnSnapshots.breakdown.length > 0 && (
+                            <div className="space-y-1 text-xs max-h-40 overflow-y-auto">
+                              {storageBreakdown.components.turnSnapshots.breakdown.map((snapshot, idx) => (
+                                <div key={idx} className="flex justify-between text-muted-foreground" data-testid={`text-storage-snapshot-${idx}`}>
+                                  <span>{snapshot.turn} turns ago</span>
+                                  <span>{formatBytes(snapshot.size)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
+                )}
+
+                {!storageBreakdown && !loadingStorage && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Click "Analyze Storage" to see detailed breakdown of your game's storage usage
+                  </p>
+                )}
               </div>
             </TabsContent>
           </Tabs>
