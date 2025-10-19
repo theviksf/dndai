@@ -86,6 +86,15 @@ When an NPC joins the party as a companion, the system automatically migrates th
 
 **IndexedDB Storage (Primary)**: All game data stored in browser IndexedDB (Dexie.js) for capacity and performance. Each game has a unique `sessionId` in the URL. Supports multi-session management, migration from localStorage, and UI for storage display. Base64 image data is sanitized, only R2 URLs are persisted.
 
+**Storage Analysis Tool**: Comprehensive breakdown of IndexedDB storage usage accessible via Settings > Game tab. Provides:
+- Summary metrics: uncompressed size, compressed size (LZ-String), and compression ratio
+- Detailed component breakdown:
+  - Game State: character, location, inventory, quests, companions, NPCs, narrative history, debug logs, and more
+  - Game Config and Cost Tracker sizes
+  - Individual turn snapshot sizes with averages
+- Collapsible detailed view for in-depth analysis
+- Helps users understand what's consuming storage as the game grows
+
 **Snapshot System (Undo/Rollback)**: Turn snapshots stored in IndexedDB for game state restoration. Clicking "Undo" opens a dialog showing all available snapshots (newest to oldest), each displaying:
 - Turn count badge (e.g., "2 turns ago")
 - Timestamp of snapshot creation
