@@ -106,6 +106,7 @@ export type Business = {
   weeklyIncome: number;
   purchaseCost: number;
   manager: string;
+  owner: string;
   runningCost: number;
   description: string;
   imageUrl?: string;
