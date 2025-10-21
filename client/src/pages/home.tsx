@@ -6,7 +6,7 @@ import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateConfig, migrateCostTracker } from '@/lib/game-state';
 import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
-import { db, getSessionData, saveSessionData, getStorageEstimate, deleteSessionData, deleteAllSessions, getAllSessions, type SessionData } from '@/lib/db';
+import { db, getSessionData, saveSessionData, getStorageEstimate, deleteAllSessions, getAllSessions, type SessionData } from '@/lib/db';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
 import DebugLogViewer from '@/components/debug-log-viewer';
@@ -538,16 +538,9 @@ export default function Home() {
     saveMutation.mutate();
   };
 
-  const handleNewGame = async () => {
-    // Delete current session data from IndexedDB before creating new session
-    try {
-      await deleteSessionData(sessionId);
-      console.log('[NEW GAME] Deleted old session data:', sessionId);
-    } catch (error) {
-      console.error('[NEW GAME] Failed to delete old session:', error);
-    }
-    
-    // Generate new session ID and force full page reload to reset all state
+  const handleNewGame = () => {
+    // Generate new session ID and navigate to it
+    // Old session data is preserved in IndexedDB for future access
     const newSessionId = generateSessionId();
     window.location.href = buildSessionUrl('/', newSessionId);
   };
