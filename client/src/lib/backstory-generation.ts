@@ -159,6 +159,12 @@ function buildBackstoryContext(
     sections.push('# Party Members (Companions)');
     gameState.companions.forEach(comp => {
       sections.push(`- ${comp.name} (${comp.race} ${comp.class}, Level ${comp.level})`);
+      if (comp.appearance) {
+        sections.push(`  Appearance: ${comp.appearance}`);
+      }
+      if (comp.personality) {
+        sections.push(`  Personality: ${comp.personality}`);
+      }
       if (comp.backstory) {
         sections.push(`  Backstory: ${comp.backstory.substring(0, 200)}...`);
       }
