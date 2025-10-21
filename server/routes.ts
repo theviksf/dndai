@@ -362,8 +362,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'API key required' });
       }
       
-      // Build the full prompt with game context
-      const fullPrompt = `${systemPrompt}\n\n# Current Game Context\n\n${context}\n\nGenerate comprehensive world lore based on the current game context. Remember to return ONLY raw JSON with a "worldLore" field.`;
+      // Build the full prompt with game context - request markdown directly
+      const fullPrompt = `${systemPrompt}\n\n# Current Game Context\n\n${context}\n\nGenerate comprehensive world lore based on the current game context. Write your response in rich Markdown format with headers, paragraphs, and lists as appropriate. Do NOT use JSON - write the lore content directly as formatted text.`;
       
       console.log('[LORE GEN] Generating world lore using model', model);
       
@@ -404,123 +404,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[LORE GEN] Raw response:', rawContent.substring(0, 200));
       
-      // Parse JSON response with multiple fallback strategies
-      let parsedData;
-      try {
-        // Strategy 1: Extract from code fences
-        let jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-        
-        if (!jsonMatch) {
-          // Strategy 2: Find first complete JSON object using brace counting
-          const firstBrace = rawContent.indexOf('{');
-          if (firstBrace !== -1) {
-            let braceCount = 0;
-            let inString = false;
-            let escapeNext = false;
-            let endPos = -1;
-            
-            for (let i = firstBrace; i < rawContent.length; i++) {
-              const char = rawContent[i];
-              
-              if (escapeNext) {
-                escapeNext = false;
-                continue;
-              }
-              
-              if (char === '\\') {
-                escapeNext = true;
-                continue;
-              }
-              
-              if (char === '"') {
-                inString = !inString;
-                continue;
-              }
-              
-              if (!inString) {
-                if (char === '{') braceCount++;
-                if (char === '}') {
-                  braceCount--;
-                  if (braceCount === 0) {
-                    endPos = i + 1;
-                    break;
-                  }
-                }
-              }
-            }
-            
-            if (endPos !== -1) {
-              jsonMatch = [null, rawContent.substring(firstBrace, endPos)];
-            }
-          }
-        }
-        
-        const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
-        
-        // Try to parse, with common error fixes on failure
-        try {
-          parsedData = JSON.parse(jsonStr);
-        } catch (e) {
-          // Attempt to fix common JSON errors
-          const fixed = jsonStr
-            .replace(/,\s*}/g, '}')  // Remove trailing commas before }
-            .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
-            .replace(/([^\\])'/g, "$1\"");  // Replace single quotes with double quotes
-          parsedData = JSON.parse(fixed);
-        }
-      } catch (parseError) {
-        console.error('[LORE GEN] Failed to parse JSON:', parseError);
-        return res.status(500).json({
-          error: 'Failed to parse lore JSON from LLM response',
-          fullPrompt,
-          rawResponse: rawContent
-        });
-      }
+      // Use the raw content directly as markdown - no JSON parsing needed
+      let worldLore = rawContent.trim();
       
-      // Handle worldLore: convert object to string if needed
-      let worldLore = parsedData.worldLore || null;
-      if (worldLore && typeof worldLore === 'object') {
-        // LLM returned object instead of string - convert to formatted markdown
-        console.log('[LORE GEN] Converting object worldLore to markdown string');
-        
-        // Recursively convert object to markdown with headers
-        const convertToMarkdown = (obj: any, level: number = 2): string => {
-          let md = '';
-          for (const [key, value] of Object.entries(obj)) {
-            const header = '#'.repeat(level);
-            const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-              md += `${header} ${title}\n\n`;
-              md += convertToMarkdown(value, level + 1);
-            } else if (Array.isArray(value)) {
-              md += `${header} ${title}\n\n`;
-              value.forEach(item => {
-                if (typeof item === 'string') {
-                  md += `- ${item}\n`;
-                } else if (typeof item === 'object' && item !== null) {
-                  // Convert object items to readable format
-                  const objStr = Object.entries(item)
-                    .map(([k, v]) => {
-                      const label = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                      return `${label}: ${v}`;
-                    })
-                    .join(', ');
-                  md += `- ${objStr}\n`;
-                } else {
-                  md += `- ${item}\n`;
-                }
-              });
-              md += '\n';
-            } else {
-              md += `**${title}**: ${value}\n\n`;
-            }
-          }
-          return md;
-        };
-        
-        worldLore = convertToMarkdown(worldLore);
-      }
+      // Remove markdown code fences if present
+      worldLore = worldLore.replace(/^```(?:markdown|md)?\s*\n/i, '').replace(/\n```\s*$/i, '');
       
       res.json({
         worldLore,
