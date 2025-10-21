@@ -171,8 +171,36 @@ function buildBackstoryContext(
     sections.push('# Encountered NPCs');
     gameState.encounteredCharacters.forEach(npc => {
       sections.push(`- ${npc.name} (${npc.role}, ${npc.location}, Relationship: ${npc.relationship})`);
+      if (npc.description) {
+        sections.push(`  Description: ${npc.description}`);
+      }
       if (npc.backstory) {
         sections.push(`  Backstory: ${npc.backstory.substring(0, 200)}...`);
+      }
+    });
+    sections.push('');
+  }
+  
+  // Add businesses
+  if (gameState.businesses && gameState.businesses.length > 0) {
+    sections.push('# Businesses');
+    gameState.businesses.forEach(business => {
+      sections.push(`- ${business.name}`);
+      sections.push(`  Manager: ${business.manager}`);
+      sections.push(`  Description: ${business.description}`);
+      sections.push(`  Purchase Cost: ${business.purchaseCost}g, Weekly Income: ${business.weeklyIncome}g, Running Cost: ${business.runningCost}g`);
+    });
+    sections.push('');
+  }
+  
+  // Add previous locations
+  if (gameState.previousLocations && gameState.previousLocations.length > 0) {
+    sections.push('# Previously Visited Locations');
+    gameState.previousLocations.forEach(loc => {
+      sections.push(`- ${loc.name} (${loc.type || 'Unknown type'})`);
+      sections.push(`  Description: ${loc.description}`);
+      if (loc.backstory) {
+        sections.push(`  Backstory: ${loc.backstory.substring(0, 200)}...`);
       }
     });
     sections.push('');
