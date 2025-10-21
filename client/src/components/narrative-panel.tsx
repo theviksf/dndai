@@ -546,9 +546,16 @@ export default function NarrativePanel({
       let parsingFailed = false;
       try {
         const extracted = extractAndParseJSON(parserResponse.content);
-        parsedData = validateAndCoerceParserData(extracted, updatedStateForParser.character.name);
+        
+        // Debug: Check character name before validation
+        const characterName = updatedStateForParser.character.name;
+        console.log('[OWNER DEBUG] Character name for validation:', characterName);
+        console.log('[OWNER DEBUG] Extracted businesses (before validation):', extracted.stateUpdates?.businesses);
+        
+        parsedData = validateAndCoerceParserData(extracted, characterName);
         
         // Debug: Log what we extracted
+        console.log('[OWNER DEBUG] Validated businesses (after validation):', parsedData.stateUpdates?.businesses);
         console.log('Parser extracted:', parsedData.stateUpdates);
       } catch (error: any) {
         // Log the raw response for debugging with length info
