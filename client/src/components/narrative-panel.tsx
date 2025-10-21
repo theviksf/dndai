@@ -105,7 +105,7 @@ function extractAndParseJSON(content: string): any {
   throw new Error('No valid JSON found in parser response');
 }
 
-function validateAndCoerceParserData(data: any): any {
+function validateAndCoerceParserData(data: any, characterName: string = 'Unknown'): any {
   if (!data || typeof data !== 'object') {
     throw new Error('Parser data is not an object');
   }
@@ -300,6 +300,7 @@ function validateAndCoerceParserData(data: any): any {
         weeklyIncome: typeof b.weeklyIncome === 'number' ? b.weeklyIncome : 0,
         purchaseCost: typeof b.purchaseCost === 'number' ? b.purchaseCost : 0,
         manager: b.manager || 'Unknown',
+        owner: b.owner || characterName,
         runningCost: typeof b.runningCost === 'number' ? b.runningCost : 0,
         description: b.description || 'No description'
       }));
@@ -545,7 +546,7 @@ export default function NarrativePanel({
       let parsingFailed = false;
       try {
         const extracted = extractAndParseJSON(parserResponse.content);
-        parsedData = validateAndCoerceParserData(extracted);
+        parsedData = validateAndCoerceParserData(extracted, updatedStateForParser.character.name);
         
         // Debug: Log what we extracted
         console.log('Parser extracted:', parsedData.stateUpdates);
