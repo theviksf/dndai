@@ -59,7 +59,7 @@ export function InfoDrawer({ activePanel, onClose, gameState, onUpdate, onEntity
       case 'locations':
         return <LocationsPanel previousLocations={gameState.previousLocations} onEntityClick={onEntityClick} />;
       case 'businesses':
-        return <BusinessesPanel businesses={gameState.businesses} onEntityClick={onEntityClick} />;
+        return <BusinessesPanel businesses={gameState.businesses} onEntityClick={onEntityClick} onUpdate={onUpdate} />;
       case 'quests':
         return <QuestsPanel quests={gameState.quests} onEntityClick={onEntityClick} />;
       case 'companions':
