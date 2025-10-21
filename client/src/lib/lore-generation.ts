@@ -111,8 +111,15 @@ export async function generateWorldLore({
 }
 
 function buildLoreContext(gameState: GameStateData): string {
-  // Build rich context for the lore agent
+  // Build comprehensive context for the lore agent to prevent contradictions
   const sections: string[] = [];
+  
+  // Add existing world backstory if present
+  if (gameState.worldBackstory) {
+    sections.push('# Existing World Lore');
+    sections.push(gameState.worldBackstory);
+    sections.push('');
+  }
   
   // Add player character info
   sections.push('# Player Character');
@@ -120,29 +127,92 @@ function buildLoreContext(gameState: GameStateData): string {
   sections.push(`Race: ${gameState.character.race}, Class: ${gameState.character.class}, Level: ${gameState.character.level}`);
   sections.push('');
   
-  // Add current location
-  sections.push('# Starting Location');
+  // Add current location with backstory
+  sections.push('# Current Location');
   sections.push(`Name: ${gameState.location.name}`);
   sections.push(`Type: ${gameState.location.type || 'Unknown'}`);
   sections.push(`Description: ${gameState.location.description}`);
+  if (gameState.location.backstory) {
+    sections.push(`Backstory: ${gameState.location.backstory}`);
+  }
   sections.push('');
   
-  // Add narrative context if available
-  if (gameState.parsedRecaps.length > 0) {
-    sections.push('# Adventure Beginning');
-    const recentRecaps = gameState.parsedRecaps.slice(0, 3);
-    sections.push(recentRecaps.join(' '));
+  // Add companions with appearance, personality, and backstories
+  if (gameState.companions.length > 0) {
+    sections.push('# Party Members (Companions)');
+    gameState.companions.forEach(comp => {
+      sections.push(`- ${comp.name} (${comp.race} ${comp.class}, Level ${comp.level})`);
+      if (comp.appearance) {
+        sections.push(`  Appearance: ${comp.appearance}`);
+      }
+      if (comp.personality) {
+        sections.push(`  Personality: ${comp.personality}`);
+      }
+      if (comp.backstory) {
+        sections.push(`  Backstory: ${comp.backstory.substring(0, 200)}...`);
+      }
+    });
     sections.push('');
   }
   
-  // Add any immediate world context from narrative history
-  if (gameState.narrativeHistory.length > 0) {
-    sections.push('# Initial Narrative');
-    const lastMessage = gameState.narrativeHistory[gameState.narrativeHistory.length - 1];
-    if (lastMessage.type === 'dm') {
-      sections.push(lastMessage.content.substring(0, 500));
-      sections.push('');
-    }
+  // Add encountered NPCs with descriptions and backstories
+  if (gameState.encounteredCharacters.length > 0) {
+    sections.push('# Encountered NPCs');
+    gameState.encounteredCharacters.forEach(npc => {
+      sections.push(`- ${npc.name} (${npc.role}, ${npc.location}, Relationship: ${npc.relationship})`);
+      if (npc.description) {
+        sections.push(`  Description: ${npc.description}`);
+      }
+      if (npc.backstory) {
+        sections.push(`  Backstory: ${npc.backstory.substring(0, 200)}...`);
+      }
+    });
+    sections.push('');
+  }
+  
+  // Add businesses
+  if (gameState.businesses && gameState.businesses.length > 0) {
+    sections.push('# Businesses');
+    gameState.businesses.forEach(business => {
+      sections.push(`- ${business.name}`);
+      sections.push(`  Manager: ${business.manager}`);
+      sections.push(`  Description: ${business.description}`);
+      sections.push(`  Purchase Cost: ${business.purchaseCost}g, Weekly Income: ${business.weeklyIncome}g, Running Cost: ${business.runningCost}g`);
+    });
+    sections.push('');
+  }
+  
+  // Add previous locations with backstories
+  if (gameState.previousLocations && gameState.previousLocations.length > 0) {
+    sections.push('# Previously Visited Locations');
+    gameState.previousLocations.forEach(loc => {
+      sections.push(`- ${loc.name} (${loc.type || 'Unknown type'})`);
+      sections.push(`  Description: ${loc.description}`);
+      if (loc.backstory) {
+        sections.push(`  Backstory: ${loc.backstory.substring(0, 200)}...`);
+      }
+    });
+    sections.push('');
+  }
+  
+  // Add quests with backstories
+  if (gameState.quests.length > 0) {
+    sections.push('# Active Quests');
+    gameState.quests.forEach(quest => {
+      sections.push(`- ${quest.title} (${quest.type}): ${quest.description.substring(0, 100)}...`);
+      if (quest.backstory) {
+        sections.push(`  Backstory: ${quest.backstory.substring(0, 200)}...`);
+      }
+    });
+    sections.push('');
+  }
+  
+  // Add narrative context for recent events
+  if (gameState.parsedRecaps.length > 0) {
+    sections.push('# Recent Events (Parsed History)');
+    const recentRecaps = gameState.parsedRecaps.slice(-5);
+    sections.push(recentRecaps.join(' '));
+    sections.push('');
   }
   
   return sections.join('\n');
