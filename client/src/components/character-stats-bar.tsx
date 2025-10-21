@@ -339,17 +339,18 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
               </div>
             </div>
 
-            {/* World Map Button */}
-            <Button
-              variant="outline"
-              size="sm"
+            {/* World Map Image */}
+            <div 
               onClick={() => setWorldDetailSheetOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 h-auto bg-primary/10 border-primary/30 hover:bg-primary/20"
+              className="cursor-pointer hover:opacity-80 transition-opacity border-2 border-primary/30 rounded-lg overflow-hidden"
               data-testid="button-world-map"
             >
-              <Globe className="w-4 h-4 text-primary" />
-              <span className="text-xs font-medium">World Map</span>
-            </Button>
+              <img 
+                src="/images/worldmap.jpg" 
+                alt="World Map" 
+                className="w-20 h-20 object-cover"
+              />
+            </div>
           </div>
         </div>
 
