@@ -122,6 +122,54 @@ FORMAT YOUR RESPONSES IN MARKDOWN:
 ##Notetaker
 There is a notetaker who's going to be reading the story you output, and is going to try to keep track of changes.  If a Business is aquired (make sure to state the purchace price, staff and weekly income), If an Item is aquired, if a Spell is gained, If an NPC shows up, if cash goes down if XP is awarded their job is to track ever detail in an interaction - in addition to reading the storty you can add details for them in the Notes: section of the format - make it comprehensive and focus on changes as they already have the current game state.  
 
+##Notes Examples - note format and detail of the note.
+Level up: Dax now Level 6, HP increased to 38, learned Fireball
+Party member joined: Grimjaw (M,156) Dwarf Fighter Level 4
+Party member departed: Lyra left party in Thornhaven (reason: family emergency)
+Character death: Borin died fighting ogres at Blackwood Bridge
+Character retired: Thorn retired to manage his vineyard in Willowdale
+Gold spent: 150gp on plate armor at Ironforge Smithy
+Gold earned: 2,000gp reward for clearing goblin cave
+Loan taken: 5,000gp from Merchant Guild (12% interest, 6 month term)
+Debt paid: 1,200gp to Thieves Guild, remaining balance 800gp
+Tax paid: 300gp property tax on The Gilded Griffin (quarterly)
+Inn purchased: The Prancing Pony (cost 12,000gp, income 900gp/week, upkeep 45gp/week, staff:8, location: Crossroads)
+Business expansion: The Gilded Griffin - added gaming room (cost 2,000gp, additional income +200gp/week)
+Manager hired: Torvald (M,38) to run warehouse (salary 50gp/week)
+Property damaged: The Gilded Griffin - fire damage to kitchen (repair cost 1,500gp, 2 weeks downtime)
+Business sold: Arcanist's Apothecary sold to Merchant Consortium for 9,000gp
+Relationship established: Esrie - status changed from complicated to romantic partner
+NPC ally gained: Captain Aldric of City Watch (favor level: trusted)
+Enemy made: Thieves Guild Lieutenant Vex (hostility: high)
+Marriage: Dax married Esrie in Oakhaven Temple
+Hireling: Pip (M,16) hired as tavern server (wage 15gp/week)
+Mentor found: Archmage Kellan (M,203) teaching advanced evocation (cost 100gp/session)
+Item acquired: +1 Longsword from dragon hoard
+Item lost: Bag of Holding destroyed in Gelatinous Cube
+Item crafted: Potion of Greater Healing x3 (materials cost 150gp, 3 days)
+Item sold: Ruby necklace for 750gp at Gemstone Exchange
+Equipment damaged: Plate armor -2 AC (needs repair, cost 200gp)
+Cursed item: Ring of Weakness equipped (STR -2 until Remove Curse cast)
+Location: Thornhaven City, Merchant Quarter, The Brass Flagon Inn
+Travel: Departed Oakhaven toward Stonekeep (distance 120 miles, estimated 6 days)
+Arrived: Stonekeep Fortress after 7 days travel
+Base established: Tower ruins in Mistwood Forest claimed as party headquarters
+Map discovered: Ancient map showing location of Temple of the Serpent God
+Quest accepted: "Clear the Mines" from Mayor Thornblade (reward 1,500gp, deadline 2 weeks)
+Quest completed: "Rescue the Missing Caravan" (reward received: 800gp, reputation with Merchant Guild +2)
+Quest failed: "Defend the Village" - goblins overran Millfield
+Side quest discovered: Mysterious symbol found in cave leads to hidden cultist activity
+Combat victory: Defeated bandit gang at Old Mill (8 bandits, 1 captain)
+Injury sustained: Dax broken leg (movement halved for 4 weeks or until Lesser Restoration)
+Scar gained: Grimjaw facial scar from werewolf claws (CHA -1, intimidation +2)
+Combat defeat: Party fled from Vampire Lord, lost 200gp in equipment
+Spell learned: Counterspell, Lightning Bolt (cost 200gp in materials, 10 days study)
+Spell scroll used: Scroll of Revivify consumed to save Borin
+Ability unlocked: Dax discovered Draconic Bloodline (sorcerer multiclass option available)
+Magical attunement: Attuned to Cloak of Protection (+1 AC, +1 all saves)
+
+
+
 ##Format
 At the end of your turn, format suggested actions like this:
 

@@ -87,6 +87,9 @@ export default function Home() {
         parserSystemPrompt: defaultPrompts.parser,
         characterImagePrompt: defaultPrompts.imageCharacter,
         locationImagePrompt: defaultPrompts.imageLocation,
+        backstorySystemPrompt: defaultPrompts.backstory,
+        revelationsSystemPrompt: defaultPrompts.revelations,
+        loreSystemPrompt: defaultPrompts.lore,
       };
       setConfig(newConfig);
       setIsNewSession(false);

@@ -38,6 +38,33 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
     setLocalConfig(config);
   }, [config]);
 
+  // Auto-load missing prompts for existing sessions
+  useEffect(() => {
+    const loadMissingPrompts = async () => {
+      // Check if any prompts are empty
+      if (!config.backstorySystemPrompt || !config.revelationsSystemPrompt || !config.loreSystemPrompt) {
+        console.log('[SETTINGS] Loading missing prompts for existing session');
+        const defaults = await loadDefaultPrompts();
+        if (defaults) {
+          setLocalConfig(prev => ({
+            ...prev,
+            backstorySystemPrompt: prev.backstorySystemPrompt || defaults.backstory,
+            revelationsSystemPrompt: prev.revelationsSystemPrompt || defaults.revelations,
+            loreSystemPrompt: prev.loreSystemPrompt || defaults.lore,
+          }));
+          // Auto-save the updated config
+          onSave({
+            ...config,
+            backstorySystemPrompt: config.backstorySystemPrompt || defaults.backstory,
+            revelationsSystemPrompt: config.revelationsSystemPrompt || defaults.revelations,
+            loreSystemPrompt: config.loreSystemPrompt || defaults.lore,
+          });
+        }
+      }
+    };
+    loadMissingPrompts();
+  }, [config.backstorySystemPrompt, config.revelationsSystemPrompt, config.loreSystemPrompt]);
+
   // Apply UI scale immediately when changed (preview)
   useEffect(() => {
     const scale = localConfig.uiScale === 'compact' ? '80%' : '100%';
