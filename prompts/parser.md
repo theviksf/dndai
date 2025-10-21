@@ -133,11 +133,12 @@ YOUR RESPONSE (raw JSON only):
   "stateUpdates": {
     "gold": -5000,
     "businesses": [
-      {"id": "golden-goblet", "name": "The Golden Goblet", "weeklyIncome": 500, "purchaseCost": 5000, "manager": "Marcus", "owner": "{CHARACTER_NAME}", "runningCost": 200, "description": "A popular tavern in the city center, known for its fine ale and lively atmosphere"}
+      {"id": "golden-goblet", "name": "The Golden Goblet", "weeklyIncome": 500, "purchaseCost": 5000, "manager": "Marcus", "runningCost": 200, "description": "A popular tavern in the city center, known for its fine ale and lively atmosphere"}
     ]
   },
   "recap": "Purchased The Golden Goblet tavern for 5000 gold with Marcus as manager"
 }
+NOTE: The "owner" field is optional - if not provided, it will automatically be set to the main character's name by the game system.
 
 EXAMPLE 6 - Detailed location arrival:
 Narrative: "You arrive at The Gilded Griffin, a bustling tavern in the Market District of Highspire. The tavern is owned by Borin Flintbeard and known for its honeyed ale. Sara the barkeep and Thom the bard work here. The tavern can hold about 60 people and offers food, drink, and lodging at moderate prices. It's located 1.2km northwest of the Highspire Main Gate. The Temple of Auriel is 0.4km to the east, and the Docks are 1.1km south."
