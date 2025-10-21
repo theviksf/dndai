@@ -309,6 +309,18 @@ export function EntityDetailSheet({
           {/* Management */}
           <div className="pt-3 border-t border-border">
             <h4 className="font-serif font-bold text-foreground mb-3">Management</h4>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="font-medium text-foreground text-sm min-w-[100px]">Owner:</span>
+              {onUpdate ? (
+                <InlineEdit
+                  value={biz.owner || ''}
+                  onSave={(value) => onUpdate({ owner: String(value) } as any)}
+                  inputClassName="h-7 text-base"
+                />
+              ) : (
+                <span className="text-foreground text-base font-semibold text-primary">{biz.owner || 'None'}</span>
+              )}
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="font-medium text-foreground text-sm min-w-[100px]">Manager:</span>
               {onUpdate ? (
