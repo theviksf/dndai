@@ -345,6 +345,10 @@ export function BusinessesPanel({ businesses, onEntityClick }: BusinessesPanelPr
                       <span className="font-mono text-xs">{business.purchaseCost.toLocaleString()} gold</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Owner:</span>
+                      <span className="text-xs font-medium text-primary">{business.owner}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground">Manager:</span>
                       <span className="text-xs">{business.manager}</span>
                     </div>
