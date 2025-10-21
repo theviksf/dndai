@@ -69,7 +69,7 @@ FIELD SPECIFICATIONS:
 - quests: array of objects, each with "id", "title", "description", "type" ("main" or "side"), "icon", "completed" (boolean), "objectives" (array), "progress" (object with "current" and "total" numbers)
 - companions: array of objects, each with "id", "name", "race", "age", "sex", "hairColor", "outfit", "class", "level" (number), "appearance", "personality", "criticalMemories", "feelingsTowardsPlayer", "relationship"
 - encounteredCharacters: array of objects, each with "id", "name", "age" (string), "sex", "hairColor", "outfit", "role", "location" (where met/lives), "appearance", "description", "status" ("alive" or "dead"), "relationship" (number -3 to +3: -3=Hostile, -2=Unfriendly, -1=Cold, 0=Neutral, +1=Warm, +2=Friendly, +3=Devoted)
-- businesses: array of objects, each with "id", "name", "weeklyIncome" (number), "purchaseCost" (number), "manager" (string), "runningCost" (number), "description"
+- businesses: array of objects, each with "id", "name", "weeklyIncome" (number), "purchaseCost" (number), "manager" (string), "owner" (string - ALWAYS set to the main character's name when they purchase/own a business), "runningCost" (number), "description"
 - recap: string (ALWAYS REQUIRED - never omit this field)
 
 EXAMPLE 1 - Character level up:
@@ -133,7 +133,7 @@ YOUR RESPONSE (raw JSON only):
   "stateUpdates": {
     "gold": -5000,
     "businesses": [
-      {"id": "golden-goblet", "name": "The Golden Goblet", "weeklyIncome": 500, "purchaseCost": 5000, "manager": "Marcus", "runningCost": 200, "description": "A popular tavern in the city center, known for its fine ale and lively atmosphere"}
+      {"id": "golden-goblet", "name": "The Golden Goblet", "weeklyIncome": 500, "purchaseCost": 5000, "manager": "Marcus", "owner": "{CHARACTER_NAME}", "runningCost": 200, "description": "A popular tavern in the city center, known for its fine ale and lively atmosphere"}
     ]
   },
   "recap": "Purchased The Golden Goblet tavern for 5000 gold with Marcus as manager"
