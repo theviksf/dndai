@@ -10,12 +10,26 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
   lore: string;
 } | null> {
   try {
-    const response = await fetch('/api/prompts/defaults');
-    if (!response.ok) {
-      console.error('Failed to load default prompts from API');
-      return null;
-    }
-    return await response.json();
+    // Load prompts directly from static files in /prompts/ directory
+    const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore] = await Promise.all([
+      fetch('/prompts/primary.md').then(r => r.text()),
+      fetch('/prompts/parser.md').then(r => r.text()),
+      fetch('/prompts/image-character.md').then(r => r.text()),
+      fetch('/prompts/image-location.md').then(r => r.text()),
+      fetch('/prompts/backstory.md').then(r => r.text()),
+      fetch('/prompts/revelations.md').then(r => r.text()),
+      fetch('/prompts/lore.md').then(r => r.text()),
+    ]);
+    
+    return {
+      primary,
+      parser,
+      imageCharacter,
+      imageLocation,
+      backstory,
+      revelations,
+      lore,
+    };
   } catch (error) {
     console.error('Error loading default prompts:', error);
     return null;
