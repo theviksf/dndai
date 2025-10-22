@@ -19,7 +19,7 @@ console.log('🚀 Starting Vite development server...');
 console.log('📝 Note: API routes require Vercel CLI to work locally');
 console.log('   Run "vercel dev" to test API routes\n');
 
-const vite = spawn('vite', ['--host', '0.0.0.0', '--port', '5000'], {
+const vite = spawn('vite', ['--config', 'vite.replit.config.ts', '--host', '0.0.0.0', '--port', '5000'], {
   stdio: 'inherit',
   shell: true
 });
