@@ -47,6 +47,21 @@ Set these in Vercel dashboard (Settings → Environment Variables):
 - `R2_BUCKET_NAME` - R2 bucket name
 - `R2_PUBLIC_URL` - Public URL for R2 bucket (e.g., `https://BUCKET.ACCOUNT.r2.dev`)
 
+## Important Notes
+
+### Build Script
+The `package.json` still contains the old build script with esbuild (for the removed Express server). **This is intentional** - Vercel uses the `buildCommand` from `vercel.json` instead, which is set to `vite build`.
+
+If you want to build locally, use:
+```bash
+vite build
+```
+
+Or update the build script in `package.json` to:
+```json
+"build": "vite build"
+```
+
 ## Deployment Steps
 
 1. **Push code to GitHub/GitLab/Bitbucket**

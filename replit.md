@@ -4,6 +4,8 @@
 
 An interactive Dungeons & Dragons text adventure game leveraging OpenRouter's AI models for dynamic storytelling and intelligent game state management. Players create custom characters, embark on quests, and experience AI-driven narratives with real-time state tracking. The application features a dual-LLM architecture, allowing users to select preferred models for both narrative generation and game state parsing. The project's vision is to deliver an immersive, AI-driven narrative experience that adapts dynamically to player choices, offering high replayability and a personalized D&D adventure.
 
+**Deployment**: Fully static Vite React app deployed to Vercel with serverless API routes. No Express server - all backend logic runs as Vercel serverless functions.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -42,11 +44,12 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 
-**Server Framework**: Express.js on Node.js with TypeScript (ESM modules).
+**Deployment**: Vercel serverless functions (no Express server).
+**API Routes**: All backend logic in `/api` directory as Vercel serverless functions.
 **API Design**: RESTful endpoints proxying OpenRouter API for model fetching and chat completions (streaming via SSE).
-**API Key Management**: Fallback chain for OpenRouter API keys (user-provided > environment variable > secret).
-**Prompt Management System**: Default prompts stored as markdown files in `/prompts/`, served via `/api/prompts/defaults`, with user customization and reset options. Automatic timestamped backups are created when default prompt files are updated via API or CLI, stored in `/prompts/`.
-**Development Setup**: Vite middleware for HMR.
+**API Key Management**: Fallback chain for OpenRouter API keys (user-provided > environment variable > Vercel secret).
+**Prompt Management System**: Default prompts stored as markdown files in `/prompts/`, served via `/api/prompts/defaults` (read-only in production). Custom prompts stored client-side in IndexedDB as part of GameConfig.
+**Development Setup**: Vite dev server for local development, Vercel CLI for testing API routes locally.
 
 ### Multi-Agent LLM Architecture
 
