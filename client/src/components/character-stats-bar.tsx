@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import worldmapImage from '@assets/worldmap.jpg';
 
 interface CharacterStatsBarProps {
   character: GameCharacter;
@@ -346,7 +347,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
               data-testid="button-world-map"
             >
               <img 
-                src="/images/worldmap.jpg" 
+                src={worldmapImage} 
                 alt="World Map" 
                 className="w-20 h-20 object-cover"
               />
@@ -502,7 +503,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
             <div className="lg:w-1/2 flex-shrink-0">
               <div className="relative aspect-square w-full max-w-[600px] mx-auto border-4 border-border rounded-xl overflow-hidden shadow-2xl">
                 <img 
-                  src="/images/worldmap.jpg" 
+                  src={worldmapImage} 
                   alt="World Map" 
                   className="w-full h-full object-cover"
                 />
