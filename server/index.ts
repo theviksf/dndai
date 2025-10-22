@@ -24,16 +24,11 @@ async function startServer() {
   // Mount API routes
   app.use('/api', apiRoutes);
   
-  // Create Vite server in middleware mode
+  // Create Vite server in middleware mode (without its own server)
   const vite = await createViteServer({
     configFile: './vite.replit.config.ts',
     server: {
       middlewareMode: true,
-      hmr: {
-        protocol: 'ws',
-        host: '0.0.0.0',
-        port: PORT,
-      }
     },
     appType: 'spa',
   });
@@ -41,11 +36,20 @@ async function startServer() {
   // Use Vite's middleware to serve the frontend
   app.use(vite.middlewares);
   
-  // Start the server
-  app.listen(PORT, '0.0.0.0', () => {
+  // Start the server with error handling
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
     console.log(`📡 API routes available at http://localhost:${PORT}/api/*`);
     console.log(`🎮 Frontend served by Vite with HMR\n`);
+  });
+  
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use. Exiting...`);
+      process.exit(1);
+    } else {
+      throw err;
+    }
   });
 }
 
