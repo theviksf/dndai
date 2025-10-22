@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import worldmapImage from '@assets/worldmap.jpg';
+// Worldmap served as static asset from /assets/worldmap.jpg (in client/public/assets/)
+const worldmapImage = '/assets/worldmap.jpg';
 
 interface CharacterStatsBarProps {
   character: GameCharacter;
