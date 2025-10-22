@@ -1,44 +1,55 @@
 /**
- * Development Server Wrapper for Vercel Deployment
+ * Development Server for Local Replit Development
  * 
- * This file exists only to support the local development workflow.
- * In production, this app runs as a static site on Vercel with serverless API routes.
+ * This Express server enables local development by:
+ * 1. Serving API routes (mirroring Vercel serverless functions)
+ * 2. Running Vite dev server for the frontend
  * 
- * For local development:
- * - This script runs the Vite dev server for the frontend
- * - API routes in /api directory won't work without Vercel CLI (`vercel dev`)
- * 
- * To test API routes locally, use:
- *   npm install -g vercel
- *   vercel dev
+ * For Production (Vercel):
+ * - This file is NOT used
+ * - Vercel serves static files and uses /api serverless functions
  */
 
-import { spawn } from 'child_process';
+import express from 'express';
+import { createServer as createViteServer } from 'vite';
+import apiRoutes from './routes.js';
 
-console.log('🚀 Starting Vite development server...');
-console.log('📝 Note: API routes require Vercel CLI to work locally');
-console.log('   Run "vercel dev" to test API routes\n');
+const app = express();
+const PORT = 5000;
 
-const vite = spawn('vite', ['--config', 'vite.replit.config.ts', '--host', '0.0.0.0', '--port', '5000'], {
-  stdio: 'inherit',
-  shell: true
-});
+async function startServer() {
+  // Parse JSON bodies
+  app.use(express.json({ limit: '50mb' }));
+  
+  // Mount API routes
+  app.use('/api', apiRoutes);
+  
+  // Create Vite server in middleware mode
+  const vite = await createViteServer({
+    configFile: './vite.replit.config.ts',
+    server: {
+      middlewareMode: true,
+      hmr: {
+        protocol: 'ws',
+        host: '0.0.0.0',
+        port: PORT,
+      }
+    },
+    appType: 'spa',
+  });
+  
+  // Use Vite's middleware to serve the frontend
+  app.use(vite.middlewares);
+  
+  // Start the server
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+    console.log(`📡 API routes available at http://localhost:${PORT}/api/*`);
+    console.log(`🎮 Frontend served by Vite with HMR\n`);
+  });
+}
 
-vite.on('error', (error) => {
-  console.error('Failed to start Vite:', error);
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
   process.exit(1);
-});
-
-vite.on('close', (code) => {
-  console.log(`Vite process exited with code ${code}`);
-  process.exit(code || 0);
-});
-
-// Handle termination signals
-process.on('SIGINT', () => {
-  vite.kill('SIGINT');
-});
-
-process.on('SIGTERM', () => {
-  vite.kill('SIGTERM');
 });
