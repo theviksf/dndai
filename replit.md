@@ -4,7 +4,9 @@
 
 An interactive Dungeons & Dragons text adventure game leveraging OpenRouter's AI models for dynamic storytelling and intelligent game state management. Players create custom characters, embark on quests, and experience AI-driven narratives with real-time state tracking. The application features a dual-LLM architecture, allowing users to select preferred models for both narrative generation and game state parsing. The project's vision is to deliver an immersive, AI-driven narrative experience that adapts dynamically to player choices, offering high replayability and a personalized D&D adventure.
 
-**Deployment**: Fully static Vite React app deployed to Vercel with serverless API routes. No Express server - all backend logic runs as Vercel serverless functions.
+**Deployment**: Hybrid architecture supporting both local development (Replit) and production deployment (Vercel):
+- **Replit (Development)**: Express server with Vite middleware for local development with full HMR
+- **Vercel (Production)**: Static Vite build with serverless API routes
 
 ## User Preferences
 
@@ -44,12 +46,21 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 
-**Deployment**: Vercel serverless functions (no Express server).
-**API Routes**: All backend logic in `/api` directory as Vercel serverless functions.
+**Dual-Environment Setup**:
+- **Replit Development**: Express server (`server/index.ts`) with Vite middleware on port 5000. All API routes in `server/routes.ts` mirror Vercel functions for seamless local development.
+- **Vercel Production**: Serverless functions in `/api` directory. Static files served from `dist/public/`.
+
+**API Routes**: All backend logic available in both environments:
+- Development: Express routes (`server/routes.ts`)
+- Production: Vercel serverless functions (`/api/*.ts`)
+
 **API Design**: RESTful endpoints proxying OpenRouter API for model fetching and chat completions (streaming via SSE).
-**API Key Management**: Fallback chain for OpenRouter API keys (user-provided > environment variable > Vercel secret).
-**Prompt Management System**: Default prompts stored as markdown files in `/prompts/`, served via `/api/prompts/defaults` (read-only in production). Custom prompts stored client-side in IndexedDB as part of GameConfig.
-**Development Setup**: Vite dev server for local development, Vercel CLI for testing API routes locally.
+**API Key Management**: Fallback chain for OpenRouter API keys (user-provided > environment variable > `OPEN_ROUTER_DEVKEY` secret).
+**Prompt Management System**: Default prompts stored as markdown files in `client/public/prompts/`, served via `/api/prompts/defaults`. Custom prompts stored client-side in IndexedDB as part of GameConfig.
+**Configuration Files**: 
+- `.vercelignore` excludes `server/` directory from Vercel deployment
+- `vite.replit.config.ts` for Replit development
+- `vite.config.ts` for Vercel production builds
 
 ### Multi-Agent LLM Architecture
 

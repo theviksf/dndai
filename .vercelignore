@@ -1,0 +1,20 @@
+# Exclude Express server files (only for local Replit development)
+server/
+
+# Exclude development configs
+vite.replit.config.ts
+.env
+
+# Exclude Replit-specific files
+.replit
+replit.nix
+.config/
+
+# Exclude development files
+node_modules/
+.git/
+*.log
+.DS_Store
+
+# Exclude old prompts directory (now using client/public/prompts/)
+prompts/

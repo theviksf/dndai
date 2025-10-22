@@ -1,0 +1,1239 @@
+// server/index.ts
+import express2 from "express";
+
+// server/routes.ts
+import { createServer } from "http";
+
+// server/storage.ts
+import { randomUUID } from "crypto";
+var MemStorage = class {
+  gameStates;
+  constructor() {
+    this.gameStates = /* @__PURE__ */ new Map();
+  }
+  async getGameState(id) {
+    return this.gameStates.get(id);
+  }
+  async createGameState(insertState) {
+    const id = randomUUID();
+    const now = Date.now();
+    const gameState = {
+      id,
+      state: insertState.state,
+      config: insertState.config,
+      costTracker: insertState.costTracker,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.gameStates.set(id, gameState);
+    return gameState;
+  }
+  async updateGameState(id, updates) {
+    const existing = this.gameStates.get(id);
+    if (!existing) {
+      throw new Error("Game state not found");
+    }
+    const updated = {
+      id: existing.id,
+      state: updates.state || existing.state,
+      config: updates.config || existing.config,
+      costTracker: updates.costTracker || existing.costTracker,
+      createdAt: existing.createdAt,
+      updatedAt: Date.now()
+    };
+    this.gameStates.set(id, updated);
+    return updated;
+  }
+  async deleteGameState(id) {
+    this.gameStates.delete(id);
+  }
+};
+var storage = new MemStorage();
+
+// shared/schema.ts
+import { pgTable, varchar, integer, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+var gameStates = pgTable("game_states", {
+  id: varchar("id").primaryKey(),
+  state: jsonb("state").notNull().$type(),
+  config: jsonb("config").notNull().$type(),
+  costTracker: jsonb("cost_tracker").notNull().$type(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull()
+});
+var insertGameStateSchema = createInsertSchema(gameStates).omit({
+  id: true
+});
+
+// server/r2-storage.ts
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+var R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+var R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+var R2_ENDPOINT = process.env.R2_ENDPOINT;
+var R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
+var R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
+var s3Client = new S3Client({
+  region: "auto",
+  endpoint: R2_ENDPOINT,
+  credentials: {
+    accessKeyId: R2_ACCESS_KEY_ID,
+    secretAccessKey: R2_SECRET_ACCESS_KEY
+  }
+});
+function sanitizeForFilename(str) {
+  return str.replace(/[^a-zA-Z0-9-]/g, "_");
+}
+function generateCharacterFilename(metadata) {
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").split(".")[0];
+  const parts = [
+    sanitizeForFilename(metadata.age || "NA"),
+    sanitizeForFilename(metadata.sex || "NA"),
+    sanitizeForFilename(metadata.race || "NA"),
+    sanitizeForFilename(metadata.job || "NA"),
+    sanitizeForFilename(metadata.mood || "NA")
+  ];
+  const filename = `char_${parts.join("-")}_${metadata.sessionId}_${timestamp}.png`;
+  return filename;
+}
+function generateLocationFilename(metadata) {
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").split(".")[0];
+  const parts = [
+    sanitizeForFilename(metadata.environment || "NA"),
+    sanitizeForFilename(metadata.timeOfDay || "NA"),
+    sanitizeForFilename(metadata.weather || "NA"),
+    sanitizeForFilename(metadata.region || "NA"),
+    sanitizeForFilename(metadata.vibe || "NA")
+  ];
+  const filename = `loc_${parts.join("-")}_${metadata.sessionId}_${timestamp}.png`;
+  return filename;
+}
+function generateBusinessFilename(metadata) {
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").split(".")[0];
+  const parts = [
+    sanitizeForFilename(metadata.name || "NA"),
+    sanitizeForFilename(metadata.type || "shop")
+  ];
+  const filename = `biz_${parts.join("-")}_${metadata.sessionId}_${timestamp}.png`;
+  return filename;
+}
+async function uploadImageToR2(base64Image, filename) {
+  const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+  const buffer = Buffer.from(base64Data, "base64");
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET_NAME,
+    Key: filename,
+    Body: buffer,
+    ContentType: "image/png"
+  });
+  await s3Client.send(command);
+  if (!R2_PUBLIC_URL) {
+    throw new Error("R2_PUBLIC_URL environment variable is not set. Please configure your R2 public URL in Replit Secrets.");
+  }
+  const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
+  return publicUrl;
+}
+
+// server/routes.ts
+import { readFile, writeFile, copyFile } from "fs/promises";
+import { join } from "path";
+var OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || "";
+var RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || "";
+async function registerRoutes(app2) {
+  app2.get("/api/prompts/defaults", async (req, res) => {
+    try {
+      const promptsDir = join(process.cwd(), "prompts");
+      const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore] = await Promise.all([
+        readFile(join(promptsDir, "primary.md"), "utf-8"),
+        readFile(join(promptsDir, "parser.md"), "utf-8"),
+        readFile(join(promptsDir, "image-character.md"), "utf-8"),
+        readFile(join(promptsDir, "image-location.md"), "utf-8"),
+        readFile(join(promptsDir, "backstory.md"), "utf-8"),
+        readFile(join(promptsDir, "revelations.md"), "utf-8"),
+        readFile(join(promptsDir, "lore.md"), "utf-8")
+      ]);
+      res.json({
+        primary,
+        parser,
+        imageCharacter,
+        imageLocation,
+        backstory,
+        revelations,
+        lore
+      });
+    } catch (error) {
+      res.status(500).json({ error: `Failed to load default prompts: ${error.message}` });
+    }
+  });
+  app2.post("/api/prompts/update", async (req, res) => {
+    try {
+      const { promptType, content } = req.body;
+      if (!promptType || !content) {
+        return res.status(400).json({ error: "promptType and content are required" });
+      }
+      const fileMap = {
+        primary: "primary.md",
+        parser: "parser.md",
+        imageCharacter: "image-character.md",
+        imageLocation: "image-location.md",
+        backstory: "backstory.md",
+        revelations: "revelations.md",
+        lore: "lore.md"
+      };
+      const filename = fileMap[promptType];
+      if (!filename) {
+        return res.status(400).json({ error: "Invalid promptType. Must be one of: primary, parser, imageCharacter, imageLocation, backstory, revelations, lore" });
+      }
+      const promptsDir = join(process.cwd(), "prompts");
+      const filepath = join(promptsDir, filename);
+      const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").slice(0, -5);
+      const backupFilename = filename.replace(".md", `-${timestamp}.md`);
+      const backupPath = join(promptsDir, backupFilename);
+      let backupCreated = false;
+      try {
+        await copyFile(filepath, backupPath);
+        backupCreated = true;
+        console.log(`[PROMPT UPDATE] Created backup: ${backupFilename}`);
+      } catch (copyError) {
+        if (copyError.code === "ENOENT") {
+          console.log(`[PROMPT UPDATE] No existing file to backup (creating new file: ${filename})`);
+        } else {
+          console.error("[PROMPT UPDATE] Failed to create backup:", copyError.message);
+          return res.status(500).json({
+            error: `Failed to create backup: ${copyError.message}. Update aborted to prevent data loss.`,
+            backupCreated: false
+          });
+        }
+      }
+      await writeFile(filepath, content, "utf-8");
+      console.log(`[PROMPT UPDATE] Updated ${filename}`);
+      res.json({
+        success: true,
+        backupCreated: backupCreated ? backupFilename : null,
+        message: backupCreated ? `Updated ${filename} and created backup ${backupFilename}` : `Created new file ${filename} (no backup needed)`
+      });
+    } catch (error) {
+      console.error("[PROMPT UPDATE] Error:", error.message);
+      res.status(500).json({ error: `Failed to update prompt: ${error.message}` });
+    }
+  });
+  app2.post("/api/models", async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      const key = apiKey || OPENROUTER_API_KEY;
+      if (!key) {
+        return res.status(400).json({ error: "API key required" });
+      }
+      const response = await fetch("https://openrouter.ai/api/v1/models", {
+        headers: {
+          "Authorization": `Bearer ${key}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/llm/chat", async (req, res) => {
+    const { modelId, messages, systemPrompt, maxTokens = 1e3, apiKey } = req.body;
+    try {
+      const key = apiKey || OPENROUTER_API_KEY;
+      if (!key) {
+        return res.status(400).json({ error: "API key required" });
+      }
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "HTTP-Referer": req.headers.referer || "http://localhost:5000",
+          "X-Title": "D&D Adventure Game",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages
+          ],
+          max_tokens: maxTokens,
+          temperature: 0.7,
+          route: "fallback"
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenRouter API error: ${errorData.error?.message || "Unknown error"}`);
+      }
+      const data = await response.json();
+      res.json({
+        content: data.choices[0].message.content,
+        usage: data.usage,
+        model: data.model
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/llm/chat/stream", async (req, res) => {
+    const { modelId, messages, systemPrompt, maxTokens = 1e3, apiKey } = req.body;
+    try {
+      const key = apiKey || OPENROUTER_API_KEY;
+      if (!key) {
+        return res.status(400).json({ error: "API key required" });
+      }
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "HTTP-Referer": req.headers.referer || "http://localhost:5000",
+          "X-Title": "D&D Adventure Game",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages
+          ],
+          max_tokens: maxTokens,
+          temperature: 0.7,
+          route: "fallback",
+          stream: true
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenRouter API error: ${errorData.error?.message || "Unknown error"}`);
+      }
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value);
+            res.write(chunk);
+          }
+          res.end();
+        } catch (error) {
+          console.error("Streaming error:", error);
+          res.end();
+        }
+      } else {
+        res.end();
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/generate-backstory", async (req, res) => {
+    try {
+      const { systemPrompt, context, entity, entityType, model, apiKey } = req.body;
+      const key = apiKey || OPENROUTER_API_KEY;
+      if (!key) {
+        return res.status(400).json({ error: "API key required" });
+      }
+      const fullPrompt = `${systemPrompt}
+
+# Context for this ${entityType}
+
+${context}
+
+# Entity to create backstory for:
+${JSON.stringify(entity, null, 2)}
+
+Generate a detailed, rich backstory for this ${entityType}. Remember to return ONLY raw JSON with a "backstory" field.`;
+      console.log("[BACKSTORY GEN] Generating backstory for", entityType, "using model", model);
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "HTTP-Referer": req.headers.referer || "http://localhost:5000",
+          "X-Title": "D&D Adventure Game",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: model || "deepseek/deepseek-chat-v3.1",
+          messages: [
+            {
+              role: "user",
+              content: fullPrompt
+            }
+          ],
+          max_tokens: 1e3,
+          temperature: 0.8
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("[BACKSTORY GEN] OpenRouter API error:", errorData);
+        return res.status(response.status).json({
+          error: `OpenRouter API error: ${errorData.error?.message || "Unknown error"}`,
+          fullPrompt,
+          rawResponse: JSON.stringify(errorData, null, 2)
+        });
+      }
+      const data = await response.json();
+      const rawContent = data.choices[0].message.content;
+      console.log("[BACKSTORY GEN] Raw response:", rawContent.substring(0, 200));
+      let parsedData;
+      try {
+        const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || rawContent.match(/(\{[\s\S]*\})/);
+        const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
+        parsedData = JSON.parse(jsonStr);
+      } catch (parseError) {
+        console.error("[BACKSTORY GEN] Failed to parse JSON:", parseError);
+        return res.status(500).json({
+          error: "Failed to parse backstory JSON from LLM response",
+          fullPrompt,
+          rawResponse: rawContent
+        });
+      }
+      let backstory = parsedData.backstory || null;
+      if (backstory && typeof backstory === "object") {
+        console.log("[BACKSTORY GEN] Converting object backstory to string");
+        backstory = Object.entries(backstory).map(([key2, value]) => {
+          const label = key2.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+          return `**${label}**: ${value}`;
+        }).join("\n\n");
+      }
+      res.json({
+        backstory,
+        usage: data.usage,
+        model: data.model,
+        fullPrompt,
+        rawResponse: rawContent
+      });
+    } catch (error) {
+      console.error("[BACKSTORY GEN] Error:", error.message);
+      res.status(500).json({
+        error: error.message,
+        fullPrompt: req.body.systemPrompt || "Prompt not available",
+        rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+      });
+    }
+  });
+  app2.post("/api/generate-lore", async (req, res) => {
+    try {
+      const { systemPrompt, context, gameState, model, apiKey } = req.body;
+      const key = apiKey || OPENROUTER_API_KEY;
+      if (!key) {
+        return res.status(400).json({ error: "API key required" });
+      }
+      const fullPrompt = `${systemPrompt}
+
+# Current Game Context
+
+${context}
+
+Generate comprehensive world lore based on the current game context. Write your response in rich Markdown format with headers, paragraphs, and lists as appropriate. Do NOT use JSON - write the lore content directly as formatted text.`;
+      console.log("[LORE GEN] Generating world lore using model", model);
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "HTTP-Referer": req.headers.referer || "http://localhost:5000",
+          "X-Title": "D&D Adventure Game",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: model || "deepseek/deepseek-chat-v3.1",
+          messages: [
+            {
+              role: "user",
+              content: fullPrompt
+            }
+          ],
+          max_tokens: 2e3,
+          temperature: 0.7
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("[LORE GEN] OpenRouter API error:", errorData);
+        return res.status(response.status).json({
+          error: `OpenRouter API error: ${errorData.error?.message || "Unknown error"}`,
+          fullPrompt,
+          rawResponse: JSON.stringify(errorData, null, 2)
+        });
+      }
+      const data = await response.json();
+      const rawContent = data.choices[0].message.content;
+      console.log("[LORE GEN] Raw response:", rawContent.substring(0, 200));
+      let worldLore = rawContent.trim();
+      worldLore = worldLore.replace(/^```(?:markdown|md)?\s*\n/i, "").replace(/\n```\s*$/i, "");
+      res.json({
+        worldLore,
+        usage: data.usage,
+        model: data.model,
+        fullPrompt,
+        rawResponse: rawContent
+      });
+    } catch (error) {
+      console.error("[LORE GEN] Error:", error.message);
+      res.status(500).json({
+        error: error.message,
+        fullPrompt: req.body.systemPrompt || "Prompt not available",
+        rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+      });
+    }
+  });
+  app2.post("/api/chat/revelations", async (req, res) => {
+    try {
+      const { systemPrompt, narrative, gameState, model, apiKey } = req.body;
+      const key = apiKey || OPENROUTER_API_KEY;
+      if (!key) {
+        return res.status(400).json({ error: "API key required" });
+      }
+      const context = buildRevelationsContext(narrative, gameState);
+      const fullPrompt = `${systemPrompt}
+
+# Narrative Response
+
+${narrative}
+
+# Game Context
+
+${context}
+
+Analyze the narrative and extract any revelations. Remember to return ONLY raw JSON with a "revelations" array.`;
+      console.log("[REVELATIONS] Tracking revelations using model", model);
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "HTTP-Referer": req.headers.referer || "http://localhost:5000",
+          "X-Title": "D&D Adventure Game",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: model || "deepseek/deepseek-chat-v3.1",
+          messages: [
+            {
+              role: "user",
+              content: fullPrompt
+            }
+          ],
+          max_tokens: 800,
+          temperature: 0.3
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("[REVELATIONS] OpenRouter API error:", errorData);
+        return res.status(response.status).json({
+          error: `OpenRouter API error: ${errorData.error?.message || "Unknown error"}`,
+          fullPrompt,
+          rawResponse: JSON.stringify(errorData, null, 2)
+        });
+      }
+      const data = await response.json();
+      const rawContent = data.choices[0].message.content;
+      console.log("[REVELATIONS] Raw response:", rawContent.substring(0, 200));
+      let parsedData;
+      try {
+        const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || rawContent.match(/(\{[\s\S]*\})/);
+        const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
+        parsedData = JSON.parse(jsonStr);
+      } catch (parseError) {
+        console.error("[REVELATIONS] Failed to parse JSON:", parseError);
+        return res.status(500).json({
+          error: "Failed to parse revelations JSON from LLM response",
+          fullPrompt,
+          rawResponse: rawContent
+        });
+      }
+      const rawRevelations = parsedData.revelations || [];
+      const processedRevelations = [];
+      rawRevelations.forEach((rev) => {
+        if (rev.entityType && rev.entityId && rev.text) {
+          processedRevelations.push(rev);
+          return;
+        }
+        const content = rev.content || rev.text || "";
+        const type = rev.type || "";
+        let entityType = null;
+        let entityId = null;
+        let entityName = null;
+        if (type.includes("location") || type.includes("geography")) {
+          if (gameState.location && content.includes(gameState.location.name)) {
+            entityType = "location";
+            entityId = gameState.location.name;
+            entityName = gameState.location.name;
+          }
+        }
+        if (type.includes("business")) {
+          if (gameState.businesses && gameState.businesses.length > 0) {
+            const business = gameState.businesses.find(
+              (b) => content.toLowerCase().includes(b.name.toLowerCase())
+            );
+            if (business) {
+              entityType = "business";
+              entityId = business.id;
+              entityName = business.name;
+            }
+          }
+        }
+        if (type.includes("relationship") || type.includes("character_trait")) {
+          if (gameState.encounteredCharacters && gameState.encounteredCharacters.length > 0) {
+            const npc = gameState.encounteredCharacters.find(
+              (n) => content.toLowerCase().includes(n.name.toLowerCase())
+            );
+            if (npc) {
+              entityType = "npc";
+              entityId = npc.id;
+              entityName = npc.name;
+            }
+          }
+        }
+        if (gameState.companions && gameState.companions.length > 0) {
+          const companion = gameState.companions.find(
+            (c) => content.toLowerCase().includes(c.name.toLowerCase())
+          );
+          if (companion) {
+            entityType = "companion";
+            entityId = companion.id;
+            entityName = companion.name;
+          }
+        }
+        if (gameState.character && content.toLowerCase().includes(gameState.character.name.toLowerCase())) {
+          entityType = "character";
+          entityId = "character";
+          entityName = gameState.character.name;
+        }
+        if (entityType && entityId) {
+          processedRevelations.push({
+            entityType,
+            entityId,
+            entityName,
+            text: content,
+            revealedAtTurn: gameState.turnCount || 0
+          });
+        } else {
+          console.log(`[REVELATIONS] Could not match revelation to entity: ${type} - ${content.substring(0, 50)}...`);
+        }
+      });
+      res.json({
+        revelations: processedRevelations,
+        usage: data.usage,
+        model: data.model,
+        fullPrompt,
+        rawResponse: rawContent
+      });
+    } catch (error) {
+      console.error("[REVELATIONS] Error:", error.message);
+      res.status(500).json({
+        error: error.message,
+        fullPrompt: req.body.systemPrompt || "Prompt not available",
+        rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+      });
+    }
+  });
+  function buildRevelationsContext(narrative, gameState) {
+    const sections = [];
+    sections.push(`# Turn Count: ${gameState.turnCount || 0}`);
+    sections.push("");
+    sections.push("# Player Character");
+    sections.push(`Name: ${gameState.character.name}`);
+    if (gameState.character.backstory) {
+      sections.push(`Backstory: ${gameState.character.backstory.substring(0, 300)}...`);
+    }
+    if (gameState.character.revelations && gameState.character.revelations.length > 0) {
+      sections.push("Existing Revelations:");
+      gameState.character.revelations.forEach((rev) => {
+        sections.push(`- Turn ${rev.revealedAtTurn || "?"}: ${rev.text}`);
+      });
+    }
+    sections.push("");
+    if (gameState.companions && gameState.companions.length > 0) {
+      sections.push("# Companions");
+      gameState.companions.forEach((comp) => {
+        sections.push(`## ${comp.name} (ID: ${comp.id})`);
+        if (comp.backstory) {
+          sections.push(`Backstory: ${comp.backstory.substring(0, 300)}...`);
+        }
+        if (comp.revelations && comp.revelations.length > 0) {
+          sections.push("Existing Revelations:");
+          comp.revelations.forEach((rev) => {
+            sections.push(`- Turn ${rev.revealedAtTurn || "?"}: ${rev.text}`);
+          });
+        }
+        sections.push("");
+      });
+    }
+    if (gameState.encounteredCharacters && gameState.encounteredCharacters.length > 0) {
+      sections.push("# Encountered Characters (NPCs)");
+      gameState.encounteredCharacters.forEach((npc) => {
+        sections.push(`## ${npc.name} (ID: ${npc.id})`);
+        if (npc.backstory) {
+          sections.push(`Backstory: ${npc.backstory.substring(0, 300)}...`);
+        }
+        if (npc.revelations && npc.revelations.length > 0) {
+          sections.push("Existing Revelations:");
+          npc.revelations.forEach((rev) => {
+            sections.push(`- Turn ${rev.revealedAtTurn || "?"}: ${rev.text}`);
+          });
+        }
+        sections.push("");
+      });
+    }
+    sections.push("# Current Location");
+    sections.push(`Name: ${gameState.location.name}`);
+    if (gameState.location.backstory) {
+      sections.push(`Backstory: ${gameState.location.backstory.substring(0, 300)}...`);
+    }
+    if (gameState.location.revelations && gameState.location.revelations.length > 0) {
+      sections.push("Existing Revelations:");
+      gameState.location.revelations.forEach((rev) => {
+        sections.push(`- Turn ${rev.revealedAtTurn || "?"}: ${rev.text}`);
+      });
+    }
+    sections.push("");
+    if (gameState.previousLocations && gameState.previousLocations.length > 0) {
+      sections.push("# Previous Locations");
+      gameState.previousLocations.slice(-3).forEach((loc) => {
+        sections.push(`## ${loc.name}`);
+        if (loc.backstory) {
+          sections.push(`Backstory: ${loc.backstory.substring(0, 200)}...`);
+        }
+        if (loc.revelations && loc.revelations.length > 0) {
+          sections.push("Existing Revelations:");
+          loc.revelations.forEach((rev) => {
+            sections.push(`- Turn ${rev.revealedAtTurn || "?"}: ${rev.text}`);
+          });
+        }
+        sections.push("");
+      });
+    }
+    return sections.join("\n");
+  }
+  function sanitizeImageResponse(data) {
+    const sanitized = JSON.parse(JSON.stringify(data));
+    if (sanitized.choices && Array.isArray(sanitized.choices)) {
+      sanitized.choices = sanitized.choices.map((choice) => {
+        if (!choice.message) return choice;
+        const msg = choice.message;
+        if (typeof msg.content === "string" && msg.content.startsWith("data:image")) {
+          msg.content = "[Base64 image data removed - stored in R2]";
+        }
+        if (Array.isArray(msg.content)) {
+          msg.content = msg.content.map((item) => {
+            if (item.image_base64) {
+              return { ...item, image_base64: "[Base64 removed]" };
+            }
+            if (item.url && item.url.startsWith("data:image")) {
+              return { ...item, url: "[Base64 removed]" };
+            }
+            if (item.image_url?.url && item.image_url.url.startsWith("data:image")) {
+              return { ...item, image_url: { ...item.image_url, url: "[Base64 removed]" } };
+            }
+            return item;
+          });
+        }
+        if (msg.images && Array.isArray(msg.images)) {
+          msg.images = msg.images.map((img) => {
+            if (img.image_base64) {
+              return { ...img, image_base64: "[Base64 removed]" };
+            }
+            if (img.url && img.url.startsWith("data:image")) {
+              return { ...img, url: "[Base64 removed]" };
+            }
+            if (img.image_url?.url && img.image_url.url.startsWith("data:image")) {
+              return { ...img, image_url: { ...img.image_url, url: "[Base64 removed]" } };
+            }
+            return img;
+          });
+        }
+        return { ...choice, message: msg };
+      });
+    }
+    return sanitized;
+  }
+  app2.post("/api/generate-image", async (req, res) => {
+    try {
+      const { entityType, entity, promptTemplate, apiKey, sessionId, provider = "flux" } = req.body;
+      const entityData = entity;
+      const openRouterKey = apiKey || OPENROUTER_API_KEY;
+      const runPodKey = RUNPOD_API_KEY;
+      console.log("[IMAGE GEN] Request:", {
+        entityType,
+        entityName: entityData?.name,
+        provider,
+        hasOpenRouterKey: !!openRouterKey,
+        hasRunPodKey: !!runPodKey,
+        promptTemplateLength: promptTemplate?.length
+      });
+      if (provider === "flux" && !runPodKey) {
+        console.error("[IMAGE GEN] Error: No RunPod API key available for Flux provider");
+        return res.status(400).json({
+          error: "RunPod API key required for Flux image generation",
+          filledPrompt: promptTemplate || "No template provided"
+        });
+      }
+      if (provider === "gemini" && !openRouterKey) {
+        console.error("[IMAGE GEN] Error: No OpenRouter API key available for Gemini provider");
+        return res.status(400).json({
+          error: "OpenRouter API key required for Gemini image generation",
+          filledPrompt: promptTemplate || "No template provided"
+        });
+      }
+      if (!promptTemplate) {
+        console.error("[IMAGE GEN] Error: No prompt template provided");
+        return res.status(400).json({
+          error: "Prompt template required",
+          filledPrompt: "No template provided"
+        });
+      }
+      let filledPrompt = promptTemplate;
+      if (entityType === "character" || entityType === "companion" || entityType === "npc") {
+        filledPrompt = filledPrompt.replace(/\[age\]/g, entityData.age || "").replace(/\[sex\]/g, entityData.sex || "").replace(/\[race\]/g, entityData.race || "").replace(/\[class\]/g, entityData.class || "").replace(/\[role\]/g, entityData.role || "").replace(/\[name\]/g, entityData.name || "").replace(/\[hair_color\]/g, entityData.hairColor || "").replace(/\[outfit\]/g, entityData.outfit || "").replace(/\[body_type\]/g, entityData.bodyType || "").replace(/\[appearance\]/g, entityData.appearance || entityData.personality || "").replace(/\[description\]/g, entityData.description || "").replace(/\[brief description of expression\/specific gear\/personality trait\]/g, entityData.appearance || entityData.description || entityData.personality || "");
+      } else if (entityType === "location" || entityType === "business") {
+        filledPrompt = filledPrompt.replace(/\[location_name\]/g, entityData.name || "unknown location").replace(/\[location_description\]/g, entityData.description || "a mysterious place").replace(/\[notable landmarks or characteristics\]/g, entityData.landmarks || "unique features");
+      }
+      console.log("[IMAGE GEN] Filled prompt:", filledPrompt.substring(0, 200) + "...");
+      let imageUrl = null;
+      let usage = null;
+      let model = "";
+      if (provider === "flux") {
+        console.log("[IMAGE GEN] Using Flux 1.1 Schnell via RunPod");
+        const runPodResponse = await fetch("https://api.runpod.ai/v2/black-forest-labs-flux-1-schnell/run", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${runPodKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            input: {
+              prompt: filledPrompt,
+              seed: -1,
+              num_inference_steps: 4,
+              guidance: 7,
+              negative_prompt: "",
+              image_format: "png",
+              width: 512,
+              height: 512
+            }
+          })
+        });
+        if (!runPodResponse.ok) {
+          const errorData = await runPodResponse.json();
+          console.error("[IMAGE GEN] RunPod API error:", errorData);
+          return res.status(runPodResponse.status).json({
+            error: `RunPod API error: ${errorData.error || "Unknown error"}`,
+            filledPrompt,
+            rawResponse: JSON.stringify(errorData, null, 2)
+          });
+        }
+        const runPodData = await runPodResponse.json();
+        console.log("[IMAGE GEN] RunPod response:", {
+          status: runPodData.status,
+          id: runPodData.id
+        });
+        const jobId = runPodData.id;
+        let jobComplete = false;
+        let attempts = 0;
+        const maxAttempts = 30;
+        while (!jobComplete && attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 1e3));
+          attempts++;
+          const statusResponse = await fetch(`https://api.runpod.ai/v2/black-forest-labs-flux-1-schnell/status/${jobId}`, {
+            headers: {
+              "Authorization": `Bearer ${runPodKey}`
+            }
+          });
+          const statusData = await statusResponse.json();
+          console.log(`[IMAGE GEN] RunPod job status (attempt ${attempts}):`, statusData.status);
+          if (statusData.status === "COMPLETED") {
+            jobComplete = true;
+            if (statusData.output?.image_url) {
+              const runPodImageUrl = statusData.output.image_url;
+              console.log("[IMAGE GEN] RunPod image URL:", runPodImageUrl);
+              try {
+                const imageResponse = await fetch(runPodImageUrl);
+                if (!imageResponse.ok) {
+                  throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+                }
+                const imageBuffer = await imageResponse.arrayBuffer();
+                const base64Image = Buffer.from(imageBuffer).toString("base64");
+                imageUrl = `data:image/png;base64,${base64Image}`;
+                console.log("[IMAGE GEN] Successfully fetched and converted image to base64");
+              } catch (fetchError) {
+                console.error("[IMAGE GEN] Failed to fetch RunPod image:", fetchError.message);
+              }
+            } else {
+              console.error("[IMAGE GEN] No image_url in RunPod output:", JSON.stringify(statusData.output, null, 2).substring(0, 500));
+            }
+            model = "flux-1.1-schnell";
+            usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+          } else if (statusData.status === "FAILED") {
+            console.error("[IMAGE GEN] RunPod job failed:", statusData.error);
+            return res.status(500).json({
+              error: `RunPod job failed: ${statusData.error || "Unknown error"}`,
+              filledPrompt,
+              rawResponse: JSON.stringify(statusData, null, 2)
+            });
+          }
+        }
+        if (!jobComplete) {
+          console.error("[IMAGE GEN] RunPod job timeout after", attempts, "attempts");
+          return res.status(504).json({
+            error: "RunPod job timeout - image generation took too long",
+            filledPrompt
+          });
+        }
+      } else {
+        console.log("[IMAGE GEN] Using Gemini 2.5 Flash via OpenRouter");
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${openRouterKey}`,
+            "HTTP-Referer": req.headers.referer || "http://localhost:5000",
+            "X-Title": "D&D Adventure Game",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: filledPrompt
+              }
+            ],
+            max_tokens: 1e3,
+            temperature: 0.9
+          })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("[IMAGE GEN] OpenRouter API error:", errorData);
+          return res.status(response.status).json({
+            error: `OpenRouter API error: ${errorData.error?.message || "Unknown error"}`,
+            filledPrompt,
+            rawResponse: JSON.stringify(errorData, null, 2)
+          });
+        }
+        const data = await response.json();
+        console.log("[IMAGE GEN] OpenRouter response:", {
+          model: data.model,
+          hasChoices: !!data.choices,
+          choicesLength: data.choices?.length,
+          messageContentType: typeof data.choices?.[0]?.message?.content,
+          isContentArray: Array.isArray(data.choices?.[0]?.message?.content),
+          usage: data.usage
+        });
+        model = data.model || "google/gemini-2.5-flash-image-preview";
+        usage = data.usage;
+        const message = data.choices[0].message;
+        if (message.images && Array.isArray(message.images) && message.images.length > 0) {
+          const firstImage = message.images[0];
+          if (firstImage.image_url?.url) {
+            imageUrl = firstImage.image_url.url;
+          } else if (firstImage.url) {
+            imageUrl = firstImage.url;
+          }
+        }
+        if (!imageUrl) {
+          const content = message.content;
+          if (Array.isArray(content)) {
+            const imageContent = content.find(
+              (item) => item.type === "output_image" || item.type === "image_url"
+            );
+            if (imageContent) {
+              if (imageContent.image_url?.url) {
+                imageUrl = imageContent.image_url.url;
+              } else if (imageContent.url) {
+                imageUrl = imageContent.url;
+              } else if (imageContent.image_base64) {
+                imageUrl = `data:image/png;base64,${imageContent.image_base64}`;
+              }
+            }
+          } else if (typeof content === "string") {
+            const urlMatch = content.match(/https?:\/\/[^\s]+/);
+            if (urlMatch) {
+              imageUrl = urlMatch[0];
+            } else if (content.startsWith("data:image")) {
+              imageUrl = content;
+            }
+          }
+        }
+        const sanitizedData = sanitizeImageResponse(data);
+        if (!imageUrl) {
+          console.error("[IMAGE GEN] Failed to extract image URL from response");
+          res.json({
+            imageUrl: null,
+            usage: data.usage,
+            model: data.model,
+            filledPrompt,
+            rawResponse: JSON.stringify(sanitizedData, null, 2)
+          });
+          return;
+        }
+        console.log("[IMAGE GEN] Successfully extracted image URL:", imageUrl.substring(0, 100) + "...");
+      }
+      let r2ImageUrl = null;
+      try {
+        let filename;
+        if (entityType === "location") {
+          const locationMetadata = {
+            environment: entityData.environment || entityData.type || "unknown",
+            timeOfDay: entityData.timeOfDay || "day",
+            weather: entityData.weather,
+            region: entityData.region || entityData.name,
+            vibe: entityData.vibe || entityData.atmosphere || "neutral",
+            sessionId: sessionId || "default"
+          };
+          filename = generateLocationFilename(locationMetadata);
+        } else if (entityType === "business") {
+          const businessMetadata = {
+            name: entityData.name || "business",
+            type: entityData.type || "shop",
+            sessionId: sessionId || "default"
+          };
+          filename = generateBusinessFilename(businessMetadata);
+        } else {
+          const characterMetadata = {
+            age: entityData.age?.toString() || "NA",
+            sex: entityData.sex || entityData.gender || "NA",
+            race: entityData.race || "NA",
+            job: entityData.class || entityData.job || entityData.role || "NA",
+            mood: entityData.mood || entityData.expression,
+            sessionId: sessionId || "default"
+          };
+          filename = generateCharacterFilename(characterMetadata);
+        }
+        console.log("[R2 UPLOAD] Uploading image with filename:", filename);
+        r2ImageUrl = await uploadImageToR2(imageUrl, filename);
+        console.log("[R2 UPLOAD] Successfully uploaded to R2:", r2ImageUrl);
+      } catch (uploadError) {
+        console.error("[R2 UPLOAD] Failed to upload to R2:", uploadError.message);
+        r2ImageUrl = null;
+      }
+      res.json({
+        imageUrl: r2ImageUrl,
+        usage,
+        model,
+        filledPrompt
+      });
+    } catch (error) {
+      console.error("[IMAGE GEN] Error:", error.message);
+      res.status(500).json({
+        error: error.message,
+        filledPrompt: req.body.promptTemplate || "Template not available",
+        rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+      });
+    }
+  });
+  app2.get("/api/game/:id", async (req, res) => {
+    try {
+      const gameState = await storage.getGameState(req.params.id);
+      if (!gameState) {
+        return res.status(404).json({ error: "Game state not found" });
+      }
+      res.json(gameState);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/game", async (req, res) => {
+    try {
+      const validated = insertGameStateSchema.parse(req.body);
+      const gameState = await storage.createGameState(validated);
+      res.json(gameState);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  app2.patch("/api/game/:id", async (req, res) => {
+    try {
+      const gameState = await storage.updateGameState(req.params.id, req.body);
+      res.json(gameState);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.delete("/api/game/:id", async (req, res) => {
+    try {
+      await storage.deleteGameState(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  const httpServer = createServer(app2);
+  return httpServer;
+}
+
+// server/vite.ts
+import express from "express";
+import fs from "fs";
+import path2 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+var vite_config_default = defineConfig({
+  plugins: [
+    react(),
+    runtimeErrorOverlay(),
+    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+      await import("@replit/vite-plugin-cartographer").then(
+        (m) => m.cartographer()
+      ),
+      await import("@replit/vite-plugin-dev-banner").then(
+        (m) => m.devBanner()
+      )
+    ] : []
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+    }
+  },
+  root: path.resolve(import.meta.dirname, "client"),
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true
+  },
+  server: {
+    fs: {
+      strict: true,
+      deny: ["**/.*"]
+    }
+  }
+});
+
+// server/vite.ts
+import { nanoid } from "nanoid";
+var viteLogger = createLogger();
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+async function setupVite(app2, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    try {
+      const clientTemplate = path2.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app2) {
+  const distPath = path2.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express.static(distPath));
+  app2.use("*", (_req, res) => {
+    res.sendFile(path2.resolve(distPath, "index.html"));
+  });
+}
+
+// server/index.ts
+var app = express2();
+app.use(express2.json({
+  limit: "10mb",
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(express2.urlencoded({ extended: false, limit: "10mb" }));
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path3 = req.path;
+  let capturedJsonResponse = void 0;
+  const originalResJson = res.json;
+  res.json = function(bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path3.startsWith("/api")) {
+      let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "\u2026";
+      }
+      log(logLine);
+    }
+  });
+  next();
+});
+(async () => {
+  const server = await registerRoutes(app);
+  app.use((err, _req, res, _next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
+  app.use("/images", express2.static("images"));
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  const port = parseInt(process.env.PORT || "5000", 10);
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true
+  }, () => {
+    log(`serving on port ${port}`);
+  });
+})();

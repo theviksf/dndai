@@ -544,7 +544,8 @@ router.post('/generate-image', async (req: Request, res: Response) => {
 // 8. GET /api/prompts/defaults - Load default prompts from filesystem
 router.get('/prompts/defaults', async (req: Request, res: Response) => {
   try {
-    const promptsDir = join(process.cwd(), 'prompts');
+    // Prompts are stored in client/public/prompts/ for static serving and API access
+    const promptsDir = join(process.cwd(), 'client', 'public', 'prompts');
     
     // Load all prompts from markdown files
     const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore] = await Promise.all([

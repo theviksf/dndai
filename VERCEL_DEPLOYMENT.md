@@ -1,199 +1,253 @@
 # Vercel Deployment Guide
 
-This project has been refactored from an Express + Vite full-stack app to a fully static Vite React app with Vercel serverless API routes.
+This D&D Adventure Game uses a **hybrid architecture** that works in both environments:
+- **Replit (Development)**: Express server with Vite middleware for local development
+- **Vercel (Production)**: Static Vite build + Serverless API routes
 
-## Architecture Changes
+## Architecture Overview
 
-### Before (Express)
-- Express server handling API routes and serving static files
-- Server-side game state storage (MemStorage)
-- Vite middleware for development
-- Single server process handling everything
+### Local Development (Replit)
+- Express server (`server/index.ts`) serves the app on port 5000
+- Vite runs in middleware mode for Hot Module Replacement (HMR)
+- API routes handled by Express router (`server/routes.ts`)
+- Uses `vite.replit.config.ts` configuration
+- Start with: `npm run dev`
 
-### After (Vercel)
-- Static Vite React app (client-only)
-- Vercel serverless functions in `/api` directory
-- IndexedDB for all data persistence (client-side)
-- No server process - fully static deployment
+### Production (Vercel)
+- Static files built from `client/` directory to `dist/public/`
+- Serverless functions in `/api` directory handle all backend logic
+- No Express server (excluded via `.vercelignore`)
+- Uses `vite.config.ts` configuration
+- Build with: `vite build --config vite.config.ts`
 
-## API Routes
+## Files Configured for Vercel
 
-All backend functionality has been converted to Vercel serverless functions in the `/api` directory:
+### 1. `.vercelignore`
+Excludes development-only files from deployment:
+```
+server/                  # Express server (Replit only)
+vite.replit.config.ts   # Replit-specific Vite config
+.env                    # Local environment variables
+.replit, replit.nix     # Replit configuration
+prompts/                # Old prompts location (now in client/public/prompts/)
+```
 
-- `/api/models.ts` - Fetch OpenRouter models
+### 2. `vercel.json`
+```json
+{
+  "buildCommand": "vite build --config vite.config.ts",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+### 3. Serverless API Routes (`/api`)
+All backend functionality as Vercel serverless functions:
+
+- `/api/models.ts` - Fetch available OpenRouter models
 - `/api/llm/chat.ts` - Non-streaming LLM chat completions
-- `/api/llm/chat/stream.ts` - Streaming LLM chat completions
+- `/api/llm/chat/stream.ts` - Streaming LLM chat completions with SSE
 - `/api/generate-backstory.ts` - Generate entity backstories
-- `/api/generate-lore.ts` - Generate world lore
-- `/api/chat/revelations.ts` - Track backstory revelations
-- `/api/generate-image.ts` - Generate images (RunPod Flux + Gemini)
-- `/api/prompts/defaults.ts` - Load default prompts from filesystem
+- `/api/generate-lore.ts` - Generate world lore and mythology
+- `/api/chat/revelations.ts` - Extract and track backstory revelations
+- `/api/generate-image.ts` - Generate AI images via Gemini 2.5 Flash
+- `/api/prompts/defaults.ts` - Load default system prompts from filesystem
+
+**Important**: Each serverless function reads prompts from `client/public/prompts/` (not root `prompts/`)
+
+### 4. Static Assets
+- **Frontend**: Built to `dist/public/` by Vite
+- **Prompts**: Served from `client/public/prompts/` (accessible at `/prompts/*.md`)
+- **Images**: Imported from `attached_assets/` via `@assets` alias
+- **Storage**: All game data stored in browser IndexedDB
 
 ## Environment Variables
 
-Set these in Vercel dashboard (Settings → Environment Variables):
+Set these in **Vercel Dashboard → Settings → Environment Variables**:
 
 ### Required for LLM Features
-- `OPENROUTER_API_KEY` - OpenRouter API key for LLM access
-- `OPEN_ROUTER_DEVKEY` - Alternative OpenRouter key (fallback)
+- `OPENROUTER_API_KEY` - Your OpenRouter API key
+- `OPEN_ROUTER_DEVKEY` - Fallback OpenRouter key (optional but recommended)
 
-### Required for Flux Image Generation
-- `RUNPOD_API_KEY` - RunPod API key for Flux 1.1 Schnell
-
-### Required for Image Storage (Cloudflare R2)
-- `R2_ACCESS_KEY_ID` - Cloudflare R2 access key
-- `R2_SECRET_ACCESS_KEY` - Cloudflare R2 secret key
-- `R2_ENDPOINT` - R2 endpoint URL (e.g., `https://ACCOUNT_ID.r2.cloudflarestorage.com`)
+### Optional (for Cloudflare R2 Image Storage)
+- `R2_ACCESS_KEY_ID` - Cloudflare R2 access key ID
+- `R2_SECRET_ACCESS_KEY` - Cloudflare R2 secret access key
+- `R2_ENDPOINT` - R2 endpoint URL (e.g., `https://abc123.r2.cloudflarestorage.com`)
 - `R2_BUCKET_NAME` - R2 bucket name
-- `R2_PUBLIC_URL` - Public URL for R2 bucket (e.g., `https://BUCKET.ACCOUNT.r2.dev`)
+- `R2_PUBLIC_URL` - Public URL for accessing images (e.g., `https://pub-xyz.r2.dev`)
 
-## Important Notes
-
-### Build Script
-The `package.json` still contains the old build script with esbuild (for the removed Express server). **This is intentional** - Vercel uses the `buildCommand` from `vercel.json` instead, which is set to `vite build`.
-
-If you want to build locally, use:
-```bash
-vite build
-```
-
-Or update the build script in `package.json` to:
-```json
-"build": "vite build"
-```
+**Note**: Without R2 credentials, image generation will fail but the game will still work.
 
 ## Deployment Steps
 
-1. **Push code to GitHub/GitLab/Bitbucket**
-
-2. **Import project in Vercel**
-   - Go to vercel.com
-   - Click "New Project"
-   - Import your repository
-
-3. **Configure environment variables**
-   - Add all required environment variables listed above
-   - Make sure to add them for all environments (Production, Preview, Development)
-
-4. **Deploy**
-   - Vercel will automatically detect the configuration from `vercel.json`
-   - Build command: `npm run build` (or `vite build`)
-   - Output directory: `dist/public`
-   - Install command: `npm install`
-
-5. **Verify deployment**
-   - Check that the static site loads
-   - Test API routes by trying to load models or generate content
-   - Verify IndexedDB persistence works
-
-## Development
-
-### Local Development
+### 1. Push to Git Repository
 ```bash
-npm install
+git add .
+git commit -m "Ready for Vercel deployment"
+git push
+```
+
+### 2. Import to Vercel
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Click "Import Project"
+3. Select your Git repository
+4. Vercel auto-detects `vercel.json` configuration
+5. Click "Deploy" (environment variables can be added later)
+
+### 3. Add Environment Variables
+1. Go to **Settings → Environment Variables**
+2. Add `OPENROUTER_API_KEY` (required)
+3. Add `OPEN_ROUTER_DEVKEY` (recommended fallback)
+4. Add R2 variables if using image storage
+5. Apply to: **Production, Preview, Development**
+6. Redeploy if already deployed
+
+### 4. Verify Deployment
+Test these endpoints:
+
+- ✅ `https://your-app.vercel.app/` - Frontend loads correctly
+- ✅ `https://your-app.vercel.app/prompts/primary.md` - Static prompts accessible
+- ✅ `https://your-app.vercel.app/api/models` - API works (POST with `{"apiKey": "sk-..."}`)
+
+## Local Development (Replit)
+
+The app runs seamlessly in Replit using the Express server:
+
+```bash
 npm run dev
 ```
 
-This will start Vite dev server on port 5173 (or similar).
+This starts:
+- Express server on port 5000
+- Vite dev server in middleware mode
+- API routes via Express router
+- Full HMR support
 
-**Note:** API routes won't work in local development without additional setup. You have two options:
-
-1. **Use Vercel CLI** (recommended):
-   ```bash
-   npm install -g vercel
-   vercel dev
-   ```
-   This runs both the Vite dev server and API routes locally.
-
-2. **Keep Express server for development** (not recommended):
-   The old Express server files are in `server/` but are no longer part of the build.
-
-### Production Build
-```bash
-npm run build
-```
-
-Output will be in `dist/public/` directory.
-
-## Data Storage
-
-- **Game State**: Stored in browser IndexedDB (client-side)
-- **Prompts**: Default prompts read from `/prompts/*.md` files
-  - Custom prompts stored in IndexedDB as part of GameConfig
-  - Prompt updates are client-side only (Vercel filesystem is read-only)
-- **Images**: Generated images uploaded to Cloudflare R2
-  - R2 URLs stored in IndexedDB (not base64 data)
-
-## Important Notes
-
-1. **Filesystem is Read-Only**: Vercel serverless functions cannot write to the filesystem
-   - Prompt updates must be stored client-side
-   - No server-side game state persistence
-
-2. **Cold Starts**: Serverless functions may have cold start delays (~1-2 seconds)
-   - First request after inactivity may be slower
-   - Subsequent requests are fast
-
-3. **Timeouts**: Vercel has execution limits
-   - Hobby plan: 10 seconds per function
-   - Pro plan: 60 seconds per function
-   - Image generation with RunPod may timeout on Hobby plan
-
-4. **Bundle Size**: Keep API functions lean
-   - Each API route is bundled separately
-   - Large dependencies increase cold start time
+All API endpoints work identically to Vercel, making local development a true replica of production.
 
 ## Troubleshooting
 
-### API Routes Return 404
+### "Module 'server/index.ts' not found" in Vercel
+**Cause**: Vercel is trying to bundle Express server  
+**Fix**: `.vercelignore` excludes `server/` directory ✅ (already configured)
+
+### "Failed to load default prompts"
+**Cause**: Prompts not found in expected location  
+**Fix**: Prompts must be in `client/public/prompts/`, not root `prompts/` ✅ (already fixed)
+
+### API Routes Return 404 in Vercel
+**Cause**: Serverless functions not deploying correctly  
+**Fix**: 
+- Ensure `/api` directory exists and is NOT in `.vercelignore`
 - Check `vercel.json` rewrites configuration
-- Verify API files are in `/api` directory
-- Check function file names match URL paths
+- Verify API file exports default handler function
 
 ### Image Generation Fails
-- Verify R2 environment variables are set
-- Check RunPod/OpenRouter API keys
-- Monitor Vercel function logs for errors
+**Cause**: Missing R2 environment variables or API keys  
+**Fix**: 
+- Add all R2 variables to Vercel environment
+- Check R2 bucket permissions (public read access)
+- Verify `R2_PUBLIC_URL` matches actual bucket URL
 
-### Prompts Not Loading
-- Ensure `/prompts/*.md` files are included in deployment
-- Check API route `/api/prompts/defaults` is working
-- Verify filesystem reads are using `process.cwd()` correctly
+### Prompts Not Loading in Vercel
+**Cause**: `/api/prompts/defaults.ts` reading from wrong directory  
+**Fix**: Function reads from `client/public/prompts/` ✅ (already fixed)
 
-### Database/Storage Issues
-- IndexedDB is client-side only - check browser console
-- Clear browser IndexedDB if corruption occurs
-- Storage quota: ~10GB per origin in most browsers
+## Development vs Production Comparison
+
+| Feature | Replit (Dev) | Vercel (Prod) |
+|---------|--------------|---------------|
+| **Server** | Express + Vite middleware | Static files + Serverless |
+| **Port** | 5000 | N/A (CDN) |
+| **API Routes** | `server/routes.ts` | `/api/*.ts` functions |
+| **Vite Config** | `vite.replit.config.ts` | `vite.config.ts` |
+| **Prompts Location** | `client/public/prompts/` | `client/public/prompts/` |
+| **Hot Reload** | ✅ HMR enabled | ❌ Build only |
+| **Start Command** | `npm run dev` | N/A (auto-deployed) |
+| **Build Command** | N/A | `vite build` |
+| **Environment** | `.env` file | Vercel dashboard |
+
+Both environments read prompts from the same location (`client/public/prompts/`) for consistency.
+
+## File Structure Reference
+
+```
+.
+├── api/                          # Vercel serverless functions
+│   ├── models.ts
+│   ├── llm/
+│   │   ├── chat.ts
+│   │   └── chat/stream.ts
+│   ├── chat/
+│   │   └── revelations.ts
+│   ├── generate-backstory.ts
+│   ├── generate-lore.ts
+│   ├── generate-image.ts
+│   └── prompts/
+│       └── defaults.ts           # Reads from client/public/prompts/
+│
+├── server/                       # Express dev server (excluded in Vercel)
+│   ├── index.ts
+│   └── routes.ts                 # Mirrors all /api routes
+│
+├── client/
+│   ├── public/
+│   │   └── prompts/             # Default system prompts (both environments)
+│   │       ├── primary.md
+│   │       ├── parser.md
+│   │       ├── backstory.md
+│   │       ├── revelations.md
+│   │       ├── lore.md
+│   │       ├── image-character.md
+│   │       └── image-location.md
+│   └── src/
+│       └── ...                   # React app source
+│
+├── .vercelignore                 # Exclude dev files
+├── vercel.json                   # Vercel config
+├── vite.config.ts                # Production Vite config
+└── vite.replit.config.ts         # Development Vite config
+```
+
+## Data Persistence
+
+- **Game State**: Browser IndexedDB (client-side only, ~10GB quota)
+- **Default Prompts**: Filesystem (`client/public/prompts/*.md`)
+- **Custom Prompts**: IndexedDB as part of GameConfig
+- **Images**: Cloudflare R2 object storage (URLs stored in IndexedDB)
+- **Session Management**: Multi-session support via URL sessionId
+
+No server-side database is used. Everything is client-side or serverless.
+
+## Important Notes
+
+1. **Vercel Filesystem is Read-Only**: Prompt updates are stored client-side in IndexedDB
+2. **Cold Starts**: First request after inactivity may take 1-2 seconds
+3. **Timeouts**: Hobby plan has 10s limit, Pro plan has 60s limit per function
+4. **No Express in Production**: `server/` directory is completely excluded from Vercel builds
 
 ## Cost Optimization
 
-1. **Use Free Tier Services**:
-   - Vercel Hobby: Free for personal projects
-   - Cloudflare R2: 10GB free storage, 1M free reads/month
-   - OpenRouter: Pay-per-use (use DeepSeek for cheaper costs)
+**Free Tier Options**:
+- Vercel Hobby: Free for personal projects (100GB bandwidth/month)
+- Cloudflare R2: 10GB storage + 1M reads free/month
+- OpenRouter: Pay-per-use (use DeepSeek or free models to minimize costs)
 
-2. **Optimize API Calls**:
-   - Cache OpenRouter model list
-   - Reuse images when possible
-   - Limit debug log sizes
-
-3. **Monitor Usage**:
-   - Check Vercel usage dashboard
-   - Monitor R2 bandwidth
-   - Track OpenRouter API costs
-
-## Migration from Express
-
-If migrating from the old Express version:
-
-1. Data is already in IndexedDB - no migration needed
-2. Environment variables may need to be moved to Vercel
-3. Custom prompt modifications will be preserved in GameConfig
-4. Remove old server dependencies if desired (Express, tsx, etc.)
+**Best Practices**:
+- Cache model list client-side
+- Reuse generated images when possible
+- Limit debug log sizes to reduce IndexedDB usage
 
 ## Support
 
-For issues:
+**Common Issues**:
 - Check Vercel function logs in dashboard
-- Use browser DevTools to debug client-side issues
-- Verify all environment variables are set correctly
+- Use browser DevTools → Application → IndexedDB
+- Verify environment variables in Vercel settings
+
+**Debugging**:
+- Local: Check `http://localhost:5000/api/prompts/defaults` works
+- Production: Check `https://your-app.vercel.app/api/prompts/defaults` returns JSON
