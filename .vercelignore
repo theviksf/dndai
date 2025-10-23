@@ -15,6 +15,3 @@ node_modules/
 .git/
 *.log
 .DS_Store
-
-# Exclude old prompts directory (now using client/public/prompts/)
-prompts/

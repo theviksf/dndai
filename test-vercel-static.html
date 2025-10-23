@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Static Files</title></head>
+<body>
+<h1>Testing Static File Access</h1>
+<h2>Prompts:</h2>
+<pre id="prompts"></pre>
+<h2>Worldmap:</h2>
+<img id="worldmap" style="max-width:500px" />
+<script>
+fetch('/prompts/primary.md')
+  .then(r => r.ok ? r.text() : 'ERROR: ' + r.status)
+  .then(t => document.getElementById('prompts').textContent = t.substring(0, 500));
+  
+document.getElementById('worldmap').src = '/assets/worldmap.jpg';
+document.getElementById('worldmap').onerror = () => alert('Worldmap failed to load');
+</script>
+</body>
+</html>
