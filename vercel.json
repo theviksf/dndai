@@ -4,14 +4,13 @@
   "devCommand": "vite",
   "installCommand": "npm install",
   "framework": null,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "handle": "filesystem"
     },
     {
-      "source": "/((?!prompts|assets).*)",
-      "destination": "/index.html"
+      "src": "/.*",
+      "dest": "/index.html"
     }
   ],
   "headers": [
