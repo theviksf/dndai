@@ -867,16 +867,22 @@ export default function NarrativePanel({
             const existingBusinesses = prev.businesses || [];
             const newBusinesses = stateUpdates.businesses;
             
+            console.log('[BUSINESS DEBUG] Processing business updates:', newBusinesses);
+            console.log('[BUSINESS DEBUG] Character name:', prev.character.name);
+            
             // Merge businesses - update existing ones or add new ones
             const mergedBusinesses = [...existingBusinesses];
             newBusinesses.forEach((newBusiness: any) => {
+              console.log('[BUSINESS DEBUG] Adding/updating business:', newBusiness.name, 'Owner:', newBusiness.owner);
               const existingIndex = mergedBusinesses.findIndex(b => b.id === newBusiness.id);
               if (existingIndex >= 0) {
                 // Update existing business
                 mergedBusinesses[existingIndex] = { ...mergedBusinesses[existingIndex], ...newBusiness };
+                console.log('[BUSINESS DEBUG] Updated existing business, final owner:', mergedBusinesses[existingIndex].owner);
               } else {
                 // Add new business
                 mergedBusinesses.push(newBusiness);
+                console.log('[BUSINESS DEBUG] Added new business, final owner:', newBusiness.owner);
               }
             });
             updated.businesses = mergedBusinesses;
