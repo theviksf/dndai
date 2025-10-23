@@ -1,5 +1,5 @@
 {
-  "buildCommand": "bash build-vercel.sh",
+  "buildCommand": "vite build --config vite.config.ts",
   "outputDirectory": "dist/public",
   "devCommand": "vite",
   "installCommand": "npm install",
