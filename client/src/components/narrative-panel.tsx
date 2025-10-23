@@ -547,8 +547,13 @@ export default function NarrativePanel({
       try {
         const extracted = extractAndParseJSON(parserResponse.content);
         
-        // Debug: Check character name before validation
-        const characterName = updatedStateForParser.character.name;
+        // Use the character name from the parser's extracted data (prioritize fresh data)
+        // Fall back to old state only if parser didn't extract a name
+        const characterName = extracted.stateUpdates?.name || 
+                              extracted.stateUpdates?.character?.name || 
+                              updatedStateForParser.character.name || 
+                              'Unknown';
+        
         console.log('[OWNER DEBUG] Character name for validation:', characterName);
         console.log('[OWNER DEBUG] Extracted businesses (before validation):', extracted.stateUpdates?.businesses);
         
