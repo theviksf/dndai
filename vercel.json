@@ -1,12 +1,12 @@
 {
-  "buildCommand": "vite build --config vite.config.ts",
+  "buildCommand": "bash build-vercel.sh",
   "outputDirectory": "dist/public",
   "devCommand": "vite",
   "installCommand": "npm install",
   "framework": null,
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }
   ],
