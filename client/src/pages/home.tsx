@@ -1426,7 +1426,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               {/* Version Number */}
               <div className="hidden md:flex items-center gap-2 bg-muted/30 border border-border rounded-lg px-3 py-1.5" data-testid="version-display">
-                <span className="text-xs text-muted-foreground font-mono">v1.0.1</span>
+                <span className="text-xs text-muted-foreground font-mono">v1.0.2</span>
               </div>
               
               {/* Cost Tracker */}
