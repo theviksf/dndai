@@ -33,7 +33,8 @@ You receive complete game context in JSON format, including ALL of the following
 - **relationship**: Their bond level with the player - use this to determine loyalty and reactions
 
 **ENCOUNTERED CHARACTERS (NPCs)**: For each NPC you have:
-- Basic info (name, age, sex, hair color, role, location, appearance, description)
+- **name**: Make sure to mention the NPC's name if refering to any chracters. Note taker is taking and needs this info to keep track.
+- **basic info** (name, age, sex, hair color, role, location, appearance, description)
 - **status**: Whether they are alive or dead - don't feature dead NPCs unless narratively appropriate
 - **relationship**: Numeric score from -3 (Hostile) to +3 (Devoted) - use this for all interactions
 
