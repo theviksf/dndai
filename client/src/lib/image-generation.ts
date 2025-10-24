@@ -7,6 +7,7 @@ export interface ImageGenerationOptions {
   entity: GameCharacter | Companion | EncounteredCharacter | Location;
   config: GameConfig;
   sessionId: string;
+  existingJobId?: string;
 }
 
 export interface ImageGenerationResult {
@@ -24,7 +25,8 @@ export async function generateEntityImage({
   entityType, 
   entity, 
   config,
-  sessionId 
+  sessionId,
+  existingJobId
 }: ImageGenerationOptions): Promise<ImageGenerationResult> {
   const timestamp = Date.now();
   const id = `image-${timestamp}-${nanoid(6)}`;
@@ -52,72 +54,121 @@ export async function generateEntityImage({
   }
   
   try {
-    const response = await apiRequest('POST', '/api/generate-image', {
-      promptTemplate,
-      entity,
-      entityType,
-      apiKey: config.openRouterApiKey,
-      sessionId,
-      provider: config.imageProvider || 'flux',
-    });
+    let currentJobId = existingJobId;
+    let maxRetries = 5;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+      const response = await apiRequest('POST', '/api/generate-image', {
+        promptTemplate,
+        entity,
+        entityType,
+        apiKey: config.openRouterApiKey,
+        sessionId,
+        provider: config.imageProvider || 'flux',
+        existingJobId: currentJobId,
+      });
 
-    if (!response.ok) {
-      // Handle HTTP errors
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { error: errorText };
+      // Handle 202 Accepted - job is still queued
+      if (response.status === 202) {
+        const data = await response.json();
+        console.log(`[IMAGE GEN] Job still queued (attempt ${retryCount + 1}/${maxRetries}), job ID:`, data.jobId);
+        
+        // Store the job ID and wait before retrying
+        currentJobId = data.jobId;
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          // Wait 5 seconds before retrying
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue; // Retry with the existing job ID
+        } else {
+          // Max retries reached, return an error
+          const debugLogEntry: DebugLogEntry = {
+            id,
+            timestamp,
+            type: 'image',
+            prompt: data.filledPrompt || promptTemplate,
+            response: JSON.stringify({
+              status: 'IN_QUEUE',
+              jobId: currentJobId,
+              message: data.message,
+              attempts: retryCount
+            }, null, 2),
+            model: 'flux-1.1-schnell',
+            entityType,
+            imageUrl: null,
+            error: `Image generation still in queue after ${retryCount} attempts. Please try again later.`,
+          };
+          
+          return {
+            imageUrl: null,
+            debugLogEntry,
+          };
+        }
       }
       
+      if (!response.ok) {
+        // Handle HTTP errors
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
+        const debugLogEntry: DebugLogEntry = {
+          id,
+          timestamp,
+          type: 'image',
+          prompt: errorData.filledPrompt || promptTemplate,
+          response: errorData.rawResponse || JSON.stringify({ 
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData 
+          }, null, 2),
+          model: config.imageProvider === 'flux' ? 'flux-1.1-schnell' : 'google/gemini-2.5-flash-image-preview',
+          entityType,
+          imageUrl: null,
+          error: `HTTP ${response.status}: ${errorData.error || response.statusText}`,
+        };
+        
+        return { 
+          imageUrl: null,
+          debugLogEntry,
+        };
+      }
+
+        const data = await response.json();
+      
+      // Success! Create debug log entry with R2 URL (small string, safe to store)
       const debugLogEntry: DebugLogEntry = {
         id,
         timestamp,
         type: 'image',
-        prompt: errorData.filledPrompt || promptTemplate,
-        response: errorData.rawResponse || JSON.stringify({ 
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData 
+        prompt: data.filledPrompt || promptTemplate,
+        response: data.rawResponse || JSON.stringify({ 
+          imageUrl: data.imageUrl || null, 
+          model: data.model 
         }, null, 2),
-        model: 'google/gemini-2.5-flash-image-preview',
+        model: data.model || (config.imageProvider === 'flux' ? 'flux-1.1-schnell' : 'google/gemini-2.5-flash-image-preview'),
+        tokens: data.usage,
         entityType,
-        imageUrl: null,
-        error: `HTTP ${response.status}: ${errorData.error || response.statusText}`,
+        imageUrl: data.imageUrl || null,
+        error: data.imageUrl ? undefined : 'No image URL returned',
       };
       
-      return { 
-        imageUrl: null,
+      return {
+        imageUrl: data.imageUrl || null,
+        usage: data.usage,
+        model: data.model,
         debugLogEntry,
       };
     }
-
-    const data = await response.json();
     
-    // Create debug log entry with R2 URL (small string, safe to store)
-    const debugLogEntry: DebugLogEntry = {
-      id,
-      timestamp,
-      type: 'image',
-      prompt: data.filledPrompt || promptTemplate,
-      response: data.rawResponse || JSON.stringify({ 
-        imageUrl: data.imageUrl || null, 
-        model: data.model 
-      }, null, 2),
-      model: data.model || 'google/gemini-2.5-flash-image-preview',
-      tokens: data.usage,
-      entityType,
-      imageUrl: data.imageUrl || null,
-      error: data.imageUrl ? undefined : 'No image URL returned',
-    };
-    
-    return {
-      imageUrl: data.imageUrl || null,
-      usage: data.usage,
-      model: data.model,
-      debugLogEntry,
-    };
+    // Fallback if loop exits without returning (should never happen)
+    throw new Error('Image generation failed: max retries exceeded');
   } catch (error: any) {
     console.error(`Failed to generate image for ${entityType}:`, error);
     
@@ -132,7 +183,7 @@ export async function generateEntityImage({
         stack: error.stack,
         name: error.name 
       }, null, 2),
-      model: 'google/gemini-2.5-flash-image-preview',
+      model: config.imageProvider === 'flux' ? 'flux-1.1-schnell' : 'google/gemini-2.5-flash-image-preview',
       entityType,
       imageUrl: null,
       error: error.message || 'Unknown error',

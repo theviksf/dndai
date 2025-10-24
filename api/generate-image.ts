@@ -155,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { entityType, entity, promptTemplate, apiKey, sessionId, provider = 'flux' } = req.body;
+    const { entityType, entity, promptTemplate, apiKey, sessionId, provider = 'flux', existingJobId } = req.body;
     const entityData = entity;
     
     const openRouterKey = apiKey || process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || '';
@@ -167,7 +167,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       provider,
       hasOpenRouterKey: !!openRouterKey,
       hasRunPodKey: !!runPodKey,
-      promptTemplateLength: promptTemplate?.length
+      promptTemplateLength: promptTemplate?.length,
+      existingJobId: existingJobId || 'none'
     });
     
     // Validate API keys based on provider
@@ -229,44 +230,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Call RunPod Flux API
       console.log('[IMAGE GEN] Using Flux 1.1 Schnell via RunPod');
       
-      const runPodResponse = await fetch('https://api.runpod.ai/v2/black-forest-labs-flux-1-schnell/run', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${runPodKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          input: {
-            prompt: filledPrompt,
-            seed: -1,
-            num_inference_steps: 4,
-            guidance: 7,
-            negative_prompt: "",
-            image_format: "png",
-            width: 512,
-            height: 512
-          }
-        })
-      });
+      let jobId = existingJobId;
       
-      if (!runPodResponse.ok) {
-        const errorData = await runPodResponse.json();
-        console.error('[IMAGE GEN] RunPod API error:', errorData);
-        return res.status(runPodResponse.status).json({
-          error: `RunPod API error: ${errorData.error || 'Unknown error'}`,
-          filledPrompt,
-          rawResponse: JSON.stringify(errorData, null, 2)
+      // If we have an existing job ID, check its status first instead of creating a new job
+      if (existingJobId) {
+        console.log('[IMAGE GEN] Checking status of existing job:', existingJobId);
+      } else {
+        // Create a new job only if we don't have an existing one
+        const runPodResponse = await fetch('https://api.runpod.ai/v2/black-forest-labs-flux-1-schnell/run', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${runPodKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            input: {
+              prompt: filledPrompt,
+              seed: -1,
+              num_inference_steps: 4,
+              guidance: 7,
+              negative_prompt: "",
+              image_format: "png",
+              width: 512,
+              height: 512
+            }
+          })
         });
+        
+        if (!runPodResponse.ok) {
+          const errorData = await runPodResponse.json();
+          console.error('[IMAGE GEN] RunPod API error:', errorData);
+          return res.status(runPodResponse.status).json({
+            error: `RunPod API error: ${errorData.error || 'Unknown error'}`,
+            filledPrompt,
+            rawResponse: JSON.stringify(errorData, null, 2)
+          });
+        }
+        
+        const runPodData = await runPodResponse.json();
+        console.log('[IMAGE GEN] RunPod response:', {
+          status: runPodData.status,
+          id: runPodData.id
+        });
+        
+        jobId = runPodData.id;
       }
       
-      const runPodData = await runPodResponse.json();
-      console.log('[IMAGE GEN] RunPod response:', {
-        status: runPodData.status,
-        id: runPodData.id
-      });
-      
       // Poll for job completion
-      const jobId = runPodData.id;
       let jobComplete = false;
       let attempts = 0;
       const maxAttempts = 30;
@@ -315,13 +325,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             filledPrompt,
             rawResponse: JSON.stringify(statusData, null, 2)
           });
+        } else if (statusData.status === 'IN_QUEUE' || statusData.status === 'IN_PROGRESS') {
+          // Job is still queued or processing, continue polling
+          console.log(`[IMAGE GEN] Job ${jobId} is ${statusData.status}, continuing to poll...`);
         }
       }
       
       if (!jobComplete) {
-        console.error('[IMAGE GEN] RunPod job timeout after', attempts, 'attempts');
-        return res.status(504).json({
-          error: 'RunPod job timeout - image generation took too long',
+        console.error('[IMAGE GEN] RunPod job still not complete after', attempts, 'attempts');
+        // Return queued status with job ID so frontend can retry
+        return res.status(202).json({
+          status: 'IN_QUEUE',
+          jobId: jobId,
+          message: 'Image generation is still in progress. Please try again in a few moments.',
           filledPrompt
         });
       }
