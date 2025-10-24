@@ -181,10 +181,12 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
           <Separator orientation="vertical" className="hidden lg:block h-16" />
 
           {/* Core Stats Section */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 flex-1">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 flex-1 w-full lg:w-auto">
             
-            {/* HP & XP Bars */}
-            <div className="flex-1 min-w-[240px] max-w-[320px] space-y-2.5">
+            {/* HP & XP Bars + Gold (grouped on mobile for better space usage) */}
+            <div className="flex flex-row items-center gap-3 w-full lg:w-auto">
+              {/* HP & XP Bars */}
+              <div className="flex-1 min-w-[240px] max-w-[320px] space-y-2.5">
               {/* HP Bar */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -266,103 +268,107 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
               </div>
             </div>
 
-            {/* Gold */}
-            <div className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-lg border border-yellow-500/30 shadow-sm">
-              <Coins className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
-              <div className="flex flex-col">
-                <span className="text-xs font-medium text-muted-foreground">Gold</span>
-                <span className="text-base font-mono font-bold text-yellow-700 dark:text-yellow-500" data-testid="text-character-gold">
-                  {onUpdate ? (
-                    <InlineEdit
-                      value={character.gold}
-                      onSave={(value) => onUpdate({ character: { gold: Number(value) } as any })}
-                      type="number"
-                      min={0}
-                      inputClassName="w-24 h-6 text-base"
-                      displayAs={(val) => Number(val).toLocaleString()}
-                    />
-                  ) : (
-                    <span>{character.gold.toLocaleString()}</span>
-                  )}
-                </span>
-                {businesses.length > 0 && (
-                  <span className={`text-xs font-mono font-semibold ${
-                    weeklyIncome > 0 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : weeklyIncome < 0 
-                      ? 'text-red-600 dark:text-red-400' 
-                      : 'text-muted-foreground'
-                  }`} data-testid="text-weekly-income">
-                    {weeklyIncome > 0 ? '+' : ''}{weeklyIncome.toLocaleString()}/wk
+              {/* Gold - beside HP/XP on mobile if space allows */}
+              <div className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-lg border border-yellow-500/30 shadow-sm flex-shrink-0">
+                <Coins className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground">Gold</span>
+                  <span className="text-base font-mono font-bold text-yellow-700 dark:text-yellow-500" data-testid="text-character-gold">
+                    {onUpdate ? (
+                      <InlineEdit
+                        value={character.gold}
+                        onSave={(value) => onUpdate({ character: { gold: Number(value) } as any })}
+                        type="number"
+                        min={0}
+                        inputClassName="w-24 h-6 text-base"
+                        displayAs={(val) => Number(val).toLocaleString()}
+                      />
+                    ) : (
+                      <span>{character.gold.toLocaleString()}</span>
+                    )}
                   </span>
-                )}
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="flex items-center gap-2.5 px-3 py-2 bg-primary/10 rounded-lg border border-primary/30 flex-1 min-w-[180px] shadow-sm">
-              <EntityImageCard
-                imageUrl={location?.imageUrl}
-                entityType="location"
-                onClick={() => setLocationDetailSheetOpen(true)}
-                className="w-20 h-20 flex-shrink-0"
-              />
-              <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <MapPin className="w-3 h-3 text-primary" />
-                  <span className="text-xs font-medium text-muted-foreground">Location</span>
-                  {location?.type && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                      {location.type}
-                    </Badge>
+                  {businesses.length > 0 && (
+                    <span className={`text-xs font-mono font-semibold ${
+                      weeklyIncome > 0 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : weeklyIncome < 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-muted-foreground'
+                    }`} data-testid="text-weekly-income">
+                      {weeklyIncome > 0 ? '+' : ''}{weeklyIncome.toLocaleString()}/wk
+                    </span>
                   )}
                 </div>
-                <span className="text-sm font-bold text-primary break-words" data-testid="text-location">
-                  {onUpdate ? (
-                    <InlineEdit
-                      value={location?.name || 'Unknown'}
-                      onSave={(value) => onUpdate({ location: { name: String(value) } as any })}
-                      inputClassName="h-6 text-sm"
-                    />
-                  ) : (
-                    <span>{location?.name || 'Unknown'}</span>
-                  )}
-                </span>
-                {location?.hierarchy && (location.hierarchy.city || location.hierarchy.district) ? (
-                  <span className="text-xs text-muted-foreground break-words line-clamp-2">
-                    {location.hierarchy.district && `${location.hierarchy.district}, `}
-                    {location.hierarchy.city || ''}
-                  </span>
-                ) : location?.description ? (
-                  <span className="text-xs text-muted-foreground break-words line-clamp-2">
-                    {location.description}
-                  </span>
-                ) : null}
               </div>
             </div>
 
-            {/* World Map Image */}
-            <div 
-              onClick={() => setWorldDetailSheetOpen(true)}
-              className="cursor-pointer hover:opacity-80 transition-opacity border-2 border-primary/30 rounded-lg overflow-hidden"
-              data-testid="button-world-map"
-            >
-              <img 
-                src={worldmapImage} 
-                alt="World Map" 
-                className="w-20 h-20 object-cover"
-              />
+            {/* Location + World Map (grouped on mobile for better space usage) */}
+            <div className="flex flex-row items-center gap-3 w-full lg:w-auto">
+              {/* Location */}
+              <div className="flex items-center gap-2.5 px-3 py-2 bg-primary/10 rounded-lg border border-primary/30 flex-1 min-w-[180px] shadow-sm">
+                <EntityImageCard
+                  imageUrl={location?.imageUrl}
+                  entityType="location"
+                  onClick={() => setLocationDetailSheetOpen(true)}
+                  className="w-20 h-20 flex-shrink-0"
+                />
+                <div className="flex flex-col min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <MapPin className="w-3 h-3 text-primary" />
+                    <span className="text-xs font-medium text-muted-foreground">Location</span>
+                    {location?.type && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                        {location.type}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-sm font-bold text-primary break-words" data-testid="text-location">
+                    {onUpdate ? (
+                      <InlineEdit
+                        value={location?.name || 'Unknown'}
+                        onSave={(value) => onUpdate({ location: { name: String(value) } as any })}
+                        inputClassName="h-6 text-sm"
+                      />
+                    ) : (
+                      <span>{location?.name || 'Unknown'}</span>
+                    )}
+                  </span>
+                  {location?.hierarchy && (location.hierarchy.city || location.hierarchy.district) ? (
+                    <span className="text-xs text-muted-foreground break-words line-clamp-2">
+                      {location.hierarchy.district && `${location.hierarchy.district}, `}
+                      {location.hierarchy.city || ''}
+                    </span>
+                  ) : location?.description ? (
+                    <span className="text-xs text-muted-foreground break-words line-clamp-2">
+                      {location.description}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* World Map Image - beside location on mobile if space allows */}
+              <div 
+                onClick={() => setWorldDetailSheetOpen(true)}
+                className="cursor-pointer hover:opacity-80 transition-opacity border-2 border-primary/30 rounded-lg overflow-hidden flex-shrink-0"
+                data-testid="button-world-map"
+              >
+                <img 
+                  src={worldmapImage} 
+                  alt="World Map" 
+                  className="w-20 h-20 object-cover"
+                />
+              </div>
             </div>
           </div>
         </div>
 
         <Separator className="my-3" />
 
-        {/* Bottom Row: Attributes, AC, Status Effects, Week Counter */}
+        {/* Bottom Row: Attributes + AC (inline), Status Effects, Week Counter */}
         <div className="flex flex-wrap items-center gap-3">
           
-          {/* Attributes - Always Visible */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+          {/* Attributes + AC - Combined for better mobile layout */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border flex-wrap">
             <Zap className="w-4 h-4 text-primary flex-shrink-0" />
             <div className="flex gap-2">
               {[
@@ -393,32 +399,32 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* AC Badge */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border" data-testid="text-ac">
-            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase">AC</span>
-              <span className="text-lg font-bold font-mono leading-tight">
-                {onUpdate ? (
-                  <InlineEdit
-                    value={character.attributes.ac}
-                    onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, ac: Number(value) } } as any })}
-                    type="number"
-                    min={1}
-                    max={30}
-                    inputClassName="w-12 h-7 text-lg text-center font-bold"
-                  />
-                ) : (
-                  <span>{character.attributes.ac}</span>
-                )}
-              </span>
+            
+            {/* AC Badge - inline with attributes for mobile space efficiency */}
+            <div className="flex items-center gap-2 pl-2 border-l border-border" data-testid="text-ac">
+              <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase">AC</span>
+                <span className="text-lg font-bold font-mono leading-tight">
+                  {onUpdate ? (
+                    <InlineEdit
+                      value={character.attributes.ac}
+                      onSave={(value) => onUpdate({ character: { attributes: { ...character.attributes, ac: Number(value) } } as any })}
+                      type="number"
+                      min={1}
+                      max={30}
+                      inputClassName="w-12 h-7 text-lg text-center font-bold"
+                    />
+                  ) : (
+                    <span>{character.attributes.ac}</span>
+                  )}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Status Effects */}
-          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+          {/* Status Effects - Full width on mobile for clarity */}
+          <div className="flex items-center gap-2 w-full sm:flex-1 sm:min-w-[200px]">
             {statusEffects.length > 0 ? (
               <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-lg border border-accent/30 flex-wrap flex-1">
                 <Sparkles className="w-4 h-4 text-accent flex-shrink-0" />
@@ -444,8 +450,8 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
             )}
           </div>
 
-          {/* Week Counter */}
-          <Badge variant="outline" className="gap-2 px-3 py-2 bg-primary/10 border-primary/30">
+          {/* Week Counter - Full width on mobile for clarity */}
+          <Badge variant="outline" className="gap-2 px-3 py-2 bg-primary/10 border-primary/30 w-full sm:w-auto">
             <Calendar className="w-4 h-4" />
             <span className="font-mono font-semibold" data-testid="text-week-counter">
               Turn {turnInWeek}/15 • Week {weekNumber}
@@ -499,7 +505,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
             </SheetDescription>
           </SheetHeader>
           
-          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100%-120px)] overflow-auto">
+          <div className="flex flex-col lg:flex-row gap-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 120px)' }}>
             {/* Left: World Map */}
             <div className="lg:w-1/2 flex-shrink-0">
               <div className="relative aspect-square w-full max-w-[600px] mx-auto border-4 border-border rounded-xl overflow-hidden shadow-2xl">
@@ -512,7 +518,7 @@ export default function CharacterStatsBar({ character, statusEffects, location, 
             </div>
 
             {/* Right: World Lore Content */}
-            <div className="lg:w-1/2 flex-1 overflow-auto">
+            <div className="lg:w-1/2 flex-1 pb-6">
               {worldBackstory ? (
                 <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
                   <div className="prose prose-sm dark:prose-invert max-w-none">
