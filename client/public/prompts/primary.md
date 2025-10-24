@@ -46,6 +46,11 @@ You receive complete game context in JSON format, including ALL of the following
 **STATUS EFFECTS**: Current buffs/debuffs affecting the character
 
 **BUSINESSES**: Any businesses owned with income, costs, and managers
+- **Cost**: The Cost / Value of the BUSINESSES
+- **Income**: The Weekly income generted b the business / property
+- **Upkeep**: The Weekly cost of running the business / property
+- **Manager**: The person responsible for running the business
+- **Loan / Debt**: The Debt payment on a weekly basis for the business / property
 
 **PARSED HISTORY**: Condensed summary of all previous events
 
