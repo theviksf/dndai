@@ -146,12 +146,30 @@ function buildBackstoryContext(
   if (gameState.location.backstory) {
     sections.push(`Backstory: ${gameState.location.backstory}`);
   }
+  if (gameState.location.revelations && gameState.location.revelations.length > 0) {
+    sections.push('Revealed Secrets:');
+    gameState.location.revelations.forEach(rev => {
+      sections.push(`- ${rev.text}`);
+    });
+  }
   sections.push('');
   
   // Add player character info
   sections.push('# Player Character');
   sections.push(`Name: ${gameState.character.name}`);
   sections.push(`Race: ${gameState.character.race}, Class: ${gameState.character.class}, Level: ${gameState.character.level}`);
+  if (gameState.character.description) {
+    sections.push(`Description: ${gameState.character.description}`);
+  }
+  if ((gameState.character as any).backstory) {
+    sections.push(`Backstory: ${(gameState.character as any).backstory.substring(0, 300)}...`);
+  }
+  if (gameState.character.revelations && gameState.character.revelations.length > 0) {
+    sections.push('Revealed Secrets:');
+    gameState.character.revelations.forEach(rev => {
+      sections.push(`- ${rev.text}`);
+    });
+  }
   sections.push('');
   
   // Add companions
@@ -168,6 +186,9 @@ function buildBackstoryContext(
       if (comp.backstory) {
         sections.push(`  Backstory: ${comp.backstory.substring(0, 200)}...`);
       }
+      if (comp.revelations && comp.revelations.length > 0) {
+        sections.push(`  Revealed Secrets: ${comp.revelations.map(r => r.text).join('; ')}`);
+      }
     });
     sections.push('');
   }
@@ -183,6 +204,9 @@ function buildBackstoryContext(
       if (npc.backstory) {
         sections.push(`  Backstory: ${npc.backstory.substring(0, 200)}...`);
       }
+      if (npc.revelations && npc.revelations.length > 0) {
+        sections.push(`  Revealed Secrets: ${npc.revelations.map(r => r.text).join('; ')}`);
+      }
     });
     sections.push('');
   }
@@ -194,7 +218,10 @@ function buildBackstoryContext(
       sections.push(`- ${business.name}`);
       sections.push(`  Manager: ${business.manager}`);
       sections.push(`  Description: ${business.description}`);
-      sections.push(`  Purchase Cost: ${business.purchaseCost}g, Weekly Income: ${business.weeklyIncome}g, Running Cost: ${business.runningCost}g`);
+      sections.push(`  Financials: Purchase ${business.purchaseCost}g, Weekly Income ${business.weeklyIncome}g, Running Cost ${business.runningCost}g`);
+      if ((business as any).backstory) {
+        sections.push(`  Backstory: ${(business as any).backstory.substring(0, 200)}...`);
+      }
     });
     sections.push('');
   }
@@ -208,6 +235,9 @@ function buildBackstoryContext(
       if (loc.backstory) {
         sections.push(`  Backstory: ${loc.backstory.substring(0, 200)}...`);
       }
+      if (loc.revelations && loc.revelations.length > 0) {
+        sections.push(`  Revealed Secrets: ${loc.revelations.map(r => r.text).join('; ')}`);
+      }
     });
     sections.push('');
   }
@@ -219,6 +249,9 @@ function buildBackstoryContext(
       sections.push(`- ${quest.title} (${quest.type}): ${quest.description.substring(0, 100)}...`);
       if (quest.backstory) {
         sections.push(`  Backstory: ${quest.backstory.substring(0, 200)}...`);
+      }
+      if (quest.revelations && quest.revelations.length > 0) {
+        sections.push(`  Revealed Secrets: ${quest.revelations.map(r => r.text).join('; ')}`);
       }
     });
     sections.push('');
