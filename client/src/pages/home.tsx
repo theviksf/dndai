@@ -800,6 +800,8 @@ export default function Home() {
             description: oldLocationDesc || '',
             imageUrl: prev.location.imageUrl,
             lastVisited: Date.now(),
+            backstory: prev.location.backstory,
+            revelations: prev.location.revelations,
           };
           newState.previousLocations = [...prevLocations, newPrevLocation];
         } else {

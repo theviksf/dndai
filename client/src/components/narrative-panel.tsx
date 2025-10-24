@@ -673,6 +673,8 @@ export default function NarrativePanel({
                   description: prev.location.description || '',
                   imageUrl: prev.location.imageUrl,
                   lastVisited: Date.now(),
+                  backstory: prev.location.backstory,
+                  revelations: prev.location.revelations,
                 };
                 updated.previousLocations = [...prevLocations, oldLocationObject];
               }
