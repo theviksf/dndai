@@ -1420,7 +1420,7 @@ export default function Home() {
               <img 
                 src="/dp-logo.svg" 
                 alt="D&D Adventure" 
-                className="h-8 md:h-10"
+                className="h-12 md:h-15"
               />
             </div>
             
