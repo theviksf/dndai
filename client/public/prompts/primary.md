@@ -41,8 +41,10 @@ You receive complete game context in JSON format, including ALL of the following
 **INVENTORY**: All items with descriptions, types, quantities, magical properties
 
 **SPELLS**: All known spells with levels, schools, and descriptions
+**name**: Make sure to mention the specific spell names as the notetaker needs them mentioned explicitly. 
 
 **QUESTS**: Active quests with objectives, progress, and completion status
+**objectives**: Make sure to explicitly mention key objectives so the note taker can keep track of them.
 
 **STATUS EFFECTS**: Current buffs/debuffs affecting the character
 
@@ -174,6 +176,8 @@ Spell scroll used: Scroll of Revivify consumed to save Borin
 Ability unlocked: Dax discovered Draconic Bloodline (sorcerer multiclass option available)
 Magical attunement: Attuned to Cloak of Protection (+1 AC, +1 all saves)
 
+##Bad Notes Examples - note format and detail of the note.
+Spells learned: Divine Sense, Lay on Hands, + Paladin spells (Because the spells are not explicitly mentioned)
 
 
 ##Format
