@@ -1416,11 +1416,12 @@ export default function Home() {
       <header className="bg-card border-b-2 border-border parchment-texture sticky top-0 z-40">
         <div className="max-w-[1920px] mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-primary">D&D Adventure</h1>
-              <span className="hidden md:inline-block text-xs text-muted-foreground border-l border-border pl-4">
-                Powered by OpenRouter
-              </span>
+            <div className="flex items-center">
+              <img 
+                src="/dp-logo.svg" 
+                alt="D&D Adventure" 
+                className="h-8 md:h-10"
+              />
             </div>
             
             <div className="flex items-center gap-3">
