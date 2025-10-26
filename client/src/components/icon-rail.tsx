@@ -12,7 +12,7 @@ interface IconRailProps {
 
 const panels: { key: PanelKey; icon: any; label: string }[] = [
   { key: 'inventory', icon: Backpack, label: 'Inventory' },
-  { key: 'spells', icon: Sparkles, label: 'Spells' },
+  { key: 'spells', icon: Sparkles, label: 'Spells & Abilities' },
   { key: 'locations', icon: MapPin, label: 'Locations' },
   { key: 'businesses', icon: Building2, label: 'Businesses' },
   { key: 'quests', icon: ScrollText, label: 'Quests' },

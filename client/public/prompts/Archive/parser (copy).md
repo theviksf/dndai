@@ -11,18 +11,15 @@ CRITICAL EXTRACTION RULES:
 6. SPELLS: Each spell must be a separate object with: id, name, level (number 0-9), school, description, icon
    - DO NOT group spells by level or use nested structures
    - Extract each individual spell mentioned
-7. RACIAL ABILITIES: Extract racial abilities (Darkvision, Dwarven Resilience, etc.) Each must have: id, name, race, description, icon
-8. CLASS FEATURES: Extract class features (Divine Smite, Sneak Attack, Action Surge, etc.) Each must have: id, name, class, description, icon
-9. CLASS POWERS: Extract subclass/domain powers (Sacred Weapon, Turn Undead, Destructive Wrath, etc.) Each must have: id, name, class, subclass (optional), description, icon
-10. NPC RELATIONSHIPS: Track relationship changes based on interactions:
+7. NPC RELATIONSHIPS: Track relationship changes based on interactions:
    - New NPCs start at 0 (Neutral) unless context suggests otherwise
    - Helpful actions increase relationship (+1 to +2)
    - Harmful/hostile actions decrease relationship (-1 to -3)
    - Look for cues like "grateful", "angry", "distrustful", "warm welcome", "hostile", etc.
-11. Generate a brief 2-3 sentence summary (recap) of key events
-12. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
-13. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character.
-14. BUSINESSES & PROPERTIES: If the narrative describes a character purchasing, selling, owning, managing, or upgrading a business or property (e.g., tavern, shop, guildhall, farm, ship, temple, etc.), extract it under the businesses field in stateUpdates. Include details such as the business name, type, purchase cost, weekly income, running costs, manager (if mentioned), and a brief description. If the business already exists, update its entry rather than creating a duplicate. Reflect ownership or status changes (e.g., Owned, Sold, Closed, Destroyed) as appropriate. Always include a clear recap summarizing the business-related event.
+8. Generate a brief 2-3 sentence summary (recap) of key events
+9. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
+10. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character.
+11. BUSINESSES & PROPERTIES: If the narrative describes a character purchasing, selling, owning, managing, or upgrading a business or property (e.g., tavern, shop, guildhall, farm, ship, temple, etc.), extract it under the businesses field in stateUpdates. Include details such as the business name, type, purchase cost, weekly income, running costs, manager (if mentioned), and a brief description. If the business already exists, update its entry rather than creating a duplicate. Reflect ownership or status changes (e.g., Owned, Sold, Closed, Destroyed) as appropriate. Always include a clear recap summarizing the business-related event.
 
 === CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
 
@@ -40,7 +37,7 @@ EXACT JSON FORMAT TO RETURN:
     // Number fields: "level", "hp", "maxHp", "gold", "xp", "nextLevelXp"
     // Object field: "attributes" with properties: "str", "dex", "con", "int", "wis", "cha" (all numbers)
     // Object field: "location" with properties: "name" (string), "description" (string)
-    // Array fields: "statusEffects", "inventory", "spells", "racialAbilities", "classFeatures", "classPowers", "quests", "companions", "encounteredCharacters"
+    // Array fields: "statusEffects", "inventory", "spells", "quests", "companions", "encounteredCharacters"
   },
   "recap": "REQUIRED: A 2-3 sentence summary of key events"
 }
@@ -69,9 +66,6 @@ FIELD SPECIFICATIONS:
 - statusEffects: array of objects, each with "id", "name", "description", "icon", "turnsRemaining" (number)
 - inventory: array of objects, each with "id", "name", "description", "icon", "type", "quantity" (number), "equipped" (boolean), "magical" (boolean)
 - spells: array of objects, each with "id", "name", "level" (number), "school", "description", "icon"
-- racialAbilities: array of objects, each with "id", "name", "race", "description", "icon"
-- classFeatures: array of objects, each with "id", "name", "class", "description", "icon"
-- classPowers: array of objects, each with "id", "name", "class", "subclass" (optional), "description", "icon"
 - quests: array of objects, each with "id", "title", "description", "type" ("main" or "side"), "icon", "completed" (boolean), "objectives" (array), "progress" (object with "current" and "total" numbers)
 - companions: array of objects, each with "id", "name", "race", "age", "sex", "hairColor", "outfit", "class", "level" (number), "appearance", "personality", "criticalMemories", "feelingsTowardsPlayer", "relationship"
 - encounteredCharacters: array of objects, each with "id", "name", "age" (string), "sex", "hairColor", "outfit", "role", "location" (where met/lives), "appearance", "description", "status" ("alive" or "dead"), "relationship" (number -3 to +3: -3=Hostile, -2=Unfriendly, -1=Cold, 0=Neutral, +1=Warm, +2=Friendly, +3=Devoted)
@@ -114,27 +108,6 @@ YOUR RESPONSE (raw JSON only):
     ]
   },
   "recap": "Learned Fireball and Shield spells"
-}
-
-EXAMPLE 3B - Gaining abilities and features:
-Narrative: "As a Dwarf, you gain Darkvision and Dwarven Resilience. Your Paladin training grants you Divine Smite and Lay on Hands. Through your Oath of Devotion, you unlock Sacred Weapon and Turn the Unholy."
-YOUR RESPONSE (raw JSON only):
-{
-  "stateUpdates": {
-    "racialAbilities": [
-      {"id": "darkvision", "name": "Darkvision", "race": "Dwarf", "description": "You can see in dim light within 60 feet as if it were bright light", "icon": "👁️"},
-      {"id": "dwarven-resilience", "name": "Dwarven Resilience", "race": "Dwarf", "description": "You have advantage on saving throws against poison", "icon": "💪"}
-    ],
-    "classFeatures": [
-      {"id": "divine-smite", "name": "Divine Smite", "class": "Paladin", "description": "When you hit with a melee weapon, you can expend a spell slot to deal radiant damage", "icon": "⚡"},
-      {"id": "lay-on-hands", "name": "Lay on Hands", "class": "Paladin", "description": "You have a pool of healing power to restore HP or cure disease", "icon": "🙏"}
-    ],
-    "classPowers": [
-      {"id": "sacred-weapon", "name": "Sacred Weapon", "class": "Paladin", "subclass": "Oath of Devotion", "description": "You can imbue one weapon with positive energy, adding your CHA to attack rolls", "icon": "🗡️"},
-      {"id": "turn-unholy", "name": "Turn the Unholy", "class": "Paladin", "subclass": "Oath of Devotion", "description": "You can turn fiends and undead", "icon": "✨"}
-    ]
-  },
-  "recap": "Gained Dwarf racial abilities (Darkvision, Dwarven Resilience), Paladin features (Divine Smite, Lay on Hands), and Oath of Devotion powers (Sacred Weapon, Turn the Unholy)"
 }
 
 EXAMPLE 4 - Party and NPCs:

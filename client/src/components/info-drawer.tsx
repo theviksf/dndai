@@ -26,7 +26,7 @@ interface InfoDrawerProps {
 
 const PANEL_TITLES: Record<PanelKey, string> = {
   inventory: 'Inventory',
-  spells: 'Spells',
+  spells: 'Spells & Abilities',
   locations: 'Locations',
   businesses: 'Businesses',
   quests: 'Quests',
@@ -55,7 +55,13 @@ export function InfoDrawer({ activePanel, onClose, gameState, onUpdate, onEntity
       case 'inventory':
         return <InventoryPanel inventory={gameState.inventory} onUpdate={onUpdate} />;
       case 'spells':
-        return <SpellsPanel spells={gameState.spells} onUpdate={onUpdate} />;
+        return <SpellsPanel 
+          spells={gameState.spells} 
+          racialAbilities={gameState.racialAbilities}
+          classFeatures={gameState.classFeatures}
+          classPowers={gameState.classPowers}
+          onUpdate={onUpdate} 
+        />;
       case 'locations':
         return <LocationsPanel previousLocations={gameState.previousLocations} onEntityClick={onEntityClick} />;
       case 'businesses':

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, X } from 'lucide-react';
-import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, Business, GameStateData, PreviousLocation } from '@shared/schema';
+import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, RacialAbility, ClassFeature, ClassPower, Business, GameStateData, PreviousLocation } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { EntityImageCard } from '@/components/entity-image-card';
 
@@ -77,19 +78,22 @@ export function InventoryPanel({ inventory, onUpdate }: InventoryPanelProps) {
 
 interface SpellsPanelProps extends BasePanelProps {
   spells: Spell[];
+  racialAbilities: RacialAbility[];
+  classFeatures: ClassFeature[];
+  classPowers: ClassPower[];
 }
 
-export function SpellsPanel({ spells, onUpdate }: SpellsPanelProps) {
-  const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
-  const [spellFilter, setSpellFilter] = useState<string>('');
+export function SpellsPanel({ spells, racialAbilities, classFeatures, classPowers, onUpdate }: SpellsPanelProps) {
+  const [filter, setFilter] = useState<string>('');
   const [spellLevelFilter, setSpellLevelFilter] = useState<string>('all');
+  const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
 
   const filteredAndSortedSpells = [...spells]
     .filter(spell => {
-      const matchesText = spellFilter === '' || 
-        spell.name.toLowerCase().includes(spellFilter.toLowerCase()) ||
-        spell.school.toLowerCase().includes(spellFilter.toLowerCase()) ||
-        spell.description.toLowerCase().includes(spellFilter.toLowerCase());
+      const matchesText = filter === '' || 
+        spell.name.toLowerCase().includes(filter.toLowerCase()) ||
+        spell.school.toLowerCase().includes(filter.toLowerCase()) ||
+        spell.description.toLowerCase().includes(filter.toLowerCase());
       
       const matchesLevel = spellLevelFilter === 'all' || 
         spell.level.toString() === spellLevelFilter;
@@ -103,137 +107,205 @@ export function SpellsPanel({ spells, onUpdate }: SpellsPanelProps) {
       return 0;
     });
 
+  const filteredRacialAbilities = racialAbilities.filter(ability => 
+    filter === '' || 
+    ability.name.toLowerCase().includes(filter.toLowerCase()) ||
+    ability.race.toLowerCase().includes(filter.toLowerCase()) ||
+    ability.description.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const filteredClassFeatures = classFeatures.filter(feature => 
+    filter === '' || 
+    feature.name.toLowerCase().includes(filter.toLowerCase()) ||
+    feature.class.toLowerCase().includes(filter.toLowerCase()) ||
+    feature.description.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const filteredClassPowers = classPowers.filter(power => 
+    filter === '' || 
+    power.name.toLowerCase().includes(filter.toLowerCase()) ||
+    power.class.toLowerCase().includes(filter.toLowerCase()) ||
+    (power.subclass && power.subclass.toLowerCase().includes(filter.toLowerCase())) ||
+    power.description.toLowerCase().includes(filter.toLowerCase())
+  );
+
   return (
-    <>
-      <div className="p-3 border-b border-border bg-muted/30 space-y-2">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Search spells..."
-            value={spellFilter}
-            onChange={(e) => setSpellFilter(e.target.value)}
-            className="flex-1 h-8 text-xs"
-            data-testid="input-spell-search"
-          />
-          <Select value={spellLevelFilter} onValueChange={setSpellLevelFilter}>
-            <SelectTrigger className="w-24 h-8 text-xs" data-testid="select-spell-level">
-              <SelectValue placeholder="Level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="0">Cantrip</SelectItem>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(level => (
-                <SelectItem key={level} value={level.toString()}>Lv {level}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Select value={spellSortBy} onValueChange={(value: any) => setSpellSortBy(value)}>
-          <SelectTrigger className="w-full h-8 text-xs" data-testid="select-spell-sort">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="level">Level</SelectItem>
-            <SelectItem value="school">School</SelectItem>
-          </SelectContent>
-        </Select>
+    <Tabs defaultValue="spells" className="h-full">
+      <div className="p-3 border-b border-border bg-muted/30">
+        <TabsList className="grid w-full grid-cols-4 h-8 mb-2">
+          <TabsTrigger value="spells" className="text-[10px] px-1" data-testid="tab-spells">Spells</TabsTrigger>
+          <TabsTrigger value="racial" className="text-[10px] px-1" data-testid="tab-racial">Racial</TabsTrigger>
+          <TabsTrigger value="features" className="text-[10px] px-1" data-testid="tab-features">Features</TabsTrigger>
+          <TabsTrigger value="powers" className="text-[10px] px-1" data-testid="tab-powers">Powers</TabsTrigger>
+        </TabsList>
+        <Input
+          placeholder="Search..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="h-8 text-xs mb-2"
+          data-testid="input-ability-search"
+        />
       </div>
-      <ScrollArea className="h-[calc(100vh-320px)]">
-        <div className="p-3 space-y-2">
-          {filteredAndSortedSpells.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              {spells.length === 0 ? 'No spells learned' : 'No spells match your filters'}
-            </p>
-          ) : (
-            filteredAndSortedSpells.map((spell) => (
-              <div
-                key={spell.id}
-                className="border border-border rounded p-2 bg-card hover:bg-accent/5 transition-colors"
-                data-testid={`spell-${spell.id}`}
-              >
-                <div className="flex items-start gap-2">
-                  <span className="text-lg flex-shrink-0">
-                    {onUpdate ? (
-                      <InlineEdit
-                        value={spell.icon}
-                        onSave={(value) => {
-                          const originalIndex = spells.findIndex(s => s.id === spell.id);
-                          const updatedSpells = [...spells];
-                          updatedSpells[originalIndex] = { ...spell, icon: String(value) };
-                          onUpdate({ spells: updatedSpells });
-                        }}
-                        className="text-lg"
-                        inputClassName="w-10 h-7 text-lg text-center"
-                      />
-                    ) : (
-                      spell.icon
-                    )}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-semibold text-xs">
-                        {onUpdate ? (
-                          <InlineEdit
-                            value={spell.name}
-                            onSave={(value) => {
-                              const originalIndex = spells.findIndex(s => s.id === spell.id);
-                              const updatedSpells = [...spells];
-                              updatedSpells[originalIndex] = { ...spell, name: String(value) };
-                              onUpdate({ spells: updatedSpells });
-                            }}
-                            inputClassName="text-xs font-semibold"
-                          />
-                        ) : (
-                          spell.name
-                        )}
-                      </span>
-                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
-                        {spell.level === 0 ? 'C' : `L${spell.level}`}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-accent mt-0.5">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={spell.school}
-                          onSave={(value) => {
-                            const originalIndex = spells.findIndex(s => s.id === spell.id);
-                            const updatedSpells = [...spells];
-                            updatedSpells[originalIndex] = { ...spell, school: String(value) };
-                            onUpdate({ spells: updatedSpells });
-                          }}
-                          className="text-[10px] text-accent"
-                          inputClassName="h-5 text-[10px]"
-                        />
-                      ) : (
-                        spell.school
-                      )}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">
-                      {onUpdate ? (
-                        <InlineEdit
-                          value={spell.description}
-                          onSave={(value) => {
-                            const originalIndex = spells.findIndex(s => s.id === spell.id);
-                            const updatedSpells = [...spells];
-                            updatedSpells[originalIndex] = { ...spell, description: String(value) };
-                            onUpdate({ spells: updatedSpells });
-                          }}
-                          type="textarea"
-                          className="text-[10px]"
-                          inputClassName="text-[10px]"
-                        />
-                      ) : (
-                        spell.description
-                      )}
+
+      <TabsContent value="spells" className="mt-0">
+        <div className="p-3 border-b border-border bg-muted/30 space-y-2">
+          <div className="flex gap-2">
+            <Select value={spellLevelFilter} onValueChange={setSpellLevelFilter}>
+              <SelectTrigger className="w-24 h-8 text-xs" data-testid="select-spell-level">
+                <SelectValue placeholder="Level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="0">Cantrip</SelectItem>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(level => (
+                  <SelectItem key={level} value={level.toString()}>Lv {level}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={spellSortBy} onValueChange={(value: any) => setSpellSortBy(value)}>
+              <SelectTrigger className="flex-1 h-8 text-xs" data-testid="select-spell-sort">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="level">Level</SelectItem>
+                <SelectItem value="school">School</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <ScrollArea className="h-[calc(100vh-380px)]">
+          <div className="p-3 space-y-2">
+            {filteredAndSortedSpells.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {spells.length === 0 ? 'No spells learned' : 'No spells match your filters'}
+              </p>
+            ) : (
+              filteredAndSortedSpells.map((spell) => (
+                <div
+                  key={spell.id}
+                  className="border border-border rounded p-2 bg-card hover:bg-accent/5 transition-colors"
+                  data-testid={`spell-${spell.id}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg flex-shrink-0">{spell.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-xs">{spell.name}</span>
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                          {spell.level === 0 ? 'C' : `L${spell.level}`}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-accent mt-0.5">{spell.school}</div>
+                      <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{spell.description}</div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      </ScrollArea>
-    </>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="racial" className="mt-0">
+        <ScrollArea className="h-[calc(100vh-290px)]">
+          <div className="p-3 space-y-2">
+            {filteredRacialAbilities.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {racialAbilities.length === 0 ? 'No racial abilities' : 'No abilities match your search'}
+              </p>
+            ) : (
+              filteredRacialAbilities.map((ability) => (
+                <div
+                  key={ability.id}
+                  className="border border-border rounded p-2 bg-card hover:bg-accent/5 transition-colors"
+                  data-testid={`racial-ability-${ability.id}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg flex-shrink-0">{ability.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-xs">{ability.name}</span>
+                        <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded flex-shrink-0">
+                          {ability.race}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{ability.description}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="features" className="mt-0">
+        <ScrollArea className="h-[calc(100vh-290px)]">
+          <div className="p-3 space-y-2">
+            {filteredClassFeatures.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {classFeatures.length === 0 ? 'No class features' : 'No features match your search'}
+              </p>
+            ) : (
+              filteredClassFeatures.map((feature) => (
+                <div
+                  key={feature.id}
+                  className="border border-border rounded p-2 bg-card hover:bg-accent/5 transition-colors"
+                  data-testid={`class-feature-${feature.id}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg flex-shrink-0">{feature.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-xs">{feature.name}</span>
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                          {feature.class}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{feature.description}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="powers" className="mt-0">
+        <ScrollArea className="h-[calc(100vh-290px)]">
+          <div className="p-3 space-y-2">
+            {filteredClassPowers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {classPowers.length === 0 ? 'No class powers' : 'No powers match your search'}
+              </p>
+            ) : (
+              filteredClassPowers.map((power) => (
+                <div
+                  key={power.id}
+                  className="border border-border rounded p-2 bg-card hover:bg-accent/5 transition-colors"
+                  data-testid={`class-power-${power.id}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg flex-shrink-0">{power.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-xs">{power.name}</span>
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                          {power.subclass || power.class}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{power.description}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </TabsContent>
+    </Tabs>
   );
 }
 

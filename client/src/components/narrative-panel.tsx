@@ -239,6 +239,21 @@ function validateAndCoerceParserData(data: any, characterName: string = 'Unknown
         result.stateUpdates.spells = spellsList;
       }
     }
+    if (updates.racialAbilities !== undefined) {
+      result.stateUpdates.racialAbilities = Array.isArray(updates.racialAbilities) 
+        ? updates.racialAbilities 
+        : [updates.racialAbilities];
+    }
+    if (updates.classFeatures !== undefined) {
+      result.stateUpdates.classFeatures = Array.isArray(updates.classFeatures) 
+        ? updates.classFeatures 
+        : [updates.classFeatures];
+    }
+    if (updates.classPowers !== undefined) {
+      result.stateUpdates.classPowers = Array.isArray(updates.classPowers) 
+        ? updates.classPowers 
+        : [updates.classPowers];
+    }
     if (updates.quests !== undefined) {
       result.stateUpdates.quests = Array.isArray(updates.quests) 
         ? updates.quests 
@@ -709,6 +724,24 @@ export default function NarrativePanel({
           // Update spells
           if (stateUpdates.spells !== undefined) {
             updated.spells = stateUpdates.spells;
+            updatedTabsSet.add('spells');
+          }
+          
+          // Update racial abilities
+          if (stateUpdates.racialAbilities !== undefined) {
+            updated.racialAbilities = stateUpdates.racialAbilities;
+            updatedTabsSet.add('spells');
+          }
+          
+          // Update class features
+          if (stateUpdates.classFeatures !== undefined) {
+            updated.classFeatures = stateUpdates.classFeatures;
+            updatedTabsSet.add('spells');
+          }
+          
+          // Update class powers
+          if (stateUpdates.classPowers !== undefined) {
+            updated.classPowers = stateUpdates.classPowers;
             updatedTabsSet.add('spells');
           }
           

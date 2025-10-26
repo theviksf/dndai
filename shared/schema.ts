@@ -62,6 +62,31 @@ export type Spell = {
   icon: string;
 };
 
+export type RacialAbility = {
+  id: string;
+  name: string;
+  race: string;
+  description: string;
+  icon: string;
+};
+
+export type ClassFeature = {
+  id: string;
+  name: string;
+  class: string;
+  description: string;
+  icon: string;
+};
+
+export type ClassPower = {
+  id: string;
+  name: string;
+  class: string;
+  subclass?: string;
+  description: string;
+  icon: string;
+};
+
 export type Companion = {
   id: string;
   name: string;
@@ -237,6 +262,9 @@ export type GameStateData = {
   previousLocations: PreviousLocation[];
   inventory: InventoryItem[];
   spells: Spell[];
+  racialAbilities: RacialAbility[];
+  classFeatures: ClassFeature[];
+  classPowers: ClassPower[];
   statusEffects: StatusEffect[];
   quests: Quest[];
   companions: Companion[];
