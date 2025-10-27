@@ -141,7 +141,7 @@ Your response must be ONLY the JSON object below. Do NOT include:
 
 EXACT JSON FORMAT TO RETURN:
 {
-  "backstory": "Your 2-4 paragraph backstory here (150-250 words). Include specific names, dates, numbers, relationships, secrets, and connections to the existing world. Be specific and concrete rather than vague. Include at least one secret or hidden element that could emerge during gameplay."
+  "backstory": "Your backstory in **Markdown format** (150-250 words). Use markdown formatting:\n- **Bold** for names, titles, and important concepts\n- Proper paragraph breaks for readability\n- Headers (## or ###) for major sections if helpful\n- Lists for objectives, connections, or key facts\n\nInclude specific names, dates, numbers, relationships, secrets, and connections to the existing world. Be specific and concrete rather than vague. Include at least one secret or hidden element that could emerge during gameplay."
 }
 
 # Important Guidelines

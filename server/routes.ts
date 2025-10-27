@@ -306,12 +306,17 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
         model: model || 'deepseek/deepseek-chat-v3.1',
         messages: [
           {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
             role: 'user',
-            content: fullPrompt
+            content: context
           }
         ],
         max_tokens: 2000,
         temperature: 0.3,
+        response_format: { type: 'json_object' }
       })
     });
     
