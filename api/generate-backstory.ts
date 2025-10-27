@@ -35,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             content: fullPrompt
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 2000,
         temperature: 0.8,
       })
     });
@@ -52,6 +52,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const data = await response.json();
     const rawContent = data.choices[0].message.content;
+    
+    // Check if response was truncated due to token limit
+    if (data.choices[0].finish_reason === 'length') {
+      console.warn('[BACKSTORY GEN] Response truncated due to max_tokens limit');
+      return res.status(500).json({
+        error: 'Backstory generation exceeded token limit. Response was truncated.',
+        fullPrompt,
+        rawResponse: rawContent,
+        finishReason: 'length'
+      });
+    }
     
     console.log('[BACKSTORY GEN] Raw response:', rawContent.substring(0, 200));
     

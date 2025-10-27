@@ -211,7 +211,7 @@ router.post('/generate-backstory', async (req: Request, res: Response) => {
             content: fullPrompt
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 2000,
         temperature: 0.8,
       })
     });
@@ -228,6 +228,17 @@ router.post('/generate-backstory', async (req: Request, res: Response) => {
     
     const data = await response.json();
     const rawContent = data.choices[0].message.content;
+    
+    // Check if response was truncated due to token limit
+    if (data.choices[0].finish_reason === 'length') {
+      console.warn('[BACKSTORY GEN] Response truncated due to max_tokens limit');
+      return res.status(500).json({
+        error: 'Backstory generation exceeded token limit. Response was truncated.',
+        fullPrompt,
+        rawResponse: rawContent,
+        finishReason: 'length'
+      });
+    }
     
     console.log('[BACKSTORY GEN] Raw response:', rawContent.substring(0, 200));
     
@@ -418,7 +429,7 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
             content: fullPrompt
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 4000,
         temperature: 0.1,
         response_format: { type: 'json_object' }
       })
@@ -436,6 +447,17 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
     
     const data = await response.json();
     const rawContent = data.choices[0].message.content;
+    
+    // Check if response was truncated due to token limit
+    if (data.choices[0].finish_reason === 'length') {
+      console.warn('[BACKSTORY PARSER] Response truncated due to max_tokens limit');
+      return res.status(500).json({
+        error: 'Backstory parser response exceeded token limit. Response was truncated. Try reducing the number of entities or simplifying backstories.',
+        fullPrompt,
+        rawResponse: rawContent,
+        finishReason: 'length'
+      });
+    }
     
     console.log('[BACKSTORY PARSER] Raw response:', rawContent.substring(0, 200));
     
