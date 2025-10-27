@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
-import { generateEntityBackstory, needsBackstoryGeneration, parseBackstoriesForEntityUpdates } from '@/lib/backstory-generation';
+import { generateEntityBackstory, needsBackstoryGeneration, parseBackstoriesForEntityUpdates, parseSingleBackstoryForEntityUpdates } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 
@@ -1464,9 +1464,161 @@ export default function NarrativePanel({
             });
           }
 
-          // Generate backstories in the background
+          // Generate backstories sequentially - parse each one immediately after generation
           if (backstoriesToGenerate.length > 0) {
-            Promise.allSettled(
+            console.log('[BACKSTORY] Starting sequential generation and parsing for', backstoriesToGenerate.length, 'entities');
+            
+            // Process each entity sequentially
+            (async () => {
+              for (const { entityType, entity, id } of backstoriesToGenerate) {
+                try {
+                  // Step 1: Generate backstory
+                  console.log('[BACKSTORY] Generating backstory for', entityType, entity.name || id);
+                  const backstoryResult = await generateEntityBackstory({
+                    entityType,
+                    entity,
+                    gameState: currentState,
+                    config,
+                  });
+                  
+                  // Step 2: Update game state with backstory
+                  await new Promise<void>((resolve) => {
+                    setGameState(prev => {
+                      const updated = { ...prev };
+                      
+                      // Add debug log
+                      if (backstoryResult.debugLogEntry) {
+                        updated.debugLog = [...(updated.debugLog || []), backstoryResult.debugLogEntry];
+                      }
+                      
+                      // Update backstory on entity
+                      if (backstoryResult.backstory) {
+                        if (entityType === 'companion') {
+                          updated.companions = updated.companions?.map(c =>
+                            c.id === id ? { ...c, backstory: backstoryResult.backstory } : c
+                          );
+                        } else if (entityType === 'npc') {
+                          updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
+                            npc.id === id ? { ...npc, backstory: backstoryResult.backstory } : npc
+                          );
+                        } else if (entityType === 'quest') {
+                          updated.quests = updated.quests?.map(q =>
+                            q.id === id ? { ...q, backstory: backstoryResult.backstory } : q
+                          );
+                        } else if (entityType === 'location') {
+                          updated.location = { ...updated.location, backstory: backstoryResult.backstory };
+                        }
+                      }
+                      
+                      resolve();
+                      return updated;
+                    });
+                  });
+                  
+                  // Step 3: Get the updated entity with backstory
+                  let entityWithBackstory = entity;
+                  if (backstoryResult.backstory) {
+                    entityWithBackstory = { ...entity, backstory: backstoryResult.backstory };
+                    
+                    // Step 4: Parse backstory immediately for this entity only
+                    console.log('[BACKSTORY PARSER] Parsing', entityType, entity.name || id);
+                    const parserResult = await parseSingleBackstoryForEntityUpdates(
+                      entityType,
+                      entityWithBackstory,
+                      currentState,
+                      config
+                    );
+                    
+                    console.log('[BACKSTORY PARSER]', entityType, 'updates:', parserResult.summary);
+                    
+                    // Step 5: Apply parser updates to this entity
+                    if (Object.keys(parserResult.updates).length > 0) {
+                      await new Promise<void>((resolve) => {
+                        setGameState(prev => {
+                          const updated = { ...prev };
+                          
+                          // Add parser debug log
+                          if (parserResult.debugLogEntry) {
+                            updated.debugLog = [...(updated.debugLog || []), parserResult.debugLogEntry];
+                          }
+                          
+                          // Apply updates based on entity type
+                          if (entityType === 'npc') {
+                            updated.encounteredCharacters = updated.encounteredCharacters.map(npc => {
+                              if (npc.id === parserResult.entityId) {
+                                console.log('[BACKSTORY PARSER] Applying NPC updates:', parserResult.updates);
+                                return { ...npc, ...parserResult.updates };
+                              }
+                              return npc;
+                            });
+                          } else if (entityType === 'companion') {
+                            updated.companions = updated.companions.map(comp => {
+                              if (comp.id === parserResult.entityId) {
+                                console.log('[BACKSTORY PARSER] Applying companion updates:', parserResult.updates);
+                                return { ...comp, ...parserResult.updates };
+                              }
+                              return comp;
+                            });
+                          } else if (entityType === 'quest') {
+                            updated.quests = updated.quests?.map(quest => {
+                              if (quest.id === parserResult.entityId) {
+                                console.log('[BACKSTORY PARSER] Applying quest updates:', parserResult.updates);
+                                // Normalize quest objectives (text/description, completed/status)
+                                const updates = { ...parserResult.updates };
+                                if (updates.objectives && Array.isArray(updates.objectives)) {
+                                  updates.objectives = updates.objectives.map((obj: any) => ({
+                                    text: String(obj.text || obj.description || ''),
+                                    completed: Boolean(obj.completed ?? obj.status === 'complete' ?? false)
+                                  }));
+                                }
+                                return { ...quest, ...updates };
+                              }
+                              return quest;
+                            }) || [];
+                          } else if (entityType === 'location') {
+                            console.log('[BACKSTORY PARSER] Applying location updates:', parserResult.updates);
+                            updated.location = { ...updated.location, ...parserResult.updates };
+                          }
+                          
+                          resolve();
+                          return updated;
+                        });
+                      });
+                    }
+                  }
+                } catch (error) {
+                  console.error('[BACKSTORY] Error generating/parsing for', entityType, entity.name || id, error);
+                }
+              }
+              
+              console.log('[BACKSTORY] Completed all backstory generation and parsing');
+            })();
+          }
+        }
+
+        return currentState;
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to process action',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+      setIsStreaming(false);
+      setIsParsing(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    processAction(actionInput);
+  };
+
+
+  return (
+    <main className="lg:col-span-6 flex flex-col space-y-4">
+      {/* Narrative Display - PLACEHOLDER TO BE CONTINUED FROM OLD CODE */}
               backstoriesToGenerate.map(async ({ entityType, entity, id }) => {
                 const result = await generateEntityBackstory({
                   entityType,

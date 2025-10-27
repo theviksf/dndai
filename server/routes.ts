@@ -620,6 +620,98 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
   }
 });
 
+// 5b. POST /api/parse-single-backstory - Parse single entity backstory for updates
+router.post('/parse-single-backstory', async (req: Request, res: Response) => {
+  try {
+    const { systemPrompt, context, entityType, entity, model } = req.body;
+    const key = getApiKey(req);
+    
+    if (!key) {
+      return res.status(400).json({ error: 'API key required' });
+    }
+    
+    // Build the full prompt
+    const fullPrompt = `${systemPrompt}\n\n${context}`;
+    
+    console.log('[BACKSTORY PARSER SINGLE] Parsing single', entityType, 'backstory using model', model);
+    
+    // Call OpenRouter with strict JSON enforcement
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'HTTP-Referer': req.headers.referer || req.headers.origin || 'http://localhost:5000',
+        'X-Title': 'D&D Adventure Game',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model || 'deepseek/deepseek-chat-v3.1',
+        messages: [
+          {
+            role: 'system',
+            content: 'YOU ARE A JSON-ONLY API. You MUST respond with ONLY raw JSON. NO narrative text, NO code fences, NO explanations. Start with { and end with }. If you write anything except valid JSON, you have FAILED your task.'
+          },
+          {
+            role: 'user',
+            content: fullPrompt
+          }
+        ],
+        max_tokens: 2000, // Reduced since we're parsing one entity
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('[BACKSTORY PARSER SINGLE] OpenRouter API error:', errorData);
+      return res.status(response.status).json({
+        error: `OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`,
+        fullPrompt,
+        rawResponse: JSON.stringify(errorData, null, 2)
+      });
+    }
+    
+    const data = await response.json();
+    const rawContent = data.choices[0].message.content;
+    
+    console.log('[BACKSTORY PARSER SINGLE] Raw response length:', rawContent.length);
+    
+    // Parse JSON response
+    let parsedData;
+    try {
+      parsedData = extractAndParseBackstoryJSON(rawContent);
+      console.log('[BACKSTORY PARSER SINGLE] Successfully parsed JSON from response');
+    } catch (parseError: any) {
+      console.error('[BACKSTORY PARSER SINGLE] Failed to extract valid JSON:', parseError.message);
+      return res.status(500).json({
+        error: 'LLM returned non-JSON response',
+        fullPrompt,
+        rawResponse: rawContent
+      });
+    }
+    
+    // Return the parsed single entity update
+    res.json({
+      entityType: parsedData.entityType || entityType,
+      entityId: parsedData.entityId || entity.id,
+      updates: parsedData.updates || {},
+      summary: parsedData.summary || 'No updates extracted',
+      usage: data.usage,
+      model: data.model,
+      fullPrompt,
+      rawResponse: rawContent
+    });
+  } catch (error: any) {
+    console.error('[BACKSTORY PARSER SINGLE] Error:', error.message);
+    res.status(500).json({ 
+      error: error.message,
+      fullPrompt: req.body.systemPrompt || 'Prompt not available',
+      rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
+    });
+  }
+});
+
 // 6. POST /api/generate-lore - Generate world lore
 router.post('/generate-lore', async (req: Request, res: Response) => {
   try {
