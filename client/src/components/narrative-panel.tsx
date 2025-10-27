@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
-import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
+import { generateEntityBackstory, needsBackstoryGeneration, parseBackstoriesForEntityUpdates } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 
@@ -1540,6 +1540,68 @@ export default function NarrativePanel({
 
                 return updated;
               });
+              
+              // After all backstories are generated and state updated, parse backstories for entity updates
+              setTimeout(async () => {
+                try {
+                  // Get fresh state and parse backstories
+                  setGameState(freshState => {
+                    // Run parser in background and update state when complete
+                    parseBackstoriesForEntityUpdates(freshState, config).then(parserResult => {
+                      setGameState(prev => {
+                        // Apply entity updates
+                        const updated = { ...prev };
+                        
+                        // Update NPCs
+                        if (parserResult.entityUpdates.npcs.length > 0) {
+                          updated.encounteredCharacters = updated.encounteredCharacters.map(npc => {
+                            const updateForNpc = parserResult.entityUpdates.npcs.find(u => u.id === npc.id);
+                            return updateForNpc ? { ...npc, ...updateForNpc.updates } : npc;
+                          });
+                        }
+                        
+                        // Update companions
+                        if (parserResult.entityUpdates.companions.length > 0) {
+                          updated.companions = updated.companions.map(comp => {
+                            const updateForComp = parserResult.entityUpdates.companions.find(u => u.id === comp.id);
+                            return updateForComp ? { ...comp, ...updateForComp.updates } : comp;
+                          });
+                        }
+                        
+                        // Update locations (current and previous)
+                        if (parserResult.entityUpdates.locations.length > 0) {
+                          parserResult.entityUpdates.locations.forEach(locUpdate => {
+                            // Check if this is for the current location
+                            if (locUpdate.id === 'current') {
+                              updated.location = { ...updated.location, ...locUpdate.updates };
+                            } else {
+                              // Check previous locations by id
+                              updated.previousLocations = updated.previousLocations?.map(loc =>
+                                (loc as any).id === locUpdate.id ? { ...loc, ...locUpdate.updates } : loc
+                              ) || [];
+                            }
+                          });
+                        }
+                        
+                        // Add backstory parser debug log
+                        if (parserResult.debugLogEntry) {
+                          updated.debugLog = [...(updated.debugLog || []), parserResult.debugLogEntry];
+                        }
+                        
+                        console.log('[BACKSTORY PARSER] Applied entity updates:', parserResult.summary);
+                        
+                        return updated;
+                      });
+                    }).catch(error => {
+                      console.error('[BACKSTORY PARSER] Error parsing backstories:', error);
+                    });
+                    
+                    return freshState;
+                  });
+                } catch (error) {
+                  console.error('[BACKSTORY PARSER] Error in backstory parser setup:', error);
+                }
+              }, 1000);
             });
           }
         }
