@@ -1576,8 +1576,8 @@ export default function NarrativePanel({
                                 const normalizedUpdates: any = {};
                                 const updates = updateForNpc.updates as any;
                                 
-                                // Ensure string fields are strings
-                                const stringFields = ['name', 'role', 'appearance', 'personality', 'backstory', 'age', 'sex', 'hairColor', 'outfit'];
+                                // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
+                                const stringFields = ['name', 'role', 'appearance', 'personality', 'age', 'sex', 'hairColor', 'outfit'];
                                 stringFields.forEach(field => {
                                   if (updates[field] !== undefined && updates[field] !== null) {
                                     normalizedUpdates[field] = String(updates[field]);
@@ -1620,8 +1620,8 @@ export default function NarrativePanel({
                                 const normalizedUpdates: any = {};
                                 const updates = updateForComp.updates as any;
                                 
-                                // Ensure string fields are strings
-                                const stringFields = ['name', 'class', 'appearance', 'personality', 'backstory', 'age', 'sex', 'hairColor', 'outfit', 'feelingsTowardsPlayer', 'criticalMemories'];
+                                // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
+                                const stringFields = ['name', 'class', 'appearance', 'personality', 'age', 'sex', 'hairColor', 'outfit', 'feelingsTowardsPlayer', 'criticalMemories'];
                                 stringFields.forEach(field => {
                                   if (updates[field] !== undefined && updates[field] !== null) {
                                     normalizedUpdates[field] = String(updates[field]);
@@ -1664,8 +1664,8 @@ export default function NarrativePanel({
                               const normalizedUpdates: any = {};
                               const updates = locUpdate.updates as any;
                               
-                              // Ensure string fields are strings
-                              const stringFields = ['name', 'type', 'description', 'backstory'];
+                              // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
+                              const stringFields = ['name', 'type', 'description'];
                               stringFields.forEach(field => {
                                 if (updates[field] !== undefined && updates[field] !== null) {
                                   normalizedUpdates[field] = String(updates[field]);
@@ -1711,15 +1711,12 @@ export default function NarrativePanel({
                                 // Validate and normalize quest update data
                                 const normalizedUpdates: any = {};
                                 
-                                // Ensure string fields are strings
+                                // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
                                 if (updateForQuest.updates.title !== undefined) {
                                   normalizedUpdates.title = String(updateForQuest.updates.title);
                                 }
                                 if (updateForQuest.updates.description !== undefined) {
                                   normalizedUpdates.description = String(updateForQuest.updates.description);
-                                }
-                                if (updateForQuest.updates.backstory !== undefined) {
-                                  normalizedUpdates.backstory = String(updateForQuest.updates.backstory);
                                 }
                                 
                                 // Ensure type is valid

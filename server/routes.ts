@@ -459,12 +459,15 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
       });
     }
     
-    console.log('[BACKSTORY PARSER] Raw response:', rawContent.substring(0, 200));
+    console.log('[BACKSTORY PARSER] Raw response length:', rawContent.length);
+    console.log('[BACKSTORY PARSER] Raw response preview:', rawContent.substring(0, 300));
     
     // Parse JSON response using robust extraction and parsing
     let parsedData;
     try {
       parsedData = extractAndParseBackstoryJSON(rawContent);
+      console.log('[BACKSTORY PARSER] Successfully parsed JSON from response');
+      console.log('[BACKSTORY PARSER] Parsed data keys:', Object.keys(parsedData));
     } catch (parseError: any) {
       console.error('[BACKSTORY PARSER] Failed to extract valid JSON:', parseError.message);
       console.error('[BACKSTORY PARSER] Raw response:', rawContent);
@@ -481,10 +484,20 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
     
     if (parsedData.entityUpdates) {
       // LLM followed the exact format
+      console.log('[BACKSTORY PARSER] LLM followed entityUpdates format directly');
       entityUpdates = parsedData.entityUpdates;
     } else {
       // LLM returned alternative format - transform it
       console.log('[BACKSTORY PARSER] Transforming LLM response to entityUpdates format');
+      console.log('[BACKSTORY PARSER] Source data structure:', {
+        hasNpcs: !!parsedData.npcs,
+        hasCompanions: !!parsedData.companions,
+        hasParty: !!parsedData.party,
+        hasCurrentLocation: !!parsedData.current_location,
+        hasLocation: !!parsedData.location,
+        hasLocations: !!parsedData.locations,
+        hasQuests: !!parsedData.quests
+      });
       entityUpdates = {
         npcs: [] as any[],
         companions: [] as any[],
@@ -549,12 +562,45 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
     if (!Array.isArray(entityUpdates.locations)) entityUpdates.locations = [];
     if (!Array.isArray(entityUpdates.quests)) entityUpdates.quests = [];
     
-    console.log('[BACKSTORY PARSER] Entity updates extracted:', {
+    const updateCounts = {
       npcs: entityUpdates.npcs.length,
       companions: entityUpdates.companions.length,
       locations: entityUpdates.locations.length,
       quests: entityUpdates.quests.length
-    });
+    };
+    
+    console.log('[BACKSTORY PARSER] Entity updates extracted:', updateCounts);
+    
+    // Log detailed update information for debugging
+    if (updateCounts.npcs > 0) {
+      console.log('[BACKSTORY PARSER] NPC updates:', entityUpdates.npcs.map((u: any) => ({
+        id: u.id,
+        updateFields: Object.keys(u.updates || {})
+      })));
+    }
+    if (updateCounts.companions > 0) {
+      console.log('[BACKSTORY PARSER] Companion updates:', entityUpdates.companions.map((u: any) => ({
+        id: u.id,
+        updateFields: Object.keys(u.updates || {})
+      })));
+    }
+    if (updateCounts.locations > 0) {
+      console.log('[BACKSTORY PARSER] Location updates:', entityUpdates.locations.map((u: any) => ({
+        id: u.id,
+        updateFields: Object.keys(u.updates || {})
+      })));
+    }
+    if (updateCounts.quests > 0) {
+      console.log('[BACKSTORY PARSER] Quest updates:', entityUpdates.quests.map((u: any) => ({
+        id: u.id,
+        updateFields: Object.keys(u.updates || {})
+      })));
+    }
+    
+    if (updateCounts.npcs === 0 && updateCounts.companions === 0 && updateCounts.locations === 0 && updateCounts.quests === 0) {
+      console.warn('[BACKSTORY PARSER] WARNING: No entity updates extracted from backstories');
+      console.warn('[BACKSTORY PARSER] This may indicate the LLM did not find extractable details or misunderstood the task');
+    }
     
     res.json({
       entityUpdates,
