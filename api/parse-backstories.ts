@@ -1,5 +1,109 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// Helper functions for robust JSON parsing
+function sanitizeBackstoryJSON(jsonString: string): string {
+  // Remove BOM
+  let cleaned = jsonString.replace(/^\uFEFF/, '');
+  
+  // Normalize curly quotes to straight quotes using unicode ranges
+  cleaned = cleaned.replace(/[\u201C\u201D]/g, '"'); // " " to "
+  cleaned = cleaned.replace(/[\u2018\u2019]/g, "'"); // ' ' to '
+  
+  // Remove trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+  
+  return cleaned.trim();
+}
+
+function extractAndParseBackstoryJSON(content: string): any {
+  const rawContent = content.trim();
+  
+  // Strategy 1: Try to extract from code fences
+  const allFences = rawContent.matchAll(/```([a-zA-Z]*)\s*([\s\S]*?)\s*```/g);
+  const fencedBlocks = Array.from(allFences);
+  
+  for (const match of fencedBlocks) {
+    const candidate = match[2].trim();
+    if (candidate.startsWith('{') || candidate.startsWith('[')) {
+      try {
+        const sanitized = sanitizeBackstoryJSON(candidate);
+        const parsed = JSON.parse(sanitized);
+        if (parsed && typeof parsed === 'object') {
+          return parsed;
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+  
+  // Strategy 2: Try raw content if it looks like JSON
+  if (rawContent.startsWith('{') || rawContent.startsWith('[')) {
+    try {
+      const sanitized = sanitizeBackstoryJSON(rawContent);
+      const parsed = JSON.parse(sanitized);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (e) {
+      // Continue to next strategy
+    }
+  }
+  
+  // Strategy 3: Try to find the first balanced JSON object using brace counting
+  // Track whether we're inside a string to avoid counting braces in string literals
+  let braceCount = 0;
+  let startIndex = -1;
+  let inString = false;
+  let escapeNext = false;
+  
+  for (let i = 0; i < rawContent.length; i++) {
+    const char = rawContent[i];
+    
+    // Handle escape sequences
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+    
+    // Track string boundaries (double quotes only, as JSON uses double quotes)
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    
+    // Only count braces outside of strings
+    if (!inString) {
+      if (char === '{') {
+        if (braceCount === 0) startIndex = i;
+        braceCount++;
+      } else if (char === '}') {
+        braceCount--;
+        if (braceCount === 0 && startIndex !== -1) {
+          try {
+            const candidate = rawContent.substring(startIndex, i + 1);
+            const sanitized = sanitizeBackstoryJSON(candidate);
+            const parsed = JSON.parse(sanitized);
+            if (parsed && typeof parsed === 'object') {
+              return parsed;
+            }
+          } catch (e) {
+            // Continue searching
+          }
+          startIndex = -1;
+        }
+      }
+    }
+  }
+  
+  throw new Error('No valid JSON found in backstory parser response');
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -60,39 +164,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('[BACKSTORY PARSER] Raw response:', rawContent.substring(0, 200));
     
-    // Parse JSON response with multiple fallback strategies
+    // Parse JSON response using robust extraction and parsing
     let parsedData;
     try {
-      // Strategy 1: Try direct JSON parse first (best case with response_format)
-      parsedData = JSON.parse(rawContent);
-    } catch (e1) {
-      try {
-        // Strategy 2: Try to extract JSON from code fences
-        const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-        if (jsonMatch) {
-          parsedData = JSON.parse(jsonMatch[1]);
-        } else {
-          throw new Error('No code fence found');
-        }
-      } catch (e2) {
-        try {
-          // Strategy 3: Try to find any JSON object in the response
-          const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsedData = JSON.parse(jsonMatch[0]);
-          } else {
-            throw new Error('No JSON object found');
-          }
-        } catch (e3) {
-          console.error('[BACKSTORY PARSER] All JSON parsing strategies failed');
-          console.error('[BACKSTORY PARSER] Raw response:', rawContent);
-          return res.status(500).json({
-            error: 'LLM returned non-JSON response. The model ignored JSON-only instructions and returned narrative text instead.',
-            fullPrompt,
-            rawResponse: rawContent
-          });
-        }
-      }
+      parsedData = extractAndParseBackstoryJSON(rawContent);
+    } catch (parseError: any) {
+      console.error('[BACKSTORY PARSER] Failed to extract valid JSON:', parseError.message);
+      console.error('[BACKSTORY PARSER] Raw response:', rawContent);
+      return res.status(500).json({
+        error: 'LLM returned non-JSON response. The model ignored JSON-only instructions and returned narrative text instead.',
+        fullPrompt,
+        rawResponse: rawContent
+      });
     }
     
     // Ensure proper structure
