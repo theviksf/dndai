@@ -348,12 +348,13 @@ router.post('/parse-backstories', async (req: Request, res: Response) => {
     }
     
     // Ensure proper structure
-    const entityUpdates = parsedData.entityUpdates || { npcs: [], companions: [], locations: [] };
+    const entityUpdates = parsedData.entityUpdates || { npcs: [], companions: [], locations: [], quests: [] };
     
     // Normalize entity updates to ensure arrays
     if (!Array.isArray(entityUpdates.npcs)) entityUpdates.npcs = [];
     if (!Array.isArray(entityUpdates.companions)) entityUpdates.companions = [];
     if (!Array.isArray(entityUpdates.locations)) entityUpdates.locations = [];
+    if (!Array.isArray(entityUpdates.quests)) entityUpdates.quests = [];
     
     res.json({
       entityUpdates,
