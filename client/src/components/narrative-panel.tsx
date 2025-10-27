@@ -1547,10 +1547,10 @@ export default function NarrativePanel({
                 setTimeout(() => {
                   console.log('[BACKSTORY PARSER] Starting parser for', backstoriesToGenerate.length, 'entities');
                   
-                  // Get current game state and run parser OUTSIDE of setState
-                  setGameState(currentGameState => {
-                    // Kick off parser with current state, but don't wait for it in the updater
-                    parseBackstoriesForEntityUpdates(currentGameState, config)
+                  // Call parser with current game state
+                  setGameState(freshState => {
+                    // Run parser asynchronously
+                    parseBackstoriesForEntityUpdates(freshState, config)
                       .then(parserResult => {
                         console.log('[BACKSTORY PARSER] Received parser result:', parserResult.summary);
                         console.log('[BACKSTORY PARSER] Entity updates:', {
@@ -1560,7 +1560,7 @@ export default function NarrativePanel({
                           quests: parserResult.entityUpdates.quests.length,
                         });
                         
-                        // Apply entity updates in a separate setState call
+                        // Apply entity updates to game state
                         setGameState(prev => {
                           const updated = { ...prev };
                           let updatesApplied = 0;
@@ -1787,14 +1787,14 @@ export default function NarrativePanel({
                             type: 'backstoryparser' as const,
                             prompt: 'Parser failed to execute',
                             response: JSON.stringify({ error: error.message, stack: error.stack }, null, 2),
-                            model: config.backstoryParserLLM || 'N/A',
+                            model: 'N/A',
                             error: error.message,
                           }],
                         }));
                       });
                     
-                    // Return current state immediately - parser runs async
-                    return currentGameState;
+                    // Return current state immediately
+                    return freshState;
                   });
                 }, 1000);
               }
