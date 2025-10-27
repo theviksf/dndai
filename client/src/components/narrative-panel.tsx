@@ -753,37 +753,13 @@ export default function NarrativePanel({
             // Merge quests - update existing ones or add new ones
             const mergedQuests = [...existingQuests];
             newQuests.forEach((newQuest: any) => {
-              // Normalize quest data to ensure correct types
-              const normalizedQuest = { ...newQuest };
-              
-              // Ensure backstory is a string
-              if ('backstory' in normalizedQuest && typeof normalizedQuest.backstory !== 'string') {
-                normalizedQuest.backstory = JSON.stringify(normalizedQuest.backstory);
-              }
-              
-              // Ensure objectives is an array with proper structure
-              if ('objectives' in normalizedQuest) {
-                if (Array.isArray(normalizedQuest.objectives)) {
-                  normalizedQuest.objectives = normalizedQuest.objectives
-                    .filter((obj: any) => obj && typeof obj === 'object')
-                    .map((obj: any) => ({
-                      text: typeof obj.text === 'string' ? obj.text : String(obj.text || ''),
-                      completed: !!obj.completed
-                    }))
-                    .filter((obj: any) => obj.text.trim() !== '');
-                } else {
-                  // If objectives is not an array, set to empty array
-                  normalizedQuest.objectives = [];
-                }
-              }
-              
-              const existingIndex = mergedQuests.findIndex(q => q.id === normalizedQuest.id);
+              const existingIndex = mergedQuests.findIndex(q => q.id === newQuest.id);
               if (existingIndex >= 0) {
                 // Update existing quest, preserving fields like backstory
-                mergedQuests[existingIndex] = { ...mergedQuests[existingIndex], ...normalizedQuest };
+                mergedQuests[existingIndex] = { ...mergedQuests[existingIndex], ...newQuest };
               } else {
                 // Add new quest
-                mergedQuests.push(normalizedQuest);
+                mergedQuests.push(newQuest);
               }
             });
             updated.quests = mergedQuests;
@@ -1637,32 +1613,7 @@ export default function NarrativePanel({
                               if (updateForQuest) {
                                 console.log('[BACKSTORY PARSER] Updating quest:', quest.title, updateForQuest.updates);
                                 updatesApplied++;
-                                
-                                // Normalize quest updates to ensure correct types
-                                const normalizedUpdates = { ...updateForQuest.updates };
-                                
-                                // Ensure backstory is a string
-                                if ('backstory' in normalizedUpdates && typeof normalizedUpdates.backstory !== 'string') {
-                                  normalizedUpdates.backstory = JSON.stringify(normalizedUpdates.backstory);
-                                }
-                                
-                                // Ensure objectives is an array with proper structure
-                                if ('objectives' in normalizedUpdates) {
-                                  if (Array.isArray(normalizedUpdates.objectives)) {
-                                    normalizedUpdates.objectives = normalizedUpdates.objectives
-                                      .filter((obj: any) => obj && typeof obj === 'object')
-                                      .map((obj: any) => ({
-                                        text: typeof obj.text === 'string' ? obj.text : String(obj.text || ''),
-                                        completed: !!obj.completed
-                                      }))
-                                      .filter((obj: any) => obj.text.trim() !== '');
-                                  } else {
-                                    // If objectives is not an array, remove it
-                                    delete normalizedUpdates.objectives;
-                                  }
-                                }
-                                
-                                return { ...quest, ...normalizedUpdates };
+                                return { ...quest, ...updateForQuest.updates };
                               }
                               return quest;
                             }) || [];
