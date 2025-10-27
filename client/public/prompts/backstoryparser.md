@@ -42,9 +42,14 @@ FOR Locations:
 
 FOR Quests:
 - Quest type (main quest or side quest)
+- Title updates or clarification (use "title" field, not "name")
 - Description updates or clarification
-- Objectives or goals clarification (add or update objective items)
-  - In most cases you will need to take the objectives from the backstory and provide them. 
+- Objectives extraction (CRITICAL - extract from backstory.key_objectives or backstory text)
+  - Read the quest's backstory and extract objectives into the objectives array
+  - Use "text" field (not "description") for each objective
+  - Use "completed" field (not "status") - set to false for new objectives
+  - DO NOT create placeholder objectives with "undefined" text
+  - Extract actual actionable objectives from the backstory content
 - Progress tracking updates
 - Icon suggestions based on quest theme
 - ❌ DO NOT UPDATE: backstory (this is set by the backstory generator)
@@ -306,7 +311,61 @@ YOUR RESPONSE (raw JSON only):
   "summary": "Updated Lyra with deeper personality insights, critical memories of her past, and her feelings toward the player"
 }
 
-EXAMPLE 4 - No new information:
+EXAMPLE 4 - Quest with objectives extraction (CRITICAL EXAMPLE):
+Input backstory for quest "Investigate the Disappearances":
+{
+  "backstory": {
+    "title": "The Shadow in the Darkwood",
+    "key_objectives": [
+      "Locate the hidden subterranean grove entrance near the claw marks",
+      "Rescue any surviving farmers before the upcoming blood moon",
+      "Either reinforce the ancient seals or confront Morwen and her shadow-fiends"
+    ],
+    "historical_context": "For generations, Oakhaven has maintained an uneasy peace with the Darkwood Forest..."
+  }
+}
+
+Current quest data:
+{
+  "id": "investigate-disappearances",
+  "title": "Investigate the Disappearances",
+  "description": "Find the missing farmers",
+  "objectives": []
+}
+
+YOUR RESPONSE (raw JSON only) - Extract objectives from backstory.key_objectives:
+{
+  "entityUpdates": {
+    "npcs": [],
+    "companions": [],
+    "locations": [],
+    "quests": [
+      {
+        "id": "investigate-disappearances",
+        "updates": {
+          "title": "The Shadow in the Darkwood",
+          "objectives": [
+            {
+              "text": "Locate the hidden subterranean grove entrance near the claw marks",
+              "completed": false
+            },
+            {
+              "text": "Rescue any surviving farmers before the upcoming blood moon",
+              "completed": false
+            },
+            {
+              "text": "Either reinforce the ancient seals or confront Morwen and her shadow-fiends",
+              "completed": false
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "summary": "Updated quest with title and extracted 3 objectives from backstory"
+}
+
+EXAMPLE 5 - No new information:
 Input backstory for "Guard Captain Marcus":
 "Marcus has served as captain of the city guard for five years. He's known for being stern but fair..."
 
