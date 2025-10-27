@@ -152,6 +152,7 @@ EXACT JSON FORMAT TO RETURN:
 4. **Add Depth**: Include one or two secrets or hidden elements that aren't immediately obvious
 5. **Maintain Consistency**: Respect the established world lore and existing relationships
 6. **Make it Actionable**: Include details that can affect gameplay (specific items, locations, contacts)
+7. **Respond in Markdown**: Use markdown formating when you respond.
 
 # Example Full Response
 
