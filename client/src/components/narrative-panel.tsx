@@ -1640,6 +1640,7 @@ export default function NarrativePanel({
                             type: 'backstoryparser' as const,
                             prompt: 'Parser failed to execute',
                             response: JSON.stringify({ error: error.message, stack: error.stack }, null, 2),
+                            model: 'N/A',
                             error: error.message,
                           }],
                         }));
