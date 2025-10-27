@@ -6,17 +6,19 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
   imageCharacter: string;
   imageLocation: string;
   backstory: string;
+  backstoryparser: string;
   revelations: string;
   lore: string;
 } | null> {
   try {
     // Load prompts directly from static files in /prompts/ directory
-    const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore] = await Promise.all([
+    const [primary, parser, imageCharacter, imageLocation, backstory, backstoryparser, revelations, lore] = await Promise.all([
       fetch('/prompts/primary.md').then(r => r.text()),
       fetch('/prompts/parser.md').then(r => r.text()),
       fetch('/prompts/image-character.md').then(r => r.text()),
       fetch('/prompts/image-location.md').then(r => r.text()),
       fetch('/prompts/backstory.md').then(r => r.text()),
+      fetch('/prompts/backstoryparser.md').then(r => r.text()),
       fetch('/prompts/revelations.md').then(r => r.text()),
       fetch('/prompts/lore.md').then(r => r.text()),
     ]);
@@ -27,6 +29,7 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
       imageCharacter,
       imageLocation,
       backstory,
+      backstoryparser,
       revelations,
       lore,
     };
@@ -90,6 +93,7 @@ export function createDefaultConfig(): GameConfig {
     primaryLLM: 'deepseek/deepseek-chat-v3.1',
     parserLLM: 'deepseek/deepseek-chat-v3.1',
     backstoryLLM: 'deepseek/deepseek-chat-v3.1',
+    backstoryParserLLM: 'deepseek/deepseek-chat-v3.1',
     revelationsLLM: 'deepseek/deepseek-chat-v3.1',
     loreLLM: 'deepseek/deepseek-chat-v3.1',
     difficulty: 'normal',
@@ -101,6 +105,7 @@ export function createDefaultConfig(): GameConfig {
     characterImagePrompt: '',
     locationImagePrompt: '',
     backstorySystemPrompt: '',
+    backstoryParserPrompt: '',
     revelationsSystemPrompt: '',
     loreSystemPrompt: '',
     imageProvider: 'flux',
@@ -119,8 +124,8 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
   // Use nullish coalescing to properly check for undefined/null (not empty strings)
   const needsPrompts = config.dmSystemPrompt == null || config.parserSystemPrompt == null || 
                        config.characterImagePrompt == null || config.locationImagePrompt == null ||
-                       config.backstorySystemPrompt == null || config.revelationsSystemPrompt == null ||
-                       config.loreSystemPrompt == null;
+                       config.backstorySystemPrompt == null || config.backstoryParserPrompt == null ||
+                       config.revelationsSystemPrompt == null || config.loreSystemPrompt == null;
   
   const prompts = needsPrompts ? await loadDefaultPromptsFromAPI() : null;
   
@@ -131,6 +136,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     primaryLLM: config.primaryLLM ?? defaults.primaryLLM,
     parserLLM: config.parserLLM ?? defaults.parserLLM,
     backstoryLLM: config.backstoryLLM ?? defaults.backstoryLLM,
+    backstoryParserLLM: config.backstoryParserLLM ?? defaults.backstoryParserLLM,
     revelationsLLM: config.revelationsLLM ?? defaults.revelationsLLM,
     loreLLM: config.loreLLM ?? defaults.loreLLM,
     // Use nullish coalescing (??) instead of OR (||) to preserve empty strings and falsy values
@@ -139,6 +145,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     imageProvider: config.imageProvider ?? defaults.imageProvider,
     autoGenerateImages: config.autoGenerateImages ?? defaults.autoGenerateImages,
     backstorySystemPrompt: config.backstorySystemPrompt ?? (prompts?.backstory ?? defaults.backstorySystemPrompt),
+    backstoryParserPrompt: config.backstoryParserPrompt ?? (prompts?.backstoryparser ?? defaults.backstoryParserPrompt),
     autoGenerateBackstories: config.autoGenerateBackstories ?? defaults.autoGenerateBackstories,
     revelationsSystemPrompt: config.revelationsSystemPrompt ?? (prompts?.revelations ?? defaults.revelationsSystemPrompt),
     autoGenerateRevelations: config.autoGenerateRevelations ?? defaults.autoGenerateRevelations,

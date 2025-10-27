@@ -157,7 +157,7 @@ export type Revelation = {
 export type DebugLogEntry = {
   id: string;
   timestamp: number;
-  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations' | 'lore';
+  type: 'primary' | 'parser' | 'image' | 'backstory' | 'backstoryparser' | 'revelations' | 'lore';
   prompt: string;
   response: string;
   model: string;
@@ -284,6 +284,7 @@ export type GameConfig = {
   primaryLLM: string;
   parserLLM: string;
   backstoryLLM: string;
+  backstoryParserLLM: string;
   revelationsLLM: string;
   loreLLM: string;
   difficulty: 'easy' | 'normal' | 'hard' | 'deadly';
@@ -295,6 +296,7 @@ export type GameConfig = {
   characterImagePrompt: string;
   locationImagePrompt: string;
   backstorySystemPrompt: string;
+  backstoryParserPrompt: string;
   revelationsSystemPrompt: string;
   loreSystemPrompt: string;
   imageProvider: 'flux' | 'gemini';
