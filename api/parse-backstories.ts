@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('[BACKSTORY PARSER] Parsing backstories for entity updates using model', model);
     
-    // Call OpenRouter
+    // Call OpenRouter with strict JSON enforcement
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -31,12 +31,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         model: model || 'deepseek/deepseek-chat-v3.1',
         messages: [
           {
+            role: 'system',
+            content: 'YOU ARE A JSON-ONLY API. You MUST respond with ONLY raw JSON. NO narrative text, NO code fences, NO explanations. Start with { and end with }. If you write anything except valid JSON, you have FAILED your task.'
+          },
+          {
             role: 'user',
             content: fullPrompt
           }
         ],
         max_tokens: 2000,
-        temperature: 0.3,
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
       })
     });
     
@@ -55,21 +60,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('[BACKSTORY PARSER] Raw response:', rawContent.substring(0, 200));
     
-    // Parse JSON response
+    // Parse JSON response with multiple fallback strategies
     let parsedData;
     try {
-      // Try to extract JSON from code fences if present
-      const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || 
-                        rawContent.match(/(\{[\s\S]*\})/);
-      const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
-      parsedData = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error('[BACKSTORY PARSER] Failed to parse JSON:', parseError);
-      return res.status(500).json({
-        error: 'Failed to parse backstory parser JSON from LLM response',
-        fullPrompt,
-        rawResponse: rawContent
-      });
+      // Strategy 1: Try direct JSON parse first (best case with response_format)
+      parsedData = JSON.parse(rawContent);
+    } catch (e1) {
+      try {
+        // Strategy 2: Try to extract JSON from code fences
+        const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+        if (jsonMatch) {
+          parsedData = JSON.parse(jsonMatch[1]);
+        } else {
+          throw new Error('No code fence found');
+        }
+      } catch (e2) {
+        try {
+          // Strategy 3: Try to find any JSON object in the response
+          const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedData = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error('No JSON object found');
+          }
+        } catch (e3) {
+          console.error('[BACKSTORY PARSER] All JSON parsing strategies failed');
+          console.error('[BACKSTORY PARSER] Raw response:', rawContent);
+          return res.status(500).json({
+            error: 'LLM returned non-JSON response. The model ignored JSON-only instructions and returned narrative text instead.',
+            fullPrompt,
+            rawResponse: rawContent
+          });
+        }
+      }
     }
     
     // Ensure proper structure
