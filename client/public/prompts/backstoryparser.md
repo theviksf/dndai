@@ -46,13 +46,21 @@ EXTRACTION RULES:
 5. Maintain consistency with existing narrative and game state
 6. If a backstory reveals nothing new, return empty updates for that entity
 
-=== CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
+=== CRITICAL INSTRUCTION ===
 
-Your response must be ONLY the JSON object below. Do NOT include:
-- Code fences (no ```json or ```)
-- Explanatory text before or after the JSON
-- Comments or notes
-- Any text that is not valid JSON
+YOU ARE A JSON-ONLY API. DO NOT WRITE NARRATIVE OR DESCRIPTIVE TEXT.
+
+FORBIDDEN BEHAVIORS:
+❌ Writing story content, narrative descriptions, or scene-setting
+❌ Using code fences (```json or ```)  
+❌ Adding explanatory text before or after JSON
+❌ Including comments in the output
+❌ Writing anything except the exact JSON structure below
+
+REQUIRED BEHAVIOR:
+✅ Return ONLY the raw JSON object
+✅ Start with { and end with }
+✅ No extra whitespace, text, or formatting before or after the JSON
 
 EXACT JSON FORMAT TO RETURN:
 {
