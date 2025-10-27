@@ -1557,6 +1557,7 @@ export default function NarrativePanel({
                           npcs: parserResult.entityUpdates.npcs.length,
                           companions: parserResult.entityUpdates.companions.length,
                           locations: parserResult.entityUpdates.locations.length,
+                          quests: parserResult.entityUpdates.quests.length,
                         });
                         
                         // Apply entity updates to game state
@@ -1603,6 +1604,19 @@ export default function NarrativePanel({
                                 ) || [];
                               }
                             });
+                          }
+                          
+                          // Update quests
+                          if (parserResult.entityUpdates.quests.length > 0) {
+                            updated.quests = updated.quests?.map(quest => {
+                              const updateForQuest = parserResult.entityUpdates.quests.find(u => u.id === quest.id);
+                              if (updateForQuest) {
+                                console.log('[BACKSTORY PARSER] Updating quest:', quest.title, updateForQuest.updates);
+                                updatesApplied++;
+                                return { ...quest, ...updateForQuest.updates };
+                              }
+                              return quest;
+                            }) || [];
                           }
                           
                           // Add backstory parser debug log
