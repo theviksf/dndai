@@ -40,23 +40,12 @@ FOR Quests:
 - Icon suggestions based on quest theme
 
 EXTRACTION RULES:
-
-⚠️ CRITICAL PRIORITY RULE ⚠️
-**BACKSTORY INFORMATION ALWAYS TAKES PRECEDENCE**
-- If the backstory contains information that conflicts with current entity data, THE BACKSTORY IS CORRECT
-- Always extract and update fields when the backstory provides details, even if the entity already has different values
-- The backstory is the authoritative source - it overrides any existing entity data
-- Example: If entity says "age: Unknown" but backstory says "late forties", extract "age": "Late 40s"
-- Example: If entity says "role: Guard" but backstory reveals "role: Guard Captain", extract "role": "Guard Captain"
-- Example: If entity has "appearance: A tall woman" but backstory describes "silver hair and green eyes wearing merchant robes", extract the full appearance details
-
-ADDITIONAL RULES:
 1. ONLY extract details explicitly mentioned or strongly implied in the backstory
-2. Do NOT make assumptions or invent details beyond what the backstory states
-3. Focus on extracting ALL information from backstories that adds to or corrects entity data
-4. If the backstory provides richer detail than current entity data, always extract it
+2. Do NOT make assumptions or invent details
+3. Do NOT extract details that are already correct in current entity data
+4. Focus on NEW information that enriches the entity
 5. Maintain consistency with existing narrative and game state
-6. If a backstory reveals nothing new or different, return empty updates for that entity
+6. If a backstory reveals nothing new, return empty updates for that entity
 
 === CRITICAL INSTRUCTION ===
 

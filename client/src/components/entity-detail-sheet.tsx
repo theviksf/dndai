@@ -393,15 +393,15 @@ export function EntityDetailSheet({
           </div>
 
           {/* Objectives */}
-          {quest.objectives && quest.objectives.length > 0 && (
+          {quest.objectives && Array.isArray(quest.objectives) && quest.objectives.length > 0 && (
             <div className="pt-3 border-t border-border">
               <h4 className="font-serif font-bold text-foreground mb-3">Objectives</h4>
               <ul className="space-y-2.5">
-                {quest.objectives.filter(obj => obj.text && obj.text.trim() !== '').map((obj, idx) => (
+                {quest.objectives.filter(obj => obj && typeof obj === 'object' && obj.text && typeof obj.text === 'string' && obj.text.trim() !== '').map((obj, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <input
                       type="checkbox"
-                      checked={obj.completed}
+                      checked={!!obj.completed}
                       readOnly
                       className="w-5 h-5 rounded mt-0.5 cursor-not-allowed"
                     />
@@ -1035,7 +1035,7 @@ export function EntityDetailSheet({
                   ) : (
                     <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-p:text-muted-foreground prose-headings:font-serif prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-li:text-muted-foreground">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {entity.backstory}
+                        {typeof entity.backstory === 'string' ? entity.backstory : JSON.stringify(entity.backstory, null, 2)}
                       </ReactMarkdown>
                     </div>
                   )}
