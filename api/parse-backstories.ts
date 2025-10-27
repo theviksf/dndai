@@ -143,7 +143,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             content: fullPrompt
           }
         ],
-        max_tokens: 4000,
+        max_tokens: 8000,
         temperature: 0.1,
         response_format: { type: 'json_object' }
       })
