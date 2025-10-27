@@ -393,9 +393,9 @@ export function EntityDetailSheet({
           </div>
 
           {/* Objectives */}
-          {quest.objectives && quest.objectives.length > 0 && (
-            <div className="pt-3 border-t border-border">
-              <h4 className="font-serif font-bold text-foreground mb-3">Objectives</h4>
+          <div className="pt-3 border-t border-border">
+            <h4 className="font-serif font-bold text-foreground mb-3">Objectives</h4>
+            {quest.objectives && quest.objectives.length > 0 ? (
               <ul className="space-y-2.5">
                 {quest.objectives.filter(obj => obj.text && obj.text.trim() !== '').map((obj, idx) => (
                   <li key={idx} className="flex items-start gap-3">
@@ -411,8 +411,10 @@ export function EntityDetailSheet({
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No objectives yet</p>
+            )}
+          </div>
 
           {/* Progress */}
           {quest.progress && (

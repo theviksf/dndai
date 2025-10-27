@@ -35,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             content: fullPrompt
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 3000,
         temperature: 0.8,
       })
     });
