@@ -28,6 +28,25 @@ function getModifier(score: number | undefined): string {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
+// Helper function to convert backstory object to markdown string
+function formatBackstory(backstory: any): string {
+  if (typeof backstory === 'string') {
+    return backstory;
+  }
+  
+  if (typeof backstory === 'object' && backstory !== null) {
+    // Convert object to markdown format
+    return Object.entries(backstory)
+      .map(([key, value]) => {
+        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return `**${label}**: ${value}`;
+      })
+      .join('\n\n');
+  }
+  
+  return '';
+}
+
 interface EntityDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -966,7 +985,7 @@ export function EntityDetailSheet({
                   </h3>
                   {onUpdate ? (
                     <InlineEdit
-                      value={entity.backstory}
+                      value={formatBackstory(entity.backstory)}
                       onSave={(value) => onUpdate({ backstory: String(value) } as any)}
                       type="textarea"
                       inputClassName="text-sm leading-relaxed"
@@ -974,7 +993,7 @@ export function EntityDetailSheet({
                   ) : (
                     <div className="text-muted-foreground text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {entity.backstory}
+                        {formatBackstory(entity.backstory)}
                       </ReactMarkdown>
                     </div>
                   )}
