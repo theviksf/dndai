@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
-import { generateEntityBackstory, needsBackstoryGeneration, parseBackstoriesForEntityUpdates, parseSingleBackstoryForEntityUpdates } from '@/lib/backstory-generation';
+import { generateEntityBackstory, needsBackstoryGeneration, parseBackstoriesForEntityUpdates } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 
@@ -1464,161 +1464,9 @@ export default function NarrativePanel({
             });
           }
 
-          // Generate backstories sequentially - parse each one immediately after generation
+          // Generate backstories in the background
           if (backstoriesToGenerate.length > 0) {
-            console.log('[BACKSTORY] Starting sequential generation and parsing for', backstoriesToGenerate.length, 'entities');
-            
-            // Process each entity sequentially
-            (async () => {
-              for (const { entityType, entity, id } of backstoriesToGenerate) {
-                try {
-                  // Step 1: Generate backstory
-                  console.log('[BACKSTORY] Generating backstory for', entityType, entity.name || id);
-                  const backstoryResult = await generateEntityBackstory({
-                    entityType,
-                    entity,
-                    gameState: currentState,
-                    config,
-                  });
-                  
-                  // Step 2: Update game state with backstory
-                  await new Promise<void>((resolve) => {
-                    setGameState(prev => {
-                      const updated = { ...prev };
-                      
-                      // Add debug log
-                      if (backstoryResult.debugLogEntry) {
-                        updated.debugLog = [...(updated.debugLog || []), backstoryResult.debugLogEntry];
-                      }
-                      
-                      // Update backstory on entity
-                      if (backstoryResult.backstory) {
-                        if (entityType === 'companion') {
-                          updated.companions = updated.companions?.map(c =>
-                            c.id === id ? { ...c, backstory: backstoryResult.backstory } : c
-                          );
-                        } else if (entityType === 'npc') {
-                          updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
-                            npc.id === id ? { ...npc, backstory: backstoryResult.backstory } : npc
-                          );
-                        } else if (entityType === 'quest') {
-                          updated.quests = updated.quests?.map(q =>
-                            q.id === id ? { ...q, backstory: backstoryResult.backstory } : q
-                          );
-                        } else if (entityType === 'location') {
-                          updated.location = { ...updated.location, backstory: backstoryResult.backstory };
-                        }
-                      }
-                      
-                      resolve();
-                      return updated;
-                    });
-                  });
-                  
-                  // Step 3: Get the updated entity with backstory
-                  let entityWithBackstory = entity;
-                  if (backstoryResult.backstory) {
-                    entityWithBackstory = { ...entity, backstory: backstoryResult.backstory };
-                    
-                    // Step 4: Parse backstory immediately for this entity only
-                    console.log('[BACKSTORY PARSER] Parsing', entityType, entity.name || id);
-                    const parserResult = await parseSingleBackstoryForEntityUpdates(
-                      entityType,
-                      entityWithBackstory,
-                      currentState,
-                      config
-                    );
-                    
-                    console.log('[BACKSTORY PARSER]', entityType, 'updates:', parserResult.summary);
-                    
-                    // Step 5: Apply parser updates to this entity
-                    if (Object.keys(parserResult.updates).length > 0) {
-                      await new Promise<void>((resolve) => {
-                        setGameState(prev => {
-                          const updated = { ...prev };
-                          
-                          // Add parser debug log
-                          if (parserResult.debugLogEntry) {
-                            updated.debugLog = [...(updated.debugLog || []), parserResult.debugLogEntry];
-                          }
-                          
-                          // Apply updates based on entity type
-                          if (entityType === 'npc') {
-                            updated.encounteredCharacters = updated.encounteredCharacters.map(npc => {
-                              if (npc.id === parserResult.entityId) {
-                                console.log('[BACKSTORY PARSER] Applying NPC updates:', parserResult.updates);
-                                return { ...npc, ...parserResult.updates };
-                              }
-                              return npc;
-                            });
-                          } else if (entityType === 'companion') {
-                            updated.companions = updated.companions.map(comp => {
-                              if (comp.id === parserResult.entityId) {
-                                console.log('[BACKSTORY PARSER] Applying companion updates:', parserResult.updates);
-                                return { ...comp, ...parserResult.updates };
-                              }
-                              return comp;
-                            });
-                          } else if (entityType === 'quest') {
-                            updated.quests = updated.quests?.map(quest => {
-                              if (quest.id === parserResult.entityId) {
-                                console.log('[BACKSTORY PARSER] Applying quest updates:', parserResult.updates);
-                                // Normalize quest objectives (text/description, completed/status)
-                                const updates = { ...parserResult.updates };
-                                if (updates.objectives && Array.isArray(updates.objectives)) {
-                                  updates.objectives = updates.objectives.map((obj: any) => ({
-                                    text: String(obj.text || obj.description || ''),
-                                    completed: Boolean(obj.completed ?? obj.status === 'complete' ?? false)
-                                  }));
-                                }
-                                return { ...quest, ...updates };
-                              }
-                              return quest;
-                            }) || [];
-                          } else if (entityType === 'location') {
-                            console.log('[BACKSTORY PARSER] Applying location updates:', parserResult.updates);
-                            updated.location = { ...updated.location, ...parserResult.updates };
-                          }
-                          
-                          resolve();
-                          return updated;
-                        });
-                      });
-                    }
-                  }
-                } catch (error) {
-                  console.error('[BACKSTORY] Error generating/parsing for', entityType, entity.name || id, error);
-                }
-              }
-              
-              console.log('[BACKSTORY] Completed all backstory generation and parsing');
-            })();
-          }
-        }
-
-        return currentState;
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to process action',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsProcessing(false);
-      setIsStreaming(false);
-      setIsParsing(false);
-    }
-  };
-
-  const handleSubmit = () => {
-    processAction(actionInput);
-  };
-
-
-  return (
-    <main className="lg:col-span-6 flex flex-col space-y-4">
-      {/* Narrative Display - PLACEHOLDER TO BE CONTINUED FROM OLD CODE */}
+            Promise.allSettled(
               backstoriesToGenerate.map(async ({ entityType, entity, id }) => {
                 const result = await generateEntityBackstory({
                   entityType,
@@ -1717,201 +1565,55 @@ export default function NarrativePanel({
                           const updated = { ...prev };
                           let updatesApplied = 0;
                           
-                          // Update NPCs with validation
+                          // Update NPCs
                           if (parserResult.entityUpdates.npcs.length > 0) {
                             updated.encounteredCharacters = updated.encounteredCharacters.map(npc => {
                               const updateForNpc = parserResult.entityUpdates.npcs.find(u => u.id === npc.id);
                               if (updateForNpc) {
                                 console.log('[BACKSTORY PARSER] Updating NPC:', npc.name, updateForNpc.updates);
-                                
-                                // Validate and normalize NPC update data
-                                const normalizedUpdates: any = {};
-                                const updates = updateForNpc.updates as any;
-                                
-                                // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
-                                const stringFields = ['name', 'role', 'appearance', 'personality', 'age', 'sex', 'hairColor', 'outfit'];
-                                stringFields.forEach(field => {
-                                  if (updates[field] !== undefined && updates[field] !== null) {
-                                    normalizedUpdates[field] = String(updates[field]);
-                                  }
-                                });
-                                
-                                // Ensure numeric fields are numbers
-                                if (updates.relationship !== undefined) {
-                                  normalizedUpdates.relationship = Number(updates.relationship);
-                                }
-                                
-                                // Ensure boolean fields are booleans
-                                if (updates.alive !== undefined) {
-                                  normalizedUpdates.alive = Boolean(updates.alive);
-                                }
-                                
-                                // Copy arrays and objects as-is
-                                if (updates.revelations !== undefined) {
-                                  normalizedUpdates.revelations = updates.revelations;
-                                }
-                                if (updates.criticalMemories !== undefined && updates.criticalMemories !== null) {
-                                  normalizedUpdates.criticalMemories = String(updates.criticalMemories);
-                                }
-                                
                                 updatesApplied++;
-                                return { ...npc, ...normalizedUpdates };
+                                return { ...npc, ...updateForNpc.updates };
                               }
                               return npc;
                             });
                           }
                           
-                          // Update companions with validation
+                          // Update companions
                           if (parserResult.entityUpdates.companions.length > 0) {
                             updated.companions = updated.companions.map(comp => {
                               const updateForComp = parserResult.entityUpdates.companions.find(u => u.id === comp.id);
                               if (updateForComp) {
                                 console.log('[BACKSTORY PARSER] Updating companion:', comp.name, updateForComp.updates);
-                                
-                                // Validate and normalize companion update data
-                                const normalizedUpdates: any = {};
-                                const updates = updateForComp.updates as any;
-                                
-                                // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
-                                const stringFields = ['name', 'class', 'appearance', 'personality', 'age', 'sex', 'hairColor', 'outfit', 'feelingsTowardsPlayer', 'criticalMemories'];
-                                stringFields.forEach(field => {
-                                  if (updates[field] !== undefined && updates[field] !== null) {
-                                    normalizedUpdates[field] = String(updates[field]);
-                                  }
-                                });
-                                
-                                // Ensure numeric fields are numbers
-                                if (updates.level !== undefined) {
-                                  normalizedUpdates.level = Number(updates.level);
-                                }
-                                if (updates.hp !== undefined) {
-                                  normalizedUpdates.hp = Number(updates.hp);
-                                }
-                                if (updates.maxHp !== undefined) {
-                                  normalizedUpdates.maxHp = Number(updates.maxHp);
-                                }
-                                
-                                // Copy arrays and objects as-is
-                                if (updates.revelations !== undefined) {
-                                  normalizedUpdates.revelations = updates.revelations;
-                                }
-                                if (updates.abilities !== undefined) {
-                                  normalizedUpdates.abilities = updates.abilities;
-                                }
-                                if (updates.equipment !== undefined) {
-                                  normalizedUpdates.equipment = updates.equipment;
-                                }
-                                
                                 updatesApplied++;
-                                return { ...comp, ...normalizedUpdates };
+                                return { ...comp, ...updateForComp.updates };
                               }
                               return comp;
                             });
                           }
                           
-                          // Update locations (current and previous) with validation
+                          // Update locations (current and previous)
                           if (parserResult.entityUpdates.locations.length > 0) {
                             parserResult.entityUpdates.locations.forEach(locUpdate => {
-                              // Validate and normalize location update data
-                              const normalizedUpdates: any = {};
-                              const updates = locUpdate.updates as any;
-                              
-                              // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
-                              const stringFields = ['name', 'type', 'description'];
-                              stringFields.forEach(field => {
-                                if (updates[field] !== undefined && updates[field] !== null) {
-                                  normalizedUpdates[field] = String(updates[field]);
-                                }
-                              });
-                              
-                              // Copy nested objects as-is
-                              if (updates.hierarchy !== undefined) {
-                                normalizedUpdates.hierarchy = updates.hierarchy;
-                              }
-                              if (updates.details !== undefined) {
-                                normalizedUpdates.details = updates.details;
-                              }
-                              if (updates.connections !== undefined) {
-                                normalizedUpdates.connections = updates.connections;
-                              }
-                              if (updates.relative_location !== undefined) {
-                                normalizedUpdates.relative_location = updates.relative_location;
-                              }
-                              if (updates.revelations !== undefined) {
-                                normalizedUpdates.revelations = updates.revelations;
-                              }
-                              
                               if (locUpdate.id === 'current') {
-                                console.log('[BACKSTORY PARSER] Updating current location:', updated.location.name, normalizedUpdates);
-                                updated.location = { ...updated.location, ...normalizedUpdates };
+                                console.log('[BACKSTORY PARSER] Updating current location:', updated.location.name, locUpdate.updates);
+                                updated.location = { ...updated.location, ...locUpdate.updates };
                                 updatesApplied++;
                               } else {
                                 updated.previousLocations = updated.previousLocations?.map(loc =>
-                                  (loc as any).id === locUpdate.id ? { ...loc, ...normalizedUpdates } : loc
+                                  (loc as any).id === locUpdate.id ? { ...loc, ...locUpdate.updates } : loc
                                 ) || [];
                               }
                             });
                           }
                           
-                          // Update quests with validation
+                          // Update quests
                           if (parserResult.entityUpdates.quests.length > 0) {
                             updated.quests = updated.quests?.map(quest => {
                               const updateForQuest = parserResult.entityUpdates.quests.find(u => u.id === quest.id);
                               if (updateForQuest) {
                                 console.log('[BACKSTORY PARSER] Updating quest:', quest.title, updateForQuest.updates);
-                                
-                                // Validate and normalize quest update data
-                                const normalizedUpdates: any = {};
-                                
-                                // Ensure string fields are strings (NEVER update backstory - it's set by backstory generator only)
-                                if (updateForQuest.updates.title !== undefined) {
-                                  normalizedUpdates.title = String(updateForQuest.updates.title);
-                                }
-                                if (updateForQuest.updates.description !== undefined) {
-                                  normalizedUpdates.description = String(updateForQuest.updates.description);
-                                }
-                                
-                                // Ensure type is valid
-                                if (updateForQuest.updates.type !== undefined) {
-                                  normalizedUpdates.type = updateForQuest.updates.type === 'main' ? 'main' : 'side';
-                                }
-                                
-                                // Ensure objectives is an array
-                                if (updateForQuest.updates.objectives !== undefined) {
-                                  if (Array.isArray(updateForQuest.updates.objectives)) {
-                                    // Already an array, validate each objective
-                                    // Support both text/completed (schema) and description/status (parser variant)
-                                    normalizedUpdates.objectives = updateForQuest.updates.objectives.map((obj: any) => ({
-                                      text: String(obj.text || obj.description || ''),
-                                      completed: Boolean(obj.completed ?? obj.status === 'complete' ?? false)
-                                    }));
-                                  } else if (typeof updateForQuest.updates.objectives === 'object' && updateForQuest.updates.objectives !== null) {
-                                    // Single object, wrap in array
-                                    console.warn('[BACKSTORY PARSER] Quest objectives was an object, converting to array');
-                                    const singleObj = updateForQuest.updates.objectives as any;
-                                    normalizedUpdates.objectives = [{
-                                      text: String(singleObj.text || singleObj.description || ''),
-                                      completed: Boolean(singleObj.completed ?? singleObj.status === 'complete' ?? false)
-                                    }];
-                                  } else {
-                                    // Invalid type, ignore
-                                    console.warn('[BACKSTORY PARSER] Quest objectives had invalid type, ignoring');
-                                  }
-                                }
-                                
-                                // Copy other fields as-is (icon, progress, etc.)
-                                if (updateForQuest.updates.icon !== undefined) {
-                                  normalizedUpdates.icon = updateForQuest.updates.icon;
-                                }
-                                if (updateForQuest.updates.progress !== undefined) {
-                                  normalizedUpdates.progress = updateForQuest.updates.progress;
-                                }
-                                if (updateForQuest.updates.completed !== undefined) {
-                                  normalizedUpdates.completed = Boolean(updateForQuest.updates.completed);
-                                }
-                                
                                 updatesApplied++;
-                                return { ...quest, ...normalizedUpdates };
+                                return { ...quest, ...updateForQuest.updates };
                               }
                               return quest;
                             }) || [];
