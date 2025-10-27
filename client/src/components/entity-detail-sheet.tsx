@@ -30,28 +30,20 @@ function getModifier(score: number | undefined): string {
 
 // Helper function to convert backstory object to markdown string
 function formatBackstory(backstory: any): string {
-  console.log('[BACKSTORY FORMAT] Input type:', typeof backstory);
-  console.log('[BACKSTORY FORMAT] Input value:', backstory);
-  
   if (typeof backstory === 'string') {
-    console.log('[BACKSTORY FORMAT] Returning string as-is');
     return backstory;
   }
   
   if (typeof backstory === 'object' && backstory !== null) {
     // Convert object to markdown format
-    console.log('[BACKSTORY FORMAT] Converting object to markdown');
-    const result = Object.entries(backstory)
+    return Object.entries(backstory)
       .map(([key, value]) => {
         const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         return `**${label}**: ${value}`;
       })
       .join('\n\n');
-    console.log('[BACKSTORY FORMAT] Result:', result);
-    return result;
   }
   
-  console.log('[BACKSTORY FORMAT] Returning empty string');
   return '';
 }
 
@@ -1001,7 +993,7 @@ export function EntityDetailSheet({
                         inputClassName="text-sm leading-relaxed"
                       />
                     ) : (
-                      <div className="prose prose-sm max-w-none text-muted-foreground">
+                      <div className="text-foreground leading-relaxed prose prose-invert prose-sm max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {backstoryContent}
                         </ReactMarkdown>
