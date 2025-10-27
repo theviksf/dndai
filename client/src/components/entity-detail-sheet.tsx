@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star } from 'lucide-react';
+import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star, Pencil, Check, X } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, Business, Quest, StatusEffect } from '@shared/schema';
@@ -51,6 +53,18 @@ export function EntityDetailSheet({
   statusEffects = [],
   businesses = []
 }: EntityDetailSheetProps) {
+  const [isEditingBackstory, setIsEditingBackstory] = useState(false);
+  const [backstoryEditValue, setBackstoryEditValue] = useState('');
+  
+  // Reset edit state when sheet is closed
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setIsEditingBackstory(false);
+      setBackstoryEditValue('');
+    }
+    onOpenChange(newOpen);
+  };
+  
   if (!entity) return null;
 
   const Icon = entityType === 'location' || entityType === 'business' ? MapPin : entityType === 'quest' ? null : User;
@@ -899,7 +913,7 @@ export function EntityDetailSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="w-full sm:max-w-7xl overflow-y-auto">
         <SheetHeader className="space-y-4 pb-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">
@@ -961,16 +975,63 @@ export function EntityDetailSheet({
               {/* Backstory */}
               {'backstory' in entity && entity.backstory && (
                 <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-                  <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
-                    <span>📜</span> Backstory
-                  </h3>
-                  {onUpdate ? (
-                    <InlineEdit
-                      value={entity.backstory}
-                      onSave={(value) => onUpdate({ backstory: String(value) } as any)}
-                      type="textarea"
-                      inputClassName="text-sm leading-relaxed"
-                    />
+                  <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
+                    <h3 className="font-serif font-bold text-lg text-foreground flex items-center gap-2">
+                      <span>📜</span> Backstory
+                    </h3>
+                    {onUpdate && !isEditingBackstory && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setBackstoryEditValue(entity.backstory || '');
+                          setIsEditingBackstory(true);
+                        }}
+                        className="h-8 px-2 text-xs"
+                        data-testid="button-edit-backstory"
+                      >
+                        <Pencil className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                  {isEditingBackstory && onUpdate ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={backstoryEditValue}
+                        onChange={(e) => setBackstoryEditValue(e.target.value)}
+                        className="min-h-[200px] text-sm leading-relaxed font-mono"
+                        placeholder="Enter backstory in markdown format..."
+                        data-testid="textarea-backstory"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            onUpdate({ backstory: backstoryEditValue } as any);
+                            setIsEditingBackstory(false);
+                          }}
+                          className="h-8"
+                          data-testid="button-save-backstory"
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingBackstory(false);
+                            setBackstoryEditValue('');
+                          }}
+                          className="h-8"
+                          data-testid="button-cancel-backstory"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
                     <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-p:text-muted-foreground prose-headings:font-serif prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-li:text-muted-foreground">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
