@@ -32,12 +32,11 @@ FOR Locations:
 - Connections to nearby locations
 
 FOR Quests:
-- Quest type or category (main quest, side quest, rescue, investigation, etc.)
-- Objectives or goals clarification
-- Rewards or consequences mentioned
-- Time constraints or urgency
-- Required items or preparation
-- Factions or groups involved
+- Quest type (main quest or side quest)
+- Description updates or clarification
+- Objectives or goals clarification (add or update objective items)
+- Progress tracking updates
+- Icon suggestions based on quest theme
 
 EXTRACTION RULES:
 1. ONLY extract details explicitly mentioned or strongly implied in the backstory
@@ -136,12 +135,19 @@ EXACT JSON FORMAT TO RETURN:
         "updates": {
           // Only include fields that should change
           "title": "string",
+          "type": "main" or "side",
           "description": "string",
-          "objectives": "string",
-          "rewards": "string",
-          "timeConstraint": "string",
-          "requiredItems": "string",
-          "faction": "string"
+          "objectives": [
+            {
+              "text": "string",
+              "completed": false
+            }
+          ],
+          "icon": "emoji-icon",
+          "progress": {
+            "current": 0,
+            "total": 0
+          }
         }
       }
     ]
@@ -296,9 +302,8 @@ Current quest data:
   "id": "quest-whispering-woods",
   "title": "Investigate the Disappearances",
   "description": "People are going missing near Oakhaven",
-  "objectives": "",
-  "rewards": "",
-  "faction": ""
+  "objectives": [],
+  "type": "side"
 }
 
 YOUR RESPONSE (raw JSON only):
@@ -312,14 +317,28 @@ YOUR RESPONSE (raw JSON only):
         "id": "quest-whispering-woods",
         "updates": {
           "title": "The Song of the Whispering Woods",
-          "objectives": "Investigate the disappearances in Oakhaven coinciding with the centennial of the Verdant Brotherhood's curse. Discover what the druids meant by 'the woods will reclaim what was stolen'.",
-          "faction": "Verdant Brotherhood (druids)",
-          "timeConstraint": "Centennial of the final confrontation - ancient magic is at its strongest now"
+          "type": "main",
+          "description": "Investigate the mysterious disappearances in Oakhaven, which coincide with the centennial of an ancient druid curse. The Verdant Brotherhood swore the woods would reclaim what was stolen.",
+          "objectives": [
+            {
+              "text": "Investigate the disappearances in Oakhaven",
+              "completed": false
+            },
+            {
+              "text": "Learn about the Verdant Brotherhood and their curse",
+              "completed": false
+            },
+            {
+              "text": "Discover what 'the woods will reclaim' means",
+              "completed": false
+            }
+          ],
+          "icon": "🌲"
         }
       }
     ]
   },
-  "summary": "Updated quest with proper title, clearer objectives, identified faction (Verdant Brotherhood), and time constraint"
+  "summary": "Updated quest with proper title, upgraded to main quest, enhanced description, and extracted three clear objectives from the backstory"
 }
 
 REMEMBER:

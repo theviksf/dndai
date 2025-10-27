@@ -317,6 +317,10 @@ export interface BackstoryParserResult {
       id: string;
       updates: Partial<Location>;
     }>;
+    quests: Array<{
+      id: string;
+      updates: Partial<Quest>;
+    }>;
   };
   summary: string;
   usage?: {
@@ -373,7 +377,7 @@ export async function parseBackstoriesForEntityUpdates(
       };
       
       return { 
-        entityUpdates: { npcs: [], companions: [], locations: [] },
+        entityUpdates: { npcs: [], companions: [], locations: [], quests: [] },
         summary: 'Error parsing backstories',
         debugLogEntry,
       };
@@ -392,7 +396,7 @@ export async function parseBackstoriesForEntityUpdates(
     };
     
     return {
-      entityUpdates: data.entityUpdates || { npcs: [], companions: [], locations: [] },
+      entityUpdates: data.entityUpdates || { npcs: [], companions: [], locations: [], quests: [] },
       summary: data.summary || 'No updates extracted',
       usage: data.usage,
       model: data.model,
@@ -416,7 +420,7 @@ export async function parseBackstoriesForEntityUpdates(
     };
     
     return { 
-      entityUpdates: { npcs: [], companions: [], locations: [] },
+      entityUpdates: { npcs: [], companions: [], locations: [], quests: [] },
       summary: 'Error parsing backstories',
       debugLogEntry,
     };
@@ -483,6 +487,30 @@ function buildBackstoryParserContext(gameState: GameStateData): string {
         sections.push('');
         sections.push('**Backstory:**');
         sections.push(comp.backstory);
+      }
+    });
+    sections.push('');
+  }
+  
+  // Quests
+  if (gameState.quests && gameState.quests.length > 0) {
+    sections.push('## Quests');
+    gameState.quests.forEach(quest => {
+      sections.push('');
+      sections.push(`### ${quest.title} (ID: ${quest.id})`);
+      sections.push(`Type: ${quest.type}`);
+      sections.push(`Status: ${quest.completed ? 'Completed' : 'Active'}`);
+      if (quest.description) sections.push(`Description: ${quest.description}`);
+      if (quest.objectives && quest.objectives.length > 0) {
+        sections.push(`Objectives:`);
+        quest.objectives.forEach((obj, idx) => {
+          sections.push(`  ${idx + 1}. ${obj.text} ${obj.completed ? '✓' : '○'}`);
+        });
+      }
+      if (quest.backstory) {
+        sections.push('');
+        sections.push('**Backstory:**');
+        sections.push(quest.backstory);
       }
     });
     sections.push('');
