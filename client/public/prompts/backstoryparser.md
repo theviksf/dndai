@@ -97,6 +97,13 @@ REQUIRED BEHAVIOR:
 ✅ Start with { and end with }
 ✅ No extra whitespace, text, or formatting before or after the JSON
 
+⚠️ **CRITICAL: FIELDS YOU MUST NEVER INCLUDE IN UPDATES** ⚠️
+The following fields are FORBIDDEN and must NEVER appear in your "updates" objects:
+❌ "backstory" - This field is set ONLY by the backstory generator, NOT the parser
+❌ Any field containing the word "backstory"
+
+If you include "backstory" in any update, you have COMPLETELY FAILED your task.
+
 EXACT JSON FORMAT TO RETURN:
 {
   "entityUpdates": {
@@ -390,7 +397,7 @@ YOUR RESPONSE (raw JSON only):
   "summary": "No new extractable details found in backstories for this round"
 }
 
-EXAMPLE 5 - Quest with objectives and details:
+EXAMPLE 6 - Quest with objectives and details:
 Input backstory for "The Song of the Whispering Woods":
 "**Title:** The Song of the Whispering Woods **Historical Context:** Oakhaven was founded two generations ago by settlers who drove out a reclusive circle of druids known as the Verdant Brotherhood. The druids cursed the land as they fled, swearing the woods would one day reclaim what was stolen. The current disappearances coincide with the centennial of the final confrontation, a time when the ancient magic of their curse is said to be strongest..."
 
@@ -440,7 +447,10 @@ YOUR RESPONSE (raw JSON only):
 
 REMEMBER:
 - Return ONLY raw JSON, no code fences or extra text
+- ❌ NEVER EVER include "backstory" field in any updates object
 - Only include entities that have updates
 - Only include fields that are actually changing
+- For quests: use "title" (not "name"), "text" (not "description"), "completed" (not "status")
+- Extract quest objectives from backstory.key_objectives array or backstory text
 - Be conservative - don't invent details not in the backstory
 - Maintain narrative consistency with existing game state
