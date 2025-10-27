@@ -1728,16 +1728,18 @@ export default function NarrativePanel({
                                 if (updateForQuest.updates.objectives !== undefined) {
                                   if (Array.isArray(updateForQuest.updates.objectives)) {
                                     // Already an array, validate each objective
+                                    // Support both text/completed (schema) and description/status (parser variant)
                                     normalizedUpdates.objectives = updateForQuest.updates.objectives.map((obj: any) => ({
-                                      text: String(obj.text || ''),
-                                      completed: Boolean(obj.completed)
+                                      text: String(obj.text || obj.description || ''),
+                                      completed: Boolean(obj.completed ?? obj.status === 'complete' ?? false)
                                     }));
                                   } else if (typeof updateForQuest.updates.objectives === 'object' && updateForQuest.updates.objectives !== null) {
                                     // Single object, wrap in array
                                     console.warn('[BACKSTORY PARSER] Quest objectives was an object, converting to array');
+                                    const singleObj = updateForQuest.updates.objectives as any;
                                     normalizedUpdates.objectives = [{
-                                      text: String((updateForQuest.updates.objectives as any).text || ''),
-                                      completed: Boolean((updateForQuest.updates.objectives as any).completed)
+                                      text: String(singleObj.text || singleObj.description || ''),
+                                      completed: Boolean(singleObj.completed ?? singleObj.status === 'complete' ?? false)
                                     }];
                                   } else {
                                     // Invalid type, ignore
