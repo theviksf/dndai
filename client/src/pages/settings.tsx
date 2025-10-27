@@ -87,7 +87,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
     }
   };
 
-  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'revelations' | 'lore') => {
+  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'backstoryparser' | 'revelations' | 'lore') => {
     const defaults = await loadDefaultPrompts();
     if (!defaults) return;
 
@@ -97,6 +97,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
       imageCharacter: 'characterImagePrompt',
       imageLocation: 'locationImagePrompt',
       backstory: 'backstorySystemPrompt',
+      backstoryparser: 'backstoryParserPrompt',
       revelations: 'revelationsSystemPrompt',
       lore: 'loreSystemPrompt',
     };
@@ -440,6 +441,36 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                     </Select>
                   </div>
 
+                  {/* Backstory Parser LLM */}
+                  <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                    <label className="block text-sm font-semibold text-foreground">
+                      Backstory Parser LLM <span className="text-primary">(Entity Detail Extraction)</span>
+                    </label>
+                    <Select 
+                      value={localConfig.backstoryParserLLM} 
+                      onValueChange={(value) => setLocalConfig(prev => ({ ...prev, backstoryParserLLM: value }))}
+                    >
+                      <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-backstory-parser-llm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(() => {
+                          let filteredModels = models.filter(model => 
+                            model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                          );
+                          if (modelSortBy === 'name') {
+                            filteredModels = [...filteredModels].sort((a, b) => a.name.localeCompare(b.name));
+                          }
+                          return filteredModels.map(model => (
+                            <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                            </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Revelations LLM */}
                   <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
                     <label className="block text-sm font-semibold text-foreground">
@@ -728,6 +759,35 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   rows={10}
                   className="font-mono text-xs bg-input border-border"
                   data-testid="textarea-backstory-prompt"
+                />
+              </div>
+
+              {/* Backstory Parser Prompt */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Backstory Parser Prompt <span className="text-primary">(Entity Detail Extraction)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('backstoryparser')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-backstory-parser-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  System prompt for extracting entity details from generated backstories (updates NPC, companion, and location fields)
+                </p>
+                <Textarea
+                  value={localConfig.backstoryParserPrompt}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, backstoryParserPrompt: e.target.value }))}
+                  rows={10}
+                  className="font-mono text-xs bg-input border-border"
+                  data-testid="textarea-backstory-parser-prompt"
                 />
               </div>
 
