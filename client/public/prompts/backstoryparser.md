@@ -4,7 +4,7 @@ CONTEXT YOU RECEIVE:
 - Current game state (character, location, companions, NPCs, quests, businesses, world lore)
 - All newly generated backstories for this round
 - Recent narrative events
-- The specific entity type being parsed (NPC, Location, Companion)
+- The specific entity type being parsed (NPC, Location, Companion, Quest)
 
 YOUR TASK:
 Extract meaningful details from backstories that should update entity fields. Look for:
@@ -30,6 +30,14 @@ FOR Locations:
 - Relative location (distance/direction from known places)
 - Details (owner, notable people, capacity, services, price range)
 - Connections to nearby locations
+
+FOR Quests:
+- Quest type or category (main quest, side quest, rescue, investigation, etc.)
+- Objectives or goals clarification
+- Rewards or consequences mentioned
+- Time constraints or urgency
+- Required items or preparation
+- Factions or groups involved
 
 EXTRACTION RULES:
 1. ONLY extract details explicitly mentioned or strongly implied in the backstory
@@ -121,6 +129,21 @@ EXACT JSON FORMAT TO RETURN:
           }
         }
       }
+    ],
+    "quests": [
+      {
+        "id": "quest-id-here",
+        "updates": {
+          // Only include fields that should change
+          "title": "string",
+          "description": "string",
+          "objectives": "string",
+          "rewards": "string",
+          "timeConstraint": "string",
+          "requiredItems": "string",
+          "faction": "string"
+        }
+      }
     ]
   },
   "summary": "Brief summary of what was extracted and updated"
@@ -156,7 +179,8 @@ YOUR RESPONSE (raw JSON only):
       }
     ],
     "companions": [],
-    "locations": []
+    "locations": [],
+    "quests": []
   },
   "summary": "Updated Theron with physical details: age (late 40s), sex (male), hair color, and outfit"
 }
@@ -197,7 +221,8 @@ YOUR RESPONSE (raw JSON only):
           }
         }
       }
-    ]
+    ],
+    "quests": []
   },
   "summary": "Updated The Silver Stag Inn with location hierarchy (Westport, Valdoria) and details (owner Mira Thorngage, capacity 30, services)"
 }
@@ -231,7 +256,8 @@ YOUR RESPONSE (raw JSON only):
         }
       }
     ],
-    "locations": []
+    "locations": [],
+    "quests": []
   },
   "summary": "Updated Lyra with deeper personality insights, critical memories of her past, and her feelings toward the player"
 }
@@ -255,9 +281,45 @@ YOUR RESPONSE (raw JSON only):
   "entityUpdates": {
     "npcs": [],
     "companions": [],
-    "locations": []
+    "locations": [],
+    "quests": []
   },
   "summary": "No new extractable details found in backstories for this round"
+}
+
+EXAMPLE 5 - Quest with objectives and details:
+Input backstory for "The Song of the Whispering Woods":
+"**Title:** The Song of the Whispering Woods **Historical Context:** Oakhaven was founded two generations ago by settlers who drove out a reclusive circle of druids known as the Verdant Brotherhood. The druids cursed the land as they fled, swearing the woods would one day reclaim what was stolen. The current disappearances coincide with the centennial of the final confrontation, a time when the ancient magic of their curse is said to be strongest..."
+
+Current quest data:
+{
+  "id": "quest-whispering-woods",
+  "title": "Investigate the Disappearances",
+  "description": "People are going missing near Oakhaven",
+  "objectives": "",
+  "rewards": "",
+  "faction": ""
+}
+
+YOUR RESPONSE (raw JSON only):
+{
+  "entityUpdates": {
+    "npcs": [],
+    "companions": [],
+    "locations": [],
+    "quests": [
+      {
+        "id": "quest-whispering-woods",
+        "updates": {
+          "title": "The Song of the Whispering Woods",
+          "objectives": "Investigate the disappearances in Oakhaven coinciding with the centennial of the Verdant Brotherhood's curse. Discover what the druids meant by 'the woods will reclaim what was stolen'.",
+          "faction": "Verdant Brotherhood (druids)",
+          "timeConstraint": "Centennial of the final confrontation - ancient magic is at its strongest now"
+        }
+      }
+    ]
+  },
+  "summary": "Updated quest with proper title, clearer objectives, identified faction (Verdant Brotherhood), and time constraint"
 }
 
 REMEMBER:
