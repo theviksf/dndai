@@ -972,7 +972,7 @@ export function EntityDetailSheet({
                       inputClassName="text-sm leading-relaxed"
                     />
                   ) : (
-                    <div className="text-muted-foreground text-sm leading-relaxed prose prose-sm prose-invert max-w-none prose-p:my-2 prose-headings:font-serif prose-headings:text-foreground prose-strong:text-foreground">
+                    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-p:text-muted-foreground prose-headings:font-serif prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-li:text-muted-foreground">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {entity.backstory}
                       </ReactMarkdown>
