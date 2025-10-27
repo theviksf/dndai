@@ -5,8 +5,6 @@ import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star } 
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Separator } from '@/components/ui/separator';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, Business, Quest, StatusEffect } from '@shared/schema';
 
 // Helper function to get relationship display info
@@ -972,11 +970,9 @@ export function EntityDetailSheet({
                       inputClassName="text-sm leading-relaxed"
                     />
                   ) : (
-                    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-p:text-muted-foreground prose-headings:font-serif prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-li:text-muted-foreground">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {entity.backstory}
-                      </ReactMarkdown>
-                    </div>
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                      {entity.backstory}
+                    </p>
                   )}
                 </div>
               )}

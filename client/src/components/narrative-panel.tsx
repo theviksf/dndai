@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
-import { generateEntityBackstory, needsBackstoryGeneration, parseBackstoriesForEntityUpdates } from '@/lib/backstory-generation';
+import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 
@@ -1540,117 +1540,6 @@ export default function NarrativePanel({
 
                 return updated;
               });
-              
-              // After all backstories are generated and state updated, parse backstories for entity updates
-              // Only run if we actually generated backstories
-              if (backstoriesToGenerate.length > 0) {
-                setTimeout(() => {
-                  console.log('[BACKSTORY PARSER] Starting parser for', backstoriesToGenerate.length, 'entities');
-                  
-                  // Call parser with current game state
-                  setGameState(freshState => {
-                    // Run parser asynchronously
-                    parseBackstoriesForEntityUpdates(freshState, config)
-                      .then(parserResult => {
-                        console.log('[BACKSTORY PARSER] Received parser result:', parserResult.summary);
-                        console.log('[BACKSTORY PARSER] Entity updates:', {
-                          npcs: parserResult.entityUpdates.npcs.length,
-                          companions: parserResult.entityUpdates.companions.length,
-                          locations: parserResult.entityUpdates.locations.length,
-                          quests: parserResult.entityUpdates.quests.length,
-                        });
-                        
-                        // Apply entity updates to game state
-                        setGameState(prev => {
-                          const updated = { ...prev };
-                          let updatesApplied = 0;
-                          
-                          // Update NPCs
-                          if (parserResult.entityUpdates.npcs.length > 0) {
-                            updated.encounteredCharacters = updated.encounteredCharacters.map(npc => {
-                              const updateForNpc = parserResult.entityUpdates.npcs.find(u => u.id === npc.id);
-                              if (updateForNpc) {
-                                console.log('[BACKSTORY PARSER] Updating NPC:', npc.name, updateForNpc.updates);
-                                updatesApplied++;
-                                return { ...npc, ...updateForNpc.updates };
-                              }
-                              return npc;
-                            });
-                          }
-                          
-                          // Update companions
-                          if (parserResult.entityUpdates.companions.length > 0) {
-                            updated.companions = updated.companions.map(comp => {
-                              const updateForComp = parserResult.entityUpdates.companions.find(u => u.id === comp.id);
-                              if (updateForComp) {
-                                console.log('[BACKSTORY PARSER] Updating companion:', comp.name, updateForComp.updates);
-                                updatesApplied++;
-                                return { ...comp, ...updateForComp.updates };
-                              }
-                              return comp;
-                            });
-                          }
-                          
-                          // Update locations (current and previous)
-                          if (parserResult.entityUpdates.locations.length > 0) {
-                            parserResult.entityUpdates.locations.forEach(locUpdate => {
-                              if (locUpdate.id === 'current') {
-                                console.log('[BACKSTORY PARSER] Updating current location:', updated.location.name, locUpdate.updates);
-                                updated.location = { ...updated.location, ...locUpdate.updates };
-                                updatesApplied++;
-                              } else {
-                                updated.previousLocations = updated.previousLocations?.map(loc =>
-                                  (loc as any).id === locUpdate.id ? { ...loc, ...locUpdate.updates } : loc
-                                ) || [];
-                              }
-                            });
-                          }
-                          
-                          // Update quests
-                          if (parserResult.entityUpdates.quests.length > 0) {
-                            updated.quests = updated.quests?.map(quest => {
-                              const updateForQuest = parserResult.entityUpdates.quests.find(u => u.id === quest.id);
-                              if (updateForQuest) {
-                                console.log('[BACKSTORY PARSER] Updating quest:', quest.title, updateForQuest.updates);
-                                updatesApplied++;
-                                return { ...quest, ...updateForQuest.updates };
-                              }
-                              return quest;
-                            }) || [];
-                          }
-                          
-                          // Add backstory parser debug log
-                          if (parserResult.debugLogEntry) {
-                            updated.debugLog = [...(updated.debugLog || []), parserResult.debugLogEntry];
-                          }
-                          
-                          console.log('[BACKSTORY PARSER] Applied', updatesApplied, 'entity updates');
-                          
-                          return updated;
-                        });
-                      })
-                      .catch(error => {
-                        console.error('[BACKSTORY PARSER] Error parsing backstories:', error);
-                        // Log error to debug log
-                        setGameState(prev => ({
-                          ...prev,
-                          debugLog: [...(prev.debugLog || []), {
-                            id: `backstoryparser-error-${Date.now()}`,
-                            timestamp: Date.now(),
-                            type: 'backstoryparser' as const,
-                            prompt: 'Parser failed to execute',
-                            response: JSON.stringify({ error: error.message, stack: error.stack }, null, 2),
-                            model: 'N/A',
-                            error: error.message,
-                          }],
-                        }));
-                      });
-                    
-                    // Return current state immediately
-                    return freshState;
-                  });
-                }, 1000);
-              }
             });
           }
         }

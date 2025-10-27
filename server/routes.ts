@@ -278,102 +278,7 @@ router.post('/generate-backstory', async (req: Request, res: Response) => {
   }
 });
 
-// 5. POST /api/parse-backstories - Parse backstories for entity updates
-router.post('/parse-backstories', async (req: Request, res: Response) => {
-  try {
-    const { systemPrompt, context, gameState, model } = req.body;
-    const key = getApiKey(req);
-    
-    if (!key) {
-      return res.status(400).json({ error: 'API key required' });
-    }
-    
-    // Build the full prompt
-    const fullPrompt = `${systemPrompt}\n\n${context}`;
-    
-    console.log('[BACKSTORY PARSER] Parsing backstories for entity updates using model', model);
-    
-    // Call OpenRouter
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${key}`,
-        'HTTP-Referer': req.headers.referer || req.headers.origin || 'http://localhost:5000',
-        'X-Title': 'D&D Adventure Game',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model || 'deepseek/deepseek-chat-v3.1',
-        messages: [
-          {
-            role: 'user',
-            content: fullPrompt
-          }
-        ],
-        max_tokens: 2000,
-        temperature: 0.3,
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('[BACKSTORY PARSER] OpenRouter API error:', errorData);
-      return res.status(response.status).json({
-        error: `OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`,
-        fullPrompt,
-        rawResponse: JSON.stringify(errorData, null, 2)
-      });
-    }
-    
-    const data = await response.json();
-    const rawContent = data.choices[0].message.content;
-    
-    console.log('[BACKSTORY PARSER] Raw response:', rawContent.substring(0, 200));
-    
-    // Parse JSON response
-    let parsedData;
-    try {
-      // Try to extract JSON from code fences if present
-      const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || 
-                        rawContent.match(/(\{[\s\S]*\})/);
-      const jsonStr = jsonMatch ? jsonMatch[1] : rawContent;
-      parsedData = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error('[BACKSTORY PARSER] Failed to parse JSON:', parseError);
-      return res.status(500).json({
-        error: 'Failed to parse backstory parser JSON from LLM response',
-        fullPrompt,
-        rawResponse: rawContent
-      });
-    }
-    
-    // Ensure proper structure
-    const entityUpdates = parsedData.entityUpdates || { npcs: [], companions: [], locations: [] };
-    
-    // Normalize entity updates to ensure arrays
-    if (!Array.isArray(entityUpdates.npcs)) entityUpdates.npcs = [];
-    if (!Array.isArray(entityUpdates.companions)) entityUpdates.companions = [];
-    if (!Array.isArray(entityUpdates.locations)) entityUpdates.locations = [];
-    
-    res.json({
-      entityUpdates,
-      summary: parsedData.summary || 'No updates extracted',
-      usage: data.usage,
-      model: data.model,
-      fullPrompt,
-      rawResponse: rawContent
-    });
-  } catch (error: any) {
-    console.error('[BACKSTORY PARSER] Error:', error.message);
-    res.status(500).json({ 
-      error: error.message,
-      fullPrompt: req.body.systemPrompt || 'Prompt not available',
-      rawResponse: JSON.stringify({ error: error.message, stack: error.stack }, null, 2)
-    });
-  }
-});
-
-// 6. POST /api/generate-lore - Generate world lore
+// 5. POST /api/generate-lore - Generate world lore
 router.post('/generate-lore', async (req: Request, res: Response) => {
   try {
     const { systemPrompt, context, model } = req.body;
@@ -933,13 +838,12 @@ router.get('/prompts/defaults', async (req: Request, res: Response) => {
     const promptsDir = join(process.cwd(), 'client', 'public', 'prompts');
     
     // Load all prompts from markdown files
-    const [primary, parser, imageCharacter, imageLocation, backstory, backstoryparser, revelations, lore] = await Promise.all([
+    const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore] = await Promise.all([
       readFile(join(promptsDir, 'primary.md'), 'utf-8'),
       readFile(join(promptsDir, 'parser.md'), 'utf-8'),
       readFile(join(promptsDir, 'image-character.md'), 'utf-8'),
       readFile(join(promptsDir, 'image-location.md'), 'utf-8'),
       readFile(join(promptsDir, 'backstory.md'), 'utf-8'),
-      readFile(join(promptsDir, 'backstoryparser.md'), 'utf-8'),
       readFile(join(promptsDir, 'revelations.md'), 'utf-8'),
       readFile(join(promptsDir, 'lore.md'), 'utf-8'),
     ]);
@@ -950,7 +854,6 @@ router.get('/prompts/defaults', async (req: Request, res: Response) => {
       imageCharacter,
       imageLocation,
       backstory,
-      backstoryparser,
       revelations,
       lore,
     });
