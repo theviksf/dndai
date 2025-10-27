@@ -5,8 +5,6 @@ import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star } 
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Separator } from '@/components/ui/separator';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, Business, Quest, StatusEffect } from '@shared/schema';
 
 // Helper function to get relationship display info
@@ -26,25 +24,6 @@ function getModifier(score: number | undefined): string {
   if (score == null) return '+0';
   const mod = Math.floor((score - 10) / 2);
   return mod >= 0 ? `+${mod}` : `${mod}`;
-}
-
-// Helper function to convert backstory object to markdown string
-function formatBackstory(backstory: any): string {
-  if (typeof backstory === 'string') {
-    return backstory;
-  }
-  
-  if (typeof backstory === 'object' && backstory !== null) {
-    // Convert object to markdown format
-    return Object.entries(backstory)
-      .map(([key, value]) => {
-        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        return `**${label}**: ${value}`;
-      })
-      .join('\n\n');
-  }
-  
-  return '';
 }
 
 interface EntityDetailSheetProps {
@@ -978,30 +957,25 @@ export function EntityDetailSheet({
               </div>
 
               {/* Backstory */}
-              {'backstory' in entity && entity.backstory && (() => {
-                const backstoryContent = formatBackstory(entity.backstory);
-                return (
-                  <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-                    <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
-                      <span>📜</span> Backstory
-                    </h3>
-                    {onUpdate ? (
-                      <InlineEdit
-                        value={backstoryContent}
-                        onSave={(value) => onUpdate({ backstory: String(value) } as any)}
-                        type="textarea"
-                        inputClassName="text-sm leading-relaxed"
-                      />
-                    ) : (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {backstoryContent}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              {'backstory' in entity && entity.backstory && (
+                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                  <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
+                    <span>📜</span> Backstory
+                  </h3>
+                  {onUpdate ? (
+                    <InlineEdit
+                      value={entity.backstory}
+                      onSave={(value) => onUpdate({ backstory: String(value) } as any)}
+                      type="textarea"
+                      inputClassName="text-sm leading-relaxed"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                      {entity.backstory}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Revelations */}
               {'revelations' in entity && entity.revelations && entity.revelations.length > 0 && (
