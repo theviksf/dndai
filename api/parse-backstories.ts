@@ -189,14 +189,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
     
-    // Ensure proper structure
-    const entityUpdates = parsedData.entityUpdates || { npcs: [], companions: [], locations: [], quests: [] };
+    // Transform LLM response to expected format
+    // LLM may return different structures, so normalize to entityUpdates format
+    let entityUpdates: any;
+    
+    if (parsedData.entityUpdates) {
+      // LLM followed the exact format
+      entityUpdates = parsedData.entityUpdates;
+    } else {
+      // LLM returned alternative format - transform it
+      console.log('[BACKSTORY PARSER] Transforming LLM response to entityUpdates format');
+      entityUpdates = {
+        npcs: [] as any[],
+        companions: [] as any[],
+        locations: [] as any[],
+        quests: [] as any[]
+      };
+      
+      // Map npcs array
+      if (Array.isArray(parsedData.npcs)) {
+        entityUpdates.npcs = parsedData.npcs.map((npc: any) => ({
+          id: npc.id || npc.name?.toLowerCase().replace(/\s+/g, '-'),
+          updates: npc.updates || npc
+        }));
+      }
+      
+      // Map companions/party array
+      const companionsArray = parsedData.companions || parsedData.party || [];
+      if (Array.isArray(companionsArray)) {
+        entityUpdates.companions = companionsArray.map((comp: any) => ({
+          id: comp.id || comp.name?.toLowerCase().replace(/\s+/g, '-'),
+          updates: comp.updates || comp
+        }));
+      }
+      
+      // Map locations (could be current_location, location, or locations array)
+      if (parsedData.current_location) {
+        const locData = parsedData.current_location;
+        entityUpdates.locations.push({
+          id: locData.id || (locData.name ? locData.name.toLowerCase().replace(/\s+/g, '-') : 'current'),
+          updates: locData
+        });
+      } else if (parsedData.location && !Array.isArray(parsedData.location)) {
+        const locData = parsedData.location;
+        entityUpdates.locations.push({
+          id: locData.id || (locData.name ? locData.name.toLowerCase().replace(/\s+/g, '-') : 'current'),
+          updates: locData
+        });
+      }
+      
+      if (Array.isArray(parsedData.locations)) {
+        entityUpdates.locations.push(...parsedData.locations.map((loc: any) => {
+          const locData = loc.updates || loc;
+          return {
+            id: loc.id || (locData.name ? locData.name.toLowerCase().replace(/\s+/g, '-') : 'unknown-location'),
+            updates: locData
+          };
+        }));
+      }
+      
+      // Map quests array
+      if (Array.isArray(parsedData.quests)) {
+        entityUpdates.quests = parsedData.quests.map((quest: any) => ({
+          id: quest.id || quest.title?.toLowerCase().replace(/\s+/g, '-'),
+          updates: quest.updates || quest
+        }));
+      }
+    }
     
     // Normalize entity updates to ensure arrays
     if (!Array.isArray(entityUpdates.npcs)) entityUpdates.npcs = [];
     if (!Array.isArray(entityUpdates.companions)) entityUpdates.companions = [];
     if (!Array.isArray(entityUpdates.locations)) entityUpdates.locations = [];
     if (!Array.isArray(entityUpdates.quests)) entityUpdates.quests = [];
+    
+    console.log('[BACKSTORY PARSER] Entity updates extracted:', {
+      npcs: entityUpdates.npcs.length,
+      companions: entityUpdates.companions.length,
+      locations: entityUpdates.locations.length,
+      quests: entityUpdates.quests.length
+    });
     
     res.json({
       entityUpdates,
