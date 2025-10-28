@@ -13,6 +13,7 @@ import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChange
 import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
+import * as fuzz from 'fuzzball';
 
 interface NarrativePanelProps {
   gameState: GameStateData;
@@ -777,16 +778,46 @@ export default function NarrativePanel({
             // Merge companions - update existing ones or add new ones
             const mergedCompanions = [...existingCompanions];
             newCompanions.forEach((newComp: any) => {
-              const existingIndex = mergedCompanions.findIndex(comp => comp.id === newComp.id);
+              let existingIndex = mergedCompanions.findIndex(comp => comp.id === newComp.id);
+              
+              // If no ID match, try fuzzy name matching
+              if (existingIndex < 0) {
+                const fuzzyMatches = mergedCompanions.map((comp, idx) => ({
+                  idx,
+                  score: fuzz.ratio(comp.name.toLowerCase(), newComp.name.toLowerCase())
+                })).filter(m => m.score >= 85); // 85% similarity threshold
+                
+                if (fuzzyMatches.length > 0) {
+                  // Use the best match
+                  fuzzyMatches.sort((a, b) => b.score - a.score);
+                  existingIndex = fuzzyMatches[0].idx;
+                  console.log(`[COMPANION FUZZY] Matched "${newComp.name}" to existing "${mergedCompanions[existingIndex].name}" (${fuzzyMatches[0].score}% similar)`);
+                }
+              }
+              
               if (existingIndex >= 0) {
                 // Update existing companion, preserving fields like imageUrl, backstory, revelations
                 mergedCompanions[existingIndex] = { ...mergedCompanions[existingIndex], ...newComp };
               } else {
-                // Check if this companion was previously an NPC
-                const matchingNPC = existingNPCs.find(npc => 
+                // Check if this companion was previously an NPC (exact or fuzzy match)
+                let matchingNPC = existingNPCs.find(npc => 
                   npc.name.toLowerCase() === newComp.name.toLowerCase() ||
                   npc.id === newComp.id
                 );
+                
+                // Try fuzzy matching for NPC migration
+                if (!matchingNPC) {
+                  const fuzzyNPCMatches = existingNPCs.map(npc => ({
+                    npc,
+                    score: fuzz.ratio(npc.name.toLowerCase(), newComp.name.toLowerCase())
+                  })).filter(m => m.score >= 85);
+                  
+                  if (fuzzyNPCMatches.length > 0) {
+                    fuzzyNPCMatches.sort((a, b) => b.score - a.score);
+                    matchingNPC = fuzzyNPCMatches[0].npc;
+                    console.log(`[COMPANION FUZZY] Migrating NPC "${matchingNPC.name}" to companion "${newComp.name}" (${fuzzyNPCMatches[0].score}% similar)`);
+                  }
+                }
                 
                 if (matchingNPC) {
                   // Migrate NPC data to companion, preserving important fields
@@ -842,7 +873,8 @@ export default function NarrativePanel({
               // Try multiple matching strategies to prevent duplicates:
               // 1. Match by ID (exact)
               // 2. Match by name (case-insensitive) - catches NPCs whose names were revealed
-              // 3. If name is generic (Unknown, Mysterious, etc.), match by role+location
+              // 3. Fuzzy name matching (85%+ similarity) - catches typos and slight variations
+              // 4. If name is generic (Unknown, Mysterious, etc.), match by role+location
               
               const npcNameLower = newNPC.name.toLowerCase();
               const isGenericName = npcNameLower.includes('unknown') || 
@@ -857,7 +889,23 @@ export default function NarrativePanel({
                   npc.name.toLowerCase() === npcNameLower
                 );
                 if (existingIndex >= 0) {
-                  console.log(`[NPC DEDUP] Matched "${newNPC.name}" by name (ID changed from "${mergedNPCs[existingIndex].id}" to "${newNPC.id}")`);
+                  console.log(`[NPC DEDUP] Matched "${newNPC.name}" by exact name (ID changed from "${mergedNPCs[existingIndex].id}" to "${newNPC.id}")`);
+                }
+              }
+              
+              // If still no exact match, try fuzzy matching (for typos/variations)
+              if (existingIndex < 0 && !isGenericName && newNPC.name !== 'Unknown') {
+                const fuzzyMatches = mergedNPCs.map((npc, idx) => ({
+                  idx,
+                  name: npc.name,
+                  score: fuzz.ratio(npc.name.toLowerCase(), npcNameLower)
+                })).filter(m => m.score >= 85 && !m.name.toLowerCase().includes('unknown'));
+                
+                if (fuzzyMatches.length > 0) {
+                  // Use the best match
+                  fuzzyMatches.sort((a, b) => b.score - a.score);
+                  existingIndex = fuzzyMatches[0].idx;
+                  console.log(`[NPC FUZZY] Matched "${newNPC.name}" to existing "${fuzzyMatches[0].name}" (${fuzzyMatches[0].score}% similar)`);
                 }
               }
               
@@ -873,11 +921,22 @@ export default function NarrativePanel({
                 }
               }
               
-              // Check if this NPC is already a companion (prevent duplication)
-              const isCompanion = currentCompanions.some(comp => 
+              // Check if this NPC is already a companion (prevent duplication with exact and fuzzy matching)
+              let isCompanion = currentCompanions.some(comp => 
                 comp.id === newNPC.id || 
                 comp.name.toLowerCase() === npcNameLower
               );
+              
+              // Also check fuzzy matching against companions
+              if (!isCompanion && !isGenericName) {
+                const fuzzyCompanionMatches = currentCompanions.filter(comp => 
+                  fuzz.ratio(comp.name.toLowerCase(), npcNameLower) >= 85
+                );
+                if (fuzzyCompanionMatches.length > 0) {
+                  isCompanion = true;
+                  console.log(`[NPC FUZZY] Skipping NPC "${newNPC.name}" - fuzzy match with companion "${fuzzyCompanionMatches[0].name}"`);
+                }
+              }
               
               if (isCompanion) {
                 console.log(`[MIGRATION] Skipping NPC "${newNPC.name}" - already a companion`);
