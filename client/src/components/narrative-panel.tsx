@@ -1,18 +1,3 @@
-import { useState, useRef, useEffect } from 'react';
-import { flushSync } from 'react-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
-import { callLLM, callLLMStream } from '@/lib/openrouter';
-import { ArrowRight, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
-import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
-import { trackRevelations } from '@/lib/revelations-tracking';
-import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 
 interface NarrativePanelProps {
   gameState: GameStateData;
