@@ -8,10 +8,11 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
   backstory: string;
   revelations: string;
   lore: string;
+  checker: string;
 } | null> {
   try {
     // Load prompts directly from static files in /prompts/ directory
-    const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore] = await Promise.all([
+    const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore, checker] = await Promise.all([
       fetch('/prompts/primary.md').then(r => r.text()),
       fetch('/prompts/parser.md').then(r => r.text()),
       fetch('/prompts/image-character.md').then(r => r.text()),
@@ -19,6 +20,7 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
       fetch('/prompts/backstory.md').then(r => r.text()),
       fetch('/prompts/revelations.md').then(r => r.text()),
       fetch('/prompts/lore.md').then(r => r.text()),
+      fetch('/prompts/checker.md').then(r => r.text()),
     ]);
     
     return {
@@ -29,6 +31,7 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
       backstory,
       revelations,
       lore,
+      checker,
     };
   } catch (error) {
     console.error('Error loading default prompts:', error);
@@ -92,6 +95,7 @@ export function createDefaultConfig(): GameConfig {
     backstoryLLM: 'deepseek/deepseek-chat-v3.1',
     revelationsLLM: 'deepseek/deepseek-chat-v3.1',
     loreLLM: 'deepseek/deepseek-chat-v3.1',
+    checkerLLM: 'deepseek/deepseek-chat-v3.1',
     difficulty: 'normal',
     narrativeStyle: 'balanced',
     autoSave: true,
@@ -103,6 +107,7 @@ export function createDefaultConfig(): GameConfig {
     backstorySystemPrompt: '',
     revelationsSystemPrompt: '',
     loreSystemPrompt: '',
+    checkerSystemPrompt: '',
     imageProvider: 'flux',
     autoGenerateImages: false,
     autoGenerateBackstories: true,
@@ -120,7 +125,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
   const needsPrompts = config.dmSystemPrompt == null || config.parserSystemPrompt == null || 
                        config.characterImagePrompt == null || config.locationImagePrompt == null ||
                        config.backstorySystemPrompt == null || config.revelationsSystemPrompt == null ||
-                       config.loreSystemPrompt == null;
+                       config.loreSystemPrompt == null || config.checkerSystemPrompt == null;
   
   const prompts = needsPrompts ? await loadDefaultPromptsFromAPI() : null;
   
@@ -133,6 +138,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     backstoryLLM: config.backstoryLLM ?? defaults.backstoryLLM,
     revelationsLLM: config.revelationsLLM ?? defaults.revelationsLLM,
     loreLLM: config.loreLLM ?? defaults.loreLLM,
+    checkerLLM: config.checkerLLM ?? defaults.checkerLLM,
     // Use nullish coalescing (??) instead of OR (||) to preserve empty strings and falsy values
     characterImagePrompt: config.characterImagePrompt ?? (prompts?.imageCharacter ?? defaults.characterImagePrompt),
     locationImagePrompt: config.locationImagePrompt ?? (prompts?.imageLocation ?? defaults.locationImagePrompt),
@@ -144,6 +150,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     autoGenerateRevelations: config.autoGenerateRevelations ?? defaults.autoGenerateRevelations,
     loreSystemPrompt: config.loreSystemPrompt ?? (prompts?.lore ?? defaults.loreSystemPrompt),
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
+    checkerSystemPrompt: config.checkerSystemPrompt ?? (prompts?.checker ?? defaults.checkerSystemPrompt),
     dmSystemPrompt: config.dmSystemPrompt ?? (prompts?.primary ?? defaults.dmSystemPrompt),
     parserSystemPrompt: config.parserSystemPrompt ?? (prompts?.parser ?? defaults.parserSystemPrompt),
     uiScale: config.uiScale ?? defaults.uiScale,
