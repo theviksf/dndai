@@ -784,7 +784,7 @@ export default function NarrativePanel({
               if (existingIndex < 0) {
                 const fuzzyMatches = mergedCompanions.map((comp, idx) => ({
                   idx,
-                  score: fuzz.ratio(comp.name.toLowerCase(), newComp.name.toLowerCase())
+                  score: fuzz.token_set_ratio(comp.name.toLowerCase(), newComp.name.toLowerCase())
                 })).filter(m => m.score >= 85); // 85% similarity threshold
                 
                 if (fuzzyMatches.length > 0) {
@@ -809,7 +809,7 @@ export default function NarrativePanel({
                 if (!matchingNPC) {
                   const fuzzyNPCMatches = existingNPCs.map(npc => ({
                     npc,
-                    score: fuzz.ratio(npc.name.toLowerCase(), newComp.name.toLowerCase())
+                    score: fuzz.token_set_ratio(npc.name.toLowerCase(), newComp.name.toLowerCase())
                   })).filter(m => m.score >= 85);
                   
                   if (fuzzyNPCMatches.length > 0) {
@@ -898,7 +898,7 @@ export default function NarrativePanel({
                 const fuzzyMatches = mergedNPCs.map((npc, idx) => ({
                   idx,
                   name: npc.name,
-                  score: fuzz.ratio(npc.name.toLowerCase(), npcNameLower)
+                  score: fuzz.token_set_ratio(npc.name.toLowerCase(), npcNameLower)
                 })).filter(m => m.score >= 85 && !m.name.toLowerCase().includes('unknown'));
                 
                 if (fuzzyMatches.length > 0) {
@@ -930,7 +930,7 @@ export default function NarrativePanel({
               // Also check fuzzy matching against companions
               if (!isCompanion && !isGenericName) {
                 const fuzzyCompanionMatches = currentCompanions.filter(comp => 
-                  fuzz.ratio(comp.name.toLowerCase(), npcNameLower) >= 85
+                  fuzz.token_set_ratio(comp.name.toLowerCase(), npcNameLower) >= 85
                 );
                 if (fuzzyCompanionMatches.length > 0) {
                   isCompanion = true;
