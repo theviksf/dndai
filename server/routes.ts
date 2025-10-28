@@ -211,7 +211,7 @@ router.post('/generate-backstory', async (req: Request, res: Response) => {
             content: fullPrompt
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 2000,
         temperature: 0.8,
       })
     });
