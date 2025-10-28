@@ -153,6 +153,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       parsedData.entityUpdates = {};
     }
     
+    // Normalize objectives: convert string arrays to proper objective objects
+    if (parsedData.entityUpdates?.objectives && Array.isArray(parsedData.entityUpdates.objectives)) {
+      parsedData.entityUpdates.objectives = parsedData.entityUpdates.objectives.map((obj: any) => {
+        // If it's already an object with text and completed, return as-is
+        if (typeof obj === 'object' && obj !== null && 'text' in obj && 'completed' in obj) {
+          return obj;
+        }
+        // If it's a string or object without proper structure, convert it
+        return {
+          text: typeof obj === 'string' ? obj : (obj.text || String(obj)),
+          completed: typeof obj === 'object' && obj !== null ? (obj.completed || false) : false
+        };
+      });
+    }
+    
     res.json({
       entityUpdates: parsedData.entityUpdates,
       usage: data.usage,

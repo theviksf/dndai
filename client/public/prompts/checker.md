@@ -150,3 +150,5 @@ YOUR RESPONSE (raw JSON only):
 3. **Don't create new fields** - Only update fields that exist in the entity schema
 4. **Empty is valid** - If backstory doesn't reveal new info, return `{ "entityUpdates": {} }`
 5. **Never include backstory** - Your response should NEVER contain the backstory text
+
+Apply the above to the following Element:

@@ -90,7 +90,7 @@ Two centuries ago, the fortress-city of Ashenreach fell after its ruling oathkni
 * **Protagonists:** The party, guided by Ser Dalia’s mission, act as redeemers of a disgraced lineage.
 * **Antagonists:** The *Ashenbound*, spectral oathknights bound to the flame deity, seeking vessels to reignite their crusade.
 
-**Key Objectives:**
+**Objectives:**
 
 1. **Recover the Oathstone** buried in the ruins — a relic binding the lost knights’ souls.
 2. **Uncover the true cause** of Ashenreach’s fall — whether betrayal, divine punishment, or royal deceit.
