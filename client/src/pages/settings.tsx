@@ -87,7 +87,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
     }
   };
 
-  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'revelations' | 'lore') => {
+  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'revelations' | 'lore' | 'checker') => {
     const defaults = await loadDefaultPrompts();
     if (!defaults) return;
 
@@ -99,6 +99,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
       backstory: 'backstorySystemPrompt',
       revelations: 'revelationsSystemPrompt',
       lore: 'loreSystemPrompt',
+      checker: 'checkerSystemPrompt',
     };
 
     const field = fieldMap[promptType] as keyof GameConfig;
@@ -420,6 +421,36 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                       onValueChange={(value) => setLocalConfig(prev => ({ ...prev, backstoryLLM: value }))}
                     >
                       <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-backstory-llm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(() => {
+                          let filteredModels = models.filter(model => 
+                            model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                          );
+                          if (modelSortBy === 'name') {
+                            filteredModels = [...filteredModels].sort((a, b) => a.name.localeCompare(b.name));
+                          }
+                          return filteredModels.map(model => (
+                            <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                            </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Checker LLM */}
+                  <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                    <label className="block text-sm font-semibold text-foreground">
+                      Checker LLM <span className="text-primary">(Entity Consistency Checking)</span>
+                    </label>
+                    <Select 
+                      value={localConfig.checkerLLM} 
+                      onValueChange={(value) => setLocalConfig(prev => ({ ...prev, checkerLLM: value }))}
+                    >
+                      <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-checker-llm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -786,6 +817,35 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   rows={10}
                   className="font-mono text-xs bg-input border-border"
                   data-testid="textarea-lore-prompt"
+                />
+              </div>
+
+              {/* Checker Prompt */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Checker Prompt <span className="text-primary">(Entity Consistency Checking)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('checker')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-checker-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  System prompt for checking entity consistency with backstory and updating entity fields to match
+                </p>
+                <Textarea
+                  value={localConfig.checkerSystemPrompt}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, checkerSystemPrompt: e.target.value }))}
+                  rows={10}
+                  className="font-mono text-xs bg-input border-border"
+                  data-testid="textarea-checker-prompt"
                 />
               </div>
             </TabsContent>
