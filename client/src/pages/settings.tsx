@@ -42,7 +42,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
   useEffect(() => {
     const loadMissingPrompts = async () => {
       // Check if any prompts are empty
-      if (!config.backstorySystemPrompt || !config.revelationsSystemPrompt || !config.loreSystemPrompt) {
+      if (!config.backstorySystemPrompt || !config.revelationsSystemPrompt || !config.loreSystemPrompt || !config.checkerSystemPrompt) {
         console.log('[SETTINGS] Loading missing prompts for existing session');
         const defaults = await loadDefaultPrompts();
         if (defaults) {
@@ -51,6 +51,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             backstorySystemPrompt: prev.backstorySystemPrompt || defaults.backstory,
             revelationsSystemPrompt: prev.revelationsSystemPrompt || defaults.revelations,
             loreSystemPrompt: prev.loreSystemPrompt || defaults.lore,
+            checkerSystemPrompt: prev.checkerSystemPrompt || defaults.checker,
           }));
           // Auto-save the updated config
           onSave({
@@ -58,12 +59,13 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             backstorySystemPrompt: config.backstorySystemPrompt || defaults.backstory,
             revelationsSystemPrompt: config.revelationsSystemPrompt || defaults.revelations,
             loreSystemPrompt: config.loreSystemPrompt || defaults.lore,
+            checkerSystemPrompt: config.checkerSystemPrompt || defaults.checker,
           });
         }
       }
     };
     loadMissingPrompts();
-  }, [config.backstorySystemPrompt, config.revelationsSystemPrompt, config.loreSystemPrompt]);
+  }, [config.backstorySystemPrompt, config.revelationsSystemPrompt, config.loreSystemPrompt, config.checkerSystemPrompt]);
 
   // Apply UI scale immediately when changed (preview)
   useEffect(() => {

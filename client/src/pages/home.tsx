@@ -90,6 +90,7 @@ export default function Home() {
         backstorySystemPrompt: defaultPrompts.backstory,
         revelationsSystemPrompt: defaultPrompts.revelations,
         loreSystemPrompt: defaultPrompts.lore,
+        checkerSystemPrompt: defaultPrompts.checker,
       };
       setConfig(newConfig);
       setIsNewSession(false);
