@@ -1507,29 +1507,38 @@ export default function NarrativePanel({
                   
                   const { entityType, id, result } = settledResult.value;
                   
-                  // Always collect debug log entry (for both successful and failed backstory generations)
+                  // Always collect debug log entries (backstory and checker)
                   if (result.debugLogEntry) {
                     backstoryDebugLogs.push(result.debugLogEntry);
+                  }
+                  if (result.checkerDebugLogEntry) {
+                    backstoryDebugLogs.push(result.checkerDebugLogEntry);
                   }
                   
                   // Only update state if backstory was generated
                   if (!result.backstory) return;
 
+                  // Merge entity updates from checker with backstory
+                  const updates = {
+                    backstory: result.backstory || undefined,
+                    ...(result.entityUpdates || {}),
+                  };
+
                   // Clone arrays to ensure React detects state changes
                   if (entityType === 'companion') {
                     updated.companions = updated.companions?.map(c =>
-                      c.id === id ? { ...c, backstory: result.backstory || undefined } : c
+                      c.id === id ? { ...c, ...updates } : c
                     );
                   } else if (entityType === 'npc') {
                     updated.encounteredCharacters = updated.encounteredCharacters?.map(npc =>
-                      npc.id === id ? { ...npc, backstory: result.backstory || undefined } : npc
+                      npc.id === id ? { ...npc, ...updates } : npc
                     );
                   } else if (entityType === 'quest') {
                     updated.quests = updated.quests?.map(q =>
-                      q.id === id ? { ...q, backstory: result.backstory || undefined } : q
+                      q.id === id ? { ...q, ...updates } : q
                     );
                   } else if (entityType === 'location') {
-                    updated.location = { ...updated.location, backstory: result.backstory || undefined };
+                    updated.location = { ...updated.location, ...updates };
                   }
                 });
                 

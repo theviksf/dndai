@@ -1,6 +1,7 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, Quest, GameConfig, DebugLogEntry, GameStateData } from '@shared/schema';
 import { nanoid } from 'nanoid';
+import { checkEntityConsistency } from './check-entity-consistency';
 
 export interface BackstoryGenerationOptions {
   entityType: 'character' | 'companion' | 'npc' | 'location' | 'quest';
@@ -11,6 +12,7 @@ export interface BackstoryGenerationOptions {
 
 export interface BackstoryGenerationResult {
   backstory: string | null;
+  entityUpdates?: Record<string, any> | null;
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -18,6 +20,7 @@ export interface BackstoryGenerationResult {
   };
   model?: string;
   debugLogEntry?: DebugLogEntry;
+  checkerDebugLogEntry?: DebugLogEntry;
 }
 
 export async function generateEntityBackstory({ 
@@ -87,11 +90,43 @@ export async function generateEntityBackstory({
       entityType,
     };
     
+    const backstory = data.backstory || null;
+    
+    // If backstory was successfully generated, run checker to update entity fields
+    let entityUpdates: Record<string, any> | null = null;
+    let checkerDebugLogEntry: DebugLogEntry | undefined;
+    
+    if (backstory) {
+      try {
+        console.log(`[BACKSTORY GEN] Running checker for ${entityType} to align entity with backstory`);
+        const checkerResult = await checkEntityConsistency({
+          entityType,
+          entity,
+          backstory,
+          config,
+        });
+        
+        entityUpdates = checkerResult.entityUpdates;
+        checkerDebugLogEntry = checkerResult.debugLogEntry;
+        
+        if (entityUpdates && Object.keys(entityUpdates).length > 0) {
+          console.log(`[BACKSTORY GEN] Checker found ${Object.keys(entityUpdates).length} updates:`, Object.keys(entityUpdates));
+        } else {
+          console.log(`[BACKSTORY GEN] Checker found no updates needed`);
+        }
+      } catch (error) {
+        console.error(`[BACKSTORY GEN] Checker failed for ${entityType}:`, error);
+        // Don't fail backstory generation if checker fails - continue without updates
+      }
+    }
+    
     return {
-      backstory: data.backstory || null,
+      backstory,
+      entityUpdates,
       usage: data.usage,
       model: data.model,
       debugLogEntry,
+      checkerDebugLogEntry,
     };
   } catch (error: any) {
     console.error(`Failed to generate backstory for ${entityType}:`, error);
