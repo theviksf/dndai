@@ -405,7 +405,7 @@ export function EntityDetailSheet({
             <div className="pt-3 border-t border-border">
               <h4 className="font-serif font-bold text-foreground mb-3">Objectives</h4>
               <ul className="space-y-2.5">
-                {quest.objectives.filter(obj => obj.text && obj.text.trim() !== '').map((obj, idx) => (
+                {quest.objectives.map((obj, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <input
                       type="checkbox"
@@ -414,7 +414,7 @@ export function EntityDetailSheet({
                       className="w-5 h-5 rounded mt-0.5 cursor-not-allowed"
                     />
                     <span className={obj.completed ? 'line-through text-muted-foreground text-sm' : 'text-foreground text-sm font-medium'}>
-                      {obj.text}
+                      {obj.text || '(No description)'}
                     </span>
                   </li>
                 ))}

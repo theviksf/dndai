@@ -39,7 +39,7 @@ Updatable fields: name, race, age, sex, hairColor, outfit, class, level, appeara
 Example: If backstory says "Lyra Valen, human female, fighter level 5, fiery red hair" but entity only has name "Lyra", update with full name, race, sex, hair color
 
 ## For Quests:
-Updatable fields: title, description, type ("main" or "side")
+Updatable fields: title, description, type ("main" or "side"), objectives
 
 Example: If backstory provides an evocative title like "The Oath of Ashenreach" but entity title is "Quest 1", update it
 
