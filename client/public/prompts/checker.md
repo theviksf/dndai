@@ -117,6 +117,25 @@ YOUR RESPONSE (raw JSON only):
   }
 }
 
+## Example 3b - Quest with objectives
+
+Entity Type: quest
+Entity: {"id": "quest-2", "title": "Find the missing caravan", "type": "side", "objectives": []}
+Backstory: "**Title:** *The Lost Merchant Road*\n\n**Quest Giver:** Marcus Veldrin, merchant guild master\n\n**Objectives:**\n1. Investigate the abandoned campsite on the Old King's Road\n2. Track the caravan's path through Mirefen Forest\n3. Locate and rescue any surviving merchants\n4. Return the guild's ledger to Marcus\n\n**Background:** Three weeks ago, a merchant caravan carrying valuable trade goods disappeared..."
+
+YOUR RESPONSE (raw JSON only):
+{
+  "entityUpdates": {
+    "title": "The Lost Merchant Road",
+    "objectives": [
+      {"text": "Investigate the abandoned campsite on the Old King's Road", "completed": false},
+      {"text": "Track the caravan's path through Mirefen Forest", "completed": false},
+      {"text": "Locate and rescue any surviving merchants", "completed": false},
+      {"text": "Return the guild's ledger to Marcus", "completed": false}
+    ]
+  }
+}
+
 ## Example 4 - Location details
 
 Entity Type: location
