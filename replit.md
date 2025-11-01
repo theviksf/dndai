@@ -69,9 +69,9 @@ Uses specialized LLMs for different tasks:
 - **Parser LLM (State Extraction Agent)**: Extracts structured game state updates from narrative responses (character details including hair color and outfit, inventory, quests, etc.) and generates history recaps. Extracts hair color and outfit when mentioned in narratives.
 - **Revelations Agent**: Identifies and extracts backstory revelations from narrative for entities, tracks when they are discovered, and provides in-game notifications and debug logging.
 - **Image Agent**: Generates AI images for characters, NPCs, companions, and locations using Google's Gemini 2.5 Flash Image Preview via OpenRouter. Character images include appearance details such as race, age, sex, hair color, outfit, and class.
-- **Backstory Agent**: Generates structured backstories for NPCs, companions, quests, and locations (2000 token limit). Receives comprehensive game state context including world backstory, current location, player character, all companions (with appearance/personality/backstories), all NPCs (with descriptions/backstories), all businesses (with managers/descriptions/financials), all previous locations (with backstories), all quests (with backstories), and recent events to ensure narrative consistency and prevent contradictions.
+- **Backstory Agent**: Generates structured backstories for NPCs, companions, quests, and locations. Receives comprehensive game state context including world backstory, current location, player character, all companions (with appearance/personality/backstories), all NPCs (with descriptions/backstories), all businesses (with managers/descriptions/financials), all previous locations (with backstories), all quests (with backstories), and recent events to ensure narrative consistency and prevent contradictions.
 - **Checker Agent**: Ensures entity consistency by comparing entity fields against their backstories and correcting inconsistencies. Runs automatically after backstory generation, receives full entity data and backstory, and returns only updated entity fields (never modifies backstory). Uses robust JSON parsing with multiple fallback strategies for handling malformed LLM responses.
-- **Lore Agent**: Generates rich world lore and backstory to establish the game's setting and mythology (4000 token limit). Receives comprehensive game state context including existing world lore, current location (with backstory), player character, all companions (with appearance/personality/backstories), all NPCs (with descriptions/backstories), all businesses (with managers/descriptions/financials), all previous locations (with backstories), all quests (with backstories), and recent events to ensure world lore doesn't contradict established entity backstories and narrative history.
+- **Lore Agent**: Generates rich world lore and backstory to establish the game's setting and mythology. Receives comprehensive game state context including existing world lore, current location (with backstory), player character, all companions (with appearance/personality/backstories), all NPCs (with descriptions/backstories), all businesses (with managers/descriptions/financials), all previous locations (with backstories), all quests (with backstories), and recent events to ensure world lore doesn't contradict established entity backstories and narrative history.
 **Execution Flow**: Player action → Primary LLM streams narrative → Parser LLM updates game state → Revelations Agent tracks reveals → Image Agent generates visuals → Backstory Agent creates context → Checker Agent ensures consistency → Lore Agent enriches world → Cost tracking updates.
 **Streaming**: Primary LLM uses SSE; others use standard request/response.
 **Error Handling & Resilience**: Robust JSON parsing with multiple strategies for malformed LLM responses, type coercion, and graceful degradation.
@@ -83,7 +83,7 @@ Uses specialized LLMs for different tasks:
 When an NPC joins the party as a companion, the system automatically migrates their data to prevent duplication and preserve continuity:
 
 **Migration Process**:
-1. **Detection**: When the parser adds a new companion, the system checks if an NPC exists with the same name (exact match, case-insensitive) or ID, or uses fuzzy matching (85% similarity via token_set_ratio)
+1. **Detection**: When the parser adds a new companion, the system checks if an NPC exists with the same name (case-insensitive) or ID
 2. **Data Preservation**: If a matching NPC is found, all their data is migrated to the companion:
    - **imageUrl**: AI-generated portrait preserved
    - **backstory**: Generated backstory preserved
@@ -94,9 +94,7 @@ When an NPC joins the party as a companion, the system automatically migrates th
    - `description` → `appearance` (fallback if appearance not set)
    - `relationship` (numeric -3 to +3) → relationship text ("Hostile", "Unfriendly", "Neutral", "Friendly", "Ally")
 4. **Cleanup**: The NPC is automatically removed from the `encounteredCharacters` list after migration
-5. **Duplication Prevention**: When adding NPCs, the system checks if they're already companions using exact name match, ID match, or fuzzy matching (85% similarity) and skips adding them
-
-**Fuzzy Matching for Deduplication**: Uses fuzzball library's `token_set_ratio` algorithm (85% similarity threshold) to prevent duplicates caused by typos, nicknames, or titles. Examples that match: "Gareth 'Garry' Thornblade" ↔ "Gareth Thornblade" (100%), "Sir Marcus the Brave" ↔ "Marcus" (100%), "Aldric Vance" ↔ "Aldrick Vance" (92%). Matching strategies: exact ID → exact name → fuzzy name → role+location (for generic names like "Unknown").
+5. **Duplication Prevention**: When adding NPCs, the system checks if they're already companions and skips adding them
 
 **Benefits**: Players see NPCs only once (either in NPCs tab or Party tab), with all generated content (images, backstories, revelations) preserved when they join the party. No redundant AI generation needed.
 
