@@ -46,7 +46,7 @@ Example: If backstory provides an evocative title like "The Oath of Ashenreach" 
 ## For Locations:
 Updatable fields: name, type, description
 
-Example: If backstory reveals "The Gilded Griffin Tavern, capacity 60, built on ruins of western watchtower" but entity description is vague, update with specific details
+Example: If backstory reveals "The Gilded Griffin Tavern, capacity 60, built on ruins of western watchtower" but entity description is vague, update with specific details.  Note for the Description field - Your job is not to inlcude the entire backstory, just updates to the actual description of the location, avoid including secrets and hidden items.  
 
 # Output Format
 
