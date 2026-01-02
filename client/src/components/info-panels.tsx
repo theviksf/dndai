@@ -3,10 +3,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, X, Plus } from 'lucide-react';
 import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, RacialAbility, ClassFeature, ClassPower, Business, GameStateData, PreviousLocation } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { EntityImageCard } from '@/components/entity-image-card';
+import { nanoid } from 'nanoid';
 
 interface BasePanelProps {
   onUpdate?: (updates: Partial<GameStateData>) => void;
@@ -372,11 +374,142 @@ interface BusinessesPanelProps extends BasePanelProps {
 }
 
 export function BusinessesPanel({ businesses, onEntityClick, onUpdate }: BusinessesPanelProps) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [newBusiness, setNewBusiness] = useState({
+    name: '',
+    weeklyIncome: 0,
+    runningCost: 0,
+    purchaseCost: 0,
+    manager: '',
+    description: ''
+  });
+
+  const handleAddBusiness = () => {
+    if (!newBusiness.name.trim() || !onUpdate) return;
+    
+    const business: Business = {
+      id: nanoid(),
+      name: newBusiness.name.trim(),
+      weeklyIncome: newBusiness.weeklyIncome,
+      runningCost: newBusiness.runningCost,
+      purchaseCost: newBusiness.purchaseCost,
+      owner: 'Player',
+      manager: newBusiness.manager.trim() || 'None',
+      description: newBusiness.description.trim() || ''
+    };
+    
+    onUpdate({
+      businesses: [...(businesses || []), business]
+    });
+    
+    setNewBusiness({ name: '', weeklyIncome: 0, runningCost: 0, purchaseCost: 0, manager: '', description: '' });
+    setIsAdding(false);
+  };
+
   return (
     <ScrollArea className="h-[calc(100vh-200px)]">
       <div className="p-4 space-y-3">
+        {/* Add Business Button/Form */}
+        {onUpdate && (
+          <div className="mb-4">
+            {isAdding ? (
+              <div className="border border-primary/50 rounded-lg p-4 bg-primary/5 space-y-3">
+                <h4 className="font-semibold text-sm mb-2">Add New Business</h4>
+                <Input
+                  placeholder="Business name"
+                  value={newBusiness.name}
+                  onChange={(e) => setNewBusiness(prev => ({ ...prev, name: e.target.value }))}
+                  className="h-8 text-sm"
+                  data-testid="input-new-business-name"
+                />
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Weekly Income</label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={newBusiness.weeklyIncome || ''}
+                      onChange={(e) => setNewBusiness(prev => ({ ...prev, weeklyIncome: Number(e.target.value) || 0 }))}
+                      className="h-8 text-sm"
+                      data-testid="input-new-business-income"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Running Cost</label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={newBusiness.runningCost || ''}
+                      onChange={(e) => setNewBusiness(prev => ({ ...prev, runningCost: Number(e.target.value) || 0 }))}
+                      className="h-8 text-sm"
+                      data-testid="input-new-business-cost"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Purchase Cost</label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={newBusiness.purchaseCost || ''}
+                      onChange={(e) => setNewBusiness(prev => ({ ...prev, purchaseCost: Number(e.target.value) || 0 }))}
+                      className="h-8 text-sm"
+                      data-testid="input-new-business-purchase"
+                    />
+                  </div>
+                </div>
+                <Input
+                  placeholder="Manager name (optional)"
+                  value={newBusiness.manager}
+                  onChange={(e) => setNewBusiness(prev => ({ ...prev, manager: e.target.value }))}
+                  className="h-8 text-sm"
+                  data-testid="input-new-business-manager"
+                />
+                <Input
+                  placeholder="Description (optional)"
+                  value={newBusiness.description}
+                  onChange={(e) => setNewBusiness(prev => ({ ...prev, description: e.target.value }))}
+                  className="h-8 text-sm"
+                  data-testid="input-new-business-description"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleAddBusiness}
+                    disabled={!newBusiness.name.trim()}
+                    data-testid="button-confirm-add-business"
+                  >
+                    Add Business
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAdding(false);
+                      setNewBusiness({ name: '', weeklyIncome: 0, runningCost: 0, purchaseCost: 0, manager: '', description: '' });
+                    }}
+                    data-testid="button-cancel-add-business"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setIsAdding(true)}
+                data-testid="button-add-business"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Business
+              </Button>
+            )}
+          </div>
+        )}
+
         {!businesses || businesses.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No businesses owned</p>
+          !isAdding && <p className="text-sm text-muted-foreground text-center py-8">No businesses owned</p>
         ) : (
           businesses.map((business) => (
             <div

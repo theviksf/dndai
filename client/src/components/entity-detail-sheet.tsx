@@ -325,7 +325,17 @@ export function EntityDetailSheet({
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border/50">
                 <span className="font-medium text-foreground text-sm">Purchase Cost:</span>
-                <span className="text-muted-foreground font-bold text-base">{biz.purchaseCost.toLocaleString()} GP</span>
+                {onUpdate ? (
+                  <InlineEdit
+                    value={biz.purchaseCost}
+                    onSave={(value) => onUpdate({ purchaseCost: Number(value) } as any)}
+                    type="number"
+                    min={0}
+                    inputClassName="h-7 text-base w-24 text-right"
+                  />
+                ) : (
+                  <span className="text-muted-foreground font-bold text-base">{biz.purchaseCost.toLocaleString()} GP</span>
+                )}
               </div>
             </div>
           </div>
