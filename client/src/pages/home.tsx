@@ -472,71 +472,9 @@ export default function Home() {
     // (player will get error when trying to take action)
   }, []);
 
-  // Reload config and full game state when page is visible again (returning from other pages)
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (!document.hidden && dbLoaded) {
-        // Reload from IndexedDB when tab becomes visible
-        try {
-          const sessionData = await getSessionData(sessionId);
-          if (sessionData) {
-            const migratedConfig = await migrateConfig(sessionData.gameConfig);
-            setConfig(migratedConfig);
-            setCostTracker(sessionData.costTracker || createDefaultCostTracker());
-            setIsGameStarted(sessionData.isGameStarted);
-            setTurnSnapshots(sessionData.turnSnapshots);
-            
-            const migratedState = sessionData.gameState;
-            if (migratedState.character) {
-              migratedState.character.sex = migratedState.character.sex || '';
-              migratedState.character.attributes = {
-                str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10, ac: 10,
-                ...migratedState.character.attributes,
-              };
-            }
-            if (migratedState.companions) {
-              migratedState.companions = migratedState.companions.map((c: any) => ({ ...c, sex: c.sex || '' }));
-            }
-            if (migratedState.encounteredCharacters) {
-              migratedState.encounteredCharacters = migratedState.encounteredCharacters.map((c: any) => ({ ...c, sex: c.sex || '' }));
-            }
-            if (!Array.isArray(migratedState.updatedTabs)) {
-              migratedState.updatedTabs = [];
-            }
-            if (!migratedState.debugLog) {
-              migratedState.debugLog = [];
-            }
-            
-            // Clean up any base64 images from debug logs (one-time cleanup on load)
-            if (migratedState.debugLog && Array.isArray(migratedState.debugLog)) {
-              let hadBase64 = false;
-              migratedState.debugLog = migratedState.debugLog.map((log: any) => {
-                if (log.imageUrl && typeof log.imageUrl === 'string' && log.imageUrl.startsWith('data:image')) {
-                  hadBase64 = true;
-                  return { ...log, imageUrl: null };
-                }
-                if (log.response && typeof log.response === 'string' && log.response.includes('data:image')) {
-                  hadBase64 = true;
-                  return { ...log, response: log.response.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[Base64 image data removed]') };
-                }
-                return log;
-              });
-              if (hadBase64) {
-                console.log('[DB] Cleaned up base64 images from debug logs on load');
-              }
-            }
-            
-            setGameState(migratedState);
-          }
-        } catch (error) {
-          console.error('[DB] Failed to reload from IndexedDB on visibility change:', error);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [sessionId, dbLoaded]);
+  // Note: We no longer reload from IndexedDB on visibility change.
+  // The game state is already in memory, and reloading caused UI freezes.
+  // Data is only loaded on initial page load and saved when changes occur.
 
   const handleSaveGame = () => {
     saveMutation.mutate();
