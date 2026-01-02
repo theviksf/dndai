@@ -352,10 +352,21 @@ export default function NarrativePanel({
   const [isParsing, setIsParsing] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const narrativeRef = useRef<HTMLDivElement>(null);
+  const isUserNearBottom = useRef(true);
   const { toast } = useToast();
 
-  useEffect(() => {
+  // Track if user is near the bottom of the scroll container
+  const handleScroll = () => {
     if (narrativeRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = narrativeRef.current;
+      // Consider "near bottom" if within 100px of the bottom
+      isUserNearBottom.current = scrollHeight - scrollTop - clientHeight < 100;
+    }
+  };
+
+  // Only auto-scroll if user is already near the bottom
+  useEffect(() => {
+    if (narrativeRef.current && isUserNearBottom.current) {
       narrativeRef.current.scrollTop = narrativeRef.current.scrollHeight;
     }
   }, [gameState.narrativeHistory, streamingContent]);
@@ -1647,6 +1658,7 @@ export default function NarrativePanel({
 
         <div 
           ref={narrativeRef}
+          onScroll={handleScroll}
           className="flex-1 overflow-y-auto p-6 space-y-4" 
           data-testid="narrative-container"
         >
