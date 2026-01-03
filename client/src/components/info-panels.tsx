@@ -381,7 +381,8 @@ export function BusinessesPanel({ businesses, onEntityClick, onUpdate }: Busines
     runningCost: 0,
     purchaseCost: 0,
     manager: '',
-    description: ''
+    description: '',
+    details: ''
   });
 
   const handleAddBusiness = () => {
@@ -395,14 +396,15 @@ export function BusinessesPanel({ businesses, onEntityClick, onUpdate }: Busines
       purchaseCost: newBusiness.purchaseCost,
       owner: 'Player',
       manager: newBusiness.manager.trim() || 'None',
-      description: newBusiness.description.trim() || ''
+      description: newBusiness.description.trim() || '',
+      details: newBusiness.details.trim() || ''
     };
     
     onUpdate({
       businesses: [...(businesses || []), business]
     });
     
-    setNewBusiness({ name: '', weeklyIncome: 0, runningCost: 0, purchaseCost: 0, manager: '', description: '' });
+    setNewBusiness({ name: '', weeklyIncome: 0, runningCost: 0, purchaseCost: 0, manager: '', description: '', details: '' });
     setIsAdding(false);
   };
 
@@ -471,6 +473,13 @@ export function BusinessesPanel({ businesses, onEntityClick, onUpdate }: Busines
                   className="h-8 text-sm"
                   data-testid="input-new-business-description"
                 />
+                <Input
+                  placeholder="Details (optional)"
+                  value={newBusiness.details}
+                  onChange={(e) => setNewBusiness(prev => ({ ...prev, details: e.target.value }))}
+                  className="h-8 text-sm"
+                  data-testid="input-new-business-details"
+                />
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -485,7 +494,7 @@ export function BusinessesPanel({ businesses, onEntityClick, onUpdate }: Busines
                     variant="outline"
                     onClick={() => {
                       setIsAdding(false);
-                      setNewBusiness({ name: '', weeklyIncome: 0, runningCost: 0, purchaseCost: 0, manager: '', description: '' });
+                      setNewBusiness({ name: '', weeklyIncome: 0, runningCost: 0, purchaseCost: 0, manager: '', description: '', details: '' });
                     }}
                     data-testid="button-cancel-add-business"
                   >

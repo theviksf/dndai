@@ -134,6 +134,7 @@ export type Business = {
   owner: string;
   runningCost: number;
   description: string;
+  details?: string;
   imageUrl?: string;
 };
 

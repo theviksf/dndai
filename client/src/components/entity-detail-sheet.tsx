@@ -281,6 +281,20 @@ export function EntityDetailSheet({
             )}
           </div>
 
+          <div className="pt-3 border-t border-border">
+            <span className="font-serif font-bold text-foreground block mb-2">Details:</span>
+            {onUpdate ? (
+              <InlineEdit
+                value={biz.details || ''}
+                onSave={(value) => onUpdate({ details: String(value) } as any)}
+                type="textarea"
+                inputClassName="text-sm leading-relaxed"
+              />
+            ) : (
+              <p className="text-foreground text-sm leading-relaxed italic">{biz.details || 'No details'}</p>
+            )}
+          </div>
+
           {/* Financial Info */}
           <div className="pt-3 border-t border-border">
             <h4 className="font-serif font-bold text-foreground mb-3">Financial Details</h4>
