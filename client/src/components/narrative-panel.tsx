@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { flushSync } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import type { GameStateData, GameConfig, CostTracker, OpenRouterModel } from '@shared/schema';
+import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, NarrativeMessage } from '@shared/schema';
 import { callLLM, callLLMStream } from '@/lib/openrouter';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,32 @@ import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backsto
 import { trackRevelations } from '@/lib/revelations-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 import * as fuzz from 'fuzzball';
+
+// Memoized narrative message component to prevent expensive re-renders
+const MemoizedMessage = memo(function MemoizedMessage({ message }: { message: NarrativeMessage }) {
+  if (message.type === 'dm') {
+    return (
+      <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
+        <div className="text-foreground leading-relaxed prose prose-invert prose-sm max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {message.content}
+          </ReactMarkdown>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-accent/20 border border-accent rounded-lg p-3 max-w-md">
+      <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        You:
+      </div>
+      <p className="text-sm text-foreground">{message.content}</p>
+    </div>
+  );
+});
 
 interface NarrativePanelProps {
   gameState: GameStateData;
@@ -392,7 +418,8 @@ export default function NarrativePanel({
 
       setGameState(prev => ({
         ...prev,
-        narrativeHistory: [...prev.narrativeHistory, playerMessage],
+        // Cap narrative history at 500 messages to prevent unbounded growth
+        narrativeHistory: [...prev.narrativeHistory, playerMessage].slice(-500),
       }));
 
       // Call Primary LLM with COMPLETE context:
@@ -455,7 +482,8 @@ export default function NarrativePanel({
       setGameState(prev => {
         const updated = {
           ...prev,
-          narrativeHistory: [...prev.narrativeHistory, dmMessage],
+          // Cap narrative history at 500 messages to prevent unbounded growth
+          narrativeHistory: [...prev.narrativeHistory, dmMessage].slice(-500),
         };
         updatedStateForParser = updated;
         return updated;
@@ -1034,16 +1062,17 @@ export default function NarrativePanel({
               content: `**[Business Income]** You've collected ${totalIncome.toLocaleString()} gold from your businesses! (Net profit from ${updated.businesses.length} business${updated.businesses.length > 1 ? 'es' : ''})`,
               timestamp: Date.now(),
             };
-            updated.narrativeHistory = [...updated.narrativeHistory, incomeMessage];
+            // Cap narrative history at 500 messages
+            updated.narrativeHistory = [...updated.narrativeHistory, incomeMessage].slice(-500);
           }
         }
 
-        // Add debug log entries
+        // Add debug log entries (limit to last 100 entries to prevent memory bloat)
         updated.debugLog = [
           ...(prev.debugLog || []),
           primaryLogEntry,
           parserLogEntry,
-        ];
+        ].slice(-100);
 
         return updated;
       });
@@ -1085,7 +1114,7 @@ export default function NarrativePanel({
                 if (revelationsResult.debugLogEntry) {
                   setGameState(prev => ({
                     ...prev,
-                    debugLog: [...(prev.debugLog || []), revelationsResult.debugLogEntry!],
+                    debugLog: [...(prev.debugLog || []), revelationsResult.debugLogEntry!].slice(-100),
                   }));
                 }
 
@@ -1195,7 +1224,8 @@ export default function NarrativePanel({
                       timestamp: Date.now(),
                     };
                     
-                    updated.narrativeHistory = [...updated.narrativeHistory, notificationMessage];
+                    // Cap narrative history at 500 messages
+                    updated.narrativeHistory = [...updated.narrativeHistory, notificationMessage].slice(-500);
 
                     return updated;
                   });
@@ -1238,7 +1268,7 @@ export default function NarrativePanel({
                 if (loreResult.debugLogEntry) {
                   setGameState(prev => ({
                     ...prev,
-                    debugLog: [...(prev.debugLog || []), loreResult.debugLogEntry!],
+                    debugLog: [...(prev.debugLog || []), loreResult.debugLogEntry!].slice(-100),
                   }));
                 }
 
@@ -1259,7 +1289,8 @@ export default function NarrativePanel({
                   
                   setGameState(prev => ({
                     ...prev,
-                    narrativeHistory: [...prev.narrativeHistory, notificationMessage],
+                    // Cap narrative history at 500 messages
+                    narrativeHistory: [...prev.narrativeHistory, notificationMessage].slice(-500),
                   }));
 
                   console.log('[LORE] World lore generated and added to game state');
@@ -1463,9 +1494,9 @@ export default function NarrativePanel({
                 }
               });
               
-              // Add image debug logs to debugLog
+              // Add image debug logs to debugLog (limit to last 100 entries)
               if (imageDebugLogs.length > 0) {
-                updated.debugLog = [...(updated.debugLog || []), ...imageDebugLogs];
+                updated.debugLog = [...(updated.debugLog || []), ...imageDebugLogs].slice(-100);
               }
 
               return updated;
@@ -1612,9 +1643,9 @@ export default function NarrativePanel({
                   }
                 });
                 
-                // Add backstory debug logs to debugLog
+                // Add backstory debug logs to debugLog (limit to last 100 entries)
                 if (backstoryDebugLogs.length > 0) {
-                  updated.debugLog = [...(updated.debugLog || []), ...backstoryDebugLogs];
+                  updated.debugLog = [...(updated.debugLog || []), ...backstoryDebugLogs].slice(-100);
                 }
 
                 return updated;
@@ -1676,25 +1707,7 @@ export default function NarrativePanel({
                   className={`fade-in ${message.type === 'player' ? 'flex justify-end' : ''}`}
                   data-testid={`message-${message.type}-${message.id}`}
                 >
-                  {message.type === 'dm' ? (
-                    <div className="bg-muted/20 border-l-4 border-primary rounded-r-lg p-4">
-                      <div className="text-foreground leading-relaxed prose prose-invert prose-sm max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-accent/20 border border-accent rounded-lg p-3 max-w-md">
-                      <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        You:
-                      </div>
-                      <p className="text-sm text-foreground">{message.content}</p>
-                    </div>
-                  )}
+                  <MemoizedMessage message={message} />
                 </div>
               ))}
               

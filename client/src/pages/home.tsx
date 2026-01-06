@@ -827,9 +827,9 @@ export default function Home() {
           }
         }
         
-        // Add debug log entry (even if image generation failed)
+        // Add debug log entry (even if image generation failed) - limit to last 100 entries
         if (result.debugLogEntry) {
-          updated.debugLog = [...(updated.debugLog || []), result.debugLogEntry];
+          updated.debugLog = [...(updated.debugLog || []), result.debugLogEntry].slice(-100);
         }
         
         return updated;
