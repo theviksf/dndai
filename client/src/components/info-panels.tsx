@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MapPin, X, Plus } from 'lucide-react';
+import { MapPin, X, Plus, Search } from 'lucide-react';
 import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, RacialAbility, ClassFeature, ClassPower, Business, GameStateData, PreviousLocation } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { EntityImageCard } from '@/components/entity-image-card';
@@ -699,17 +699,30 @@ interface NPCsPanelProps extends BasePanelProps {
 
 export function NPCsPanel({ encounteredCharacters, onEntityClick }: NPCsPanelProps) {
   const [npcSortBy, setNpcSortBy] = useState<'name' | 'role' | 'location'>('name');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const sortedNPCs = [...encounteredCharacters].sort((a, b) => {
-    if (npcSortBy === 'name') return a.name.localeCompare(b.name);
-    if (npcSortBy === 'role') return a.role.localeCompare(b.role);
-    if (npcSortBy === 'location') return (a.location || '').localeCompare(b.location || '');
-    return 0;
-  });
+  const filteredAndSortedNPCs = [...encounteredCharacters]
+    .filter(npc => npc.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      if (npcSortBy === 'name') return a.name.localeCompare(b.name);
+      if (npcSortBy === 'role') return a.role.localeCompare(b.role);
+      if (npcSortBy === 'location') return (a.location || '').localeCompare(b.location || '');
+      return 0;
+    });
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-border">
+      <div className="p-3 border-b border-border space-y-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search NPCs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-7 text-xs pl-7"
+            data-testid="input-npc-search"
+          />
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Sort by:</span>
           <Select value={npcSortBy} onValueChange={(value: any) => setNpcSortBy(value)}>
@@ -726,11 +739,13 @@ export function NPCsPanel({ encounteredCharacters, onEntityClick }: NPCsPanelPro
       </div>
       <ScrollArea className="h-[calc(100vh-260px)]">
         <div className="p-4">
-          {sortedNPCs.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No characters encountered</p>
+          {filteredAndSortedNPCs.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {searchQuery ? 'No NPCs match your search' : 'No characters encountered'}
+            </p>
           ) : (
             <div className="grid grid-cols-2 gap-4">
-              {sortedNPCs.map((character) => {
+              {filteredAndSortedNPCs.map((character) => {
                 const relScore = character.relationship ?? 0;
                 const relDisplay = getRelationshipDisplay(relScore);
                 return (
