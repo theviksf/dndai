@@ -87,6 +87,11 @@ export type ClassPower = {
   icon: string;
 };
 
+export type Memory = {
+  text: string;
+  turn: number;
+};
+
 export type Companion = {
   id: string;
   name: string;
@@ -105,6 +110,7 @@ export type Companion = {
   imageUrl?: string;
   backstory?: string;
   revelations?: Revelation[];
+  memories?: Memory[];
 };
 
 export type EncounteredCharacter = {
@@ -123,6 +129,7 @@ export type EncounteredCharacter = {
   imageUrl?: string;
   backstory?: string;
   revelations?: Revelation[];
+  memories?: Memory[];
 };
 
 export type Business = {
