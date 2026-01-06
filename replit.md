@@ -98,6 +98,31 @@ When an NPC joins the party as a companion, the system automatically migrates th
 
 **Benefits**: Players see NPCs only once (either in NPCs tab or Party tab), with all generated content (images, backstories, revelations) preserved when they join the party. No redundant AI generation needed.
 
+### Character Memories System
+
+NPCs and party members (companions) can accumulate personal memories of interactions with the player character:
+
+**Memory Structure**:
+- Each memory contains `text` (the memory content written from the character's perspective) and `turn` (when it was created)
+- Memories are stored in the `memories` array on both Companion and EncounteredCharacter types
+
+**Memory Generation**:
+1. After each turn, the Parser LLM analyzes the narrative for meaningful interactions
+2. Memories are ONLY created for characters who already exist in the game state
+3. New characters being introduced in the same turn do not receive memories (they're being added, not interacting yet)
+4. Memories are written from the character's perspective: "[Name] remembers [experience/observation]"
+
+**Memory Usage**:
+- Memories are passed to the Primary LLM each turn as part of character context
+- The DM uses memories to inform NPC/companion dialogue and behavior
+- Creates authentic relationship development over time
+- Displayed in entity detail sheets with turn badges
+
+**Examples**:
+- "Mara remembers Dax calling her name casually in the tavern, like an old friend"
+- "Borin remembers the player standing firm against the dragon despite overwhelming odds"
+- "Elder Morin remembers the gratitude that brought him to tears when his grandson was saved"
+
 ### Data Storage Solutions
 
 **IndexedDB Storage (Primary)**: All game data stored in browser IndexedDB (Dexie.js) for capacity and performance. Each game has a unique `sessionId` in the URL. Supports multi-session management, migration from localStorage, and UI for storage display. Base64 image data is sanitized, only R2 URLs are persisted.
