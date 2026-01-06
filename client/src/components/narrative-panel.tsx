@@ -1032,6 +1032,82 @@ export default function NarrativePanel({
             updatedTabsSet.add('locations');
           }
 
+          // Process memories for existing NPCs and companions
+          if (stateUpdates.memories !== undefined && typeof stateUpdates.memories === 'object') {
+            const currentTurn = prev.turnCount + 1;
+            const memoriesObj = stateUpdates.memories as Record<string, string[]>;
+            
+            Object.entries(memoriesObj).forEach(([characterName, newMemories]) => {
+              if (!Array.isArray(newMemories) || newMemories.length === 0) return;
+              
+              const nameLower = characterName.toLowerCase();
+              
+              // First check companions
+              let companionIndex = updated.companions?.findIndex(comp => 
+                comp.name.toLowerCase() === nameLower
+              ) ?? -1;
+              
+              // Try fuzzy matching for companions
+              if (companionIndex < 0 && updated.companions) {
+                const fuzzyMatches = updated.companions.map((comp, idx) => ({
+                  idx,
+                  score: fuzz.token_set_ratio(comp.name.toLowerCase(), nameLower)
+                })).filter(m => m.score >= 80);
+                
+                if (fuzzyMatches.length > 0) {
+                  fuzzyMatches.sort((a, b) => b.score - a.score);
+                  companionIndex = fuzzyMatches[0].idx;
+                }
+              }
+              
+              if (companionIndex >= 0 && updated.companions) {
+                // Add memories to companion
+                const existingMemories = updated.companions[companionIndex].memories || [];
+                const memoriesToAdd = newMemories.map(text => ({ text, turn: currentTurn }));
+                updated.companions[companionIndex] = {
+                  ...updated.companions[companionIndex],
+                  memories: [...existingMemories, ...memoriesToAdd],
+                };
+                console.log(`[MEMORIES] Added ${newMemories.length} memory(ies) to companion "${updated.companions[companionIndex].name}"`);
+                updatedTabsSet.add('companions');
+                return;
+              }
+              
+              // Then check NPCs
+              let npcIndex = updated.encounteredCharacters?.findIndex(npc => 
+                npc.name.toLowerCase() === nameLower
+              ) ?? -1;
+              
+              // Try fuzzy matching for NPCs
+              if (npcIndex < 0 && updated.encounteredCharacters) {
+                const fuzzyMatches = updated.encounteredCharacters.map((npc, idx) => ({
+                  idx,
+                  score: fuzz.token_set_ratio(npc.name.toLowerCase(), nameLower)
+                })).filter(m => m.score >= 80);
+                
+                if (fuzzyMatches.length > 0) {
+                  fuzzyMatches.sort((a, b) => b.score - a.score);
+                  npcIndex = fuzzyMatches[0].idx;
+                }
+              }
+              
+              if (npcIndex >= 0 && updated.encounteredCharacters) {
+                // Add memories to NPC
+                const existingMemories = updated.encounteredCharacters[npcIndex].memories || [];
+                const memoriesToAdd = newMemories.map(text => ({ text, turn: currentTurn }));
+                updated.encounteredCharacters[npcIndex] = {
+                  ...updated.encounteredCharacters[npcIndex],
+                  memories: [...existingMemories, ...memoriesToAdd],
+                };
+                console.log(`[MEMORIES] Added ${newMemories.length} memory(ies) to NPC "${updated.encounteredCharacters[npcIndex].name}"`);
+                updatedTabsSet.add('encounters');
+                return;
+              }
+              
+              console.log(`[MEMORIES] Character "${characterName}" not found in companions or NPCs - skipping memories`);
+            });
+          }
+
           // Store parsed recap for future context
           if (parsedData.recap) {
             updated.parsedRecaps = [...updated.parsedRecaps, parsedData.recap];

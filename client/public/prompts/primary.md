@@ -31,12 +31,14 @@ You receive complete game context in JSON format, including ALL of the following
 - **criticalMemories**: Key events and experiences with the player - reference these in dialogue!
 - **feelingsTowardsPlayer**: Their current emotional state toward the player - reflect this in how they act
 - **relationship**: Their bond level with the player - use this to determine loyalty and reactions
+- **memories**: Array of specific memories from interactions with the player - these are personal moments the companion remembers. Reference these in dialogue to make interactions feel authentic and show the relationship developing over time.
 
 **ENCOUNTERED CHARACTERS (NPCs)**: For each NPC you have:
 - **name**: Make sure to mention the NPC's name if refering to any chracters. Note taker is taking and needs this info to keep track.
 - **basic info** (name, age, sex, hair color, role, location, appearance, description)
 - **status**: Whether they are alive or dead - don't feature dead NPCs unless narratively appropriate
 - **relationship**: Numeric score from -3 (Hostile) to +3 (Devoted) - use this for all interactions
+- **memories**: Array of specific memories from interactions with the player - these are personal moments the NPC remembers. Use these to inform how the NPC treats the player and reference them in dialogue when appropriate.
 
 **INVENTORY**: All items with descriptions, types, quantities, magical properties
 
