@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star, Pencil, Check, X } from 'lucide-react';
+import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star, Pencil, Check, X, Brain } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Textarea } from '@/components/ui/textarea';
@@ -1089,6 +1089,31 @@ export function EntityDetailSheet({
                           </div>
                           <p className="text-foreground text-sm leading-relaxed flex-1">
                             {revelation.text}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Memories */}
+              {'memories' in entity && entity.memories && entity.memories.length > 0 && (
+                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                  <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
+                    <Brain className="w-5 h-5" /> Memories
+                  </h3>
+                  <div className="space-y-3" data-testid="entity-memories-list">
+                    {entity.memories.map((memory, index) => (
+                      <div key={index} className="bg-muted/30 border-l-4 border-accent rounded-r-lg p-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-1">
+                            <Badge variant="outline" className="font-mono text-xs">
+                              Turn {memory.turn}
+                            </Badge>
+                          </div>
+                          <p className="text-foreground text-sm leading-relaxed flex-1 italic">
+                            {memory.text}
                           </p>
                         </div>
                       </div>
