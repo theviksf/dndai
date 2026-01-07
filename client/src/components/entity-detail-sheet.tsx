@@ -55,6 +55,8 @@ export function EntityDetailSheet({
 }: EntityDetailSheetProps) {
   const [isEditingBackstory, setIsEditingBackstory] = useState(false);
   const [backstoryEditValue, setBackstoryEditValue] = useState('');
+  const [editingMemoryIndex, setEditingMemoryIndex] = useState<number | null>(null);
+  const [memoryEditValue, setMemoryEditValue] = useState('');
   
   // Reset editing state when entity changes or sheet opens/closes
   useEffect(() => {
@@ -62,6 +64,8 @@ export function EntityDetailSheet({
       // Reset when sheet closes
       setIsEditingBackstory(false);
       setBackstoryEditValue('');
+      setEditingMemoryIndex(null);
+      setMemoryEditValue('');
     }
   }, [open]);
   
@@ -70,8 +74,25 @@ export function EntityDetailSheet({
     if (open) {
       setIsEditingBackstory(false);
       setBackstoryEditValue('');
+      setEditingMemoryIndex(null);
+      setMemoryEditValue('');
     }
   }, [entity, open]);
+  
+  const handleMemorySave = (index: number) => {
+    if (!entity || !onUpdate || !('memories' in entity) || !entity.memories) return;
+    const updatedMemories = [...entity.memories];
+    updatedMemories[index] = { ...updatedMemories[index], text: memoryEditValue };
+    onUpdate({ memories: updatedMemories } as any);
+    setEditingMemoryIndex(null);
+    setMemoryEditValue('');
+  };
+  
+  const handleMemoryDelete = (index: number) => {
+    if (!entity || !onUpdate || !('memories' in entity) || !entity.memories) return;
+    const updatedMemories = entity.memories.filter((_, i) => i !== index);
+    onUpdate({ memories: updatedMemories } as any);
+  };
   
   if (!entity) return null;
 
@@ -1112,9 +1133,71 @@ export function EntityDetailSheet({
                               Turn {memory.turn}
                             </Badge>
                           </div>
-                          <p className="text-foreground text-sm leading-relaxed flex-1 italic">
-                            {memory.text}
-                          </p>
+                          <div className="flex-1">
+                            {editingMemoryIndex === index ? (
+                              <div className="space-y-2">
+                                <Textarea
+                                  value={memoryEditValue}
+                                  onChange={(e) => setMemoryEditValue(e.target.value)}
+                                  className="min-h-[60px] text-sm"
+                                  data-testid={`textarea-memory-${index}`}
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleMemorySave(index)}
+                                    className="h-7"
+                                    data-testid={`button-save-memory-${index}`}
+                                  >
+                                    <Check className="w-3 h-3 mr-1" /> Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingMemoryIndex(null);
+                                      setMemoryEditValue('');
+                                    }}
+                                    className="h-7"
+                                    data-testid={`button-cancel-memory-${index}`}
+                                  >
+                                    <X className="w-3 h-3 mr-1" /> Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="group flex items-start gap-2">
+                                <p className="text-foreground text-sm leading-relaxed flex-1 italic">
+                                  {memory.text}
+                                </p>
+                                {onUpdate && (
+                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => {
+                                        setEditingMemoryIndex(index);
+                                        setMemoryEditValue(memory.text);
+                                      }}
+                                      data-testid={`button-edit-memory-${index}`}
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                      onClick={() => handleMemoryDelete(index)}
+                                      data-testid={`button-delete-memory-${index}`}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
