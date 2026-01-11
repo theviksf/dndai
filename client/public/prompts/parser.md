@@ -51,9 +51,15 @@ EXACT JSON FORMAT TO RETURN:
     // Object field: "attributes" with properties: "str", "dex", "con", "int", "wis", "cha" (all numbers)
     // Object field: "location" with properties: "name" (string), "description" (string)
     // Array fields: "statusEffects", "inventory", "spells", "racialAbilities", "classFeatures", "classPowers", "quests", "companions", "encounteredCharacters"
+    // MEMORIES (check every turn!): "memories": { "CharacterName": ["Character remembers..."] }
   },
   "recap": "REQUIRED: A 2-3 sentence summary of key events"
 }
+
+IMPORTANT - MEMORIES CHECK:
+Before returning your response, ALWAYS check: Did any EXISTING companion or NPC interact with the player this turn?
+If YES, you MUST include a "memories" field with their perspective on what happened.
+Example: "memories": { "Lyra": ["Lyra remembers the conversation about the mysterious artifact"] }
 
 FIELD SPECIFICATIONS:
 - name: string (only if character name changed)
