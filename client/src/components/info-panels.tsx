@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MapPin, X, Plus, Search, Brain } from 'lucide-react';
+import { MapPin, X, Plus, Search } from 'lucide-react';
 import type { InventoryItem, Quest, Companion, EncounteredCharacter, Spell, RacialAbility, ClassFeature, ClassPower, Business, GameStateData, PreviousLocation } from '@shared/schema';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { EntityImageCard } from '@/components/entity-image-card';
@@ -683,22 +683,6 @@ export function CompanionsPanel({ companions, onEntityClick }: CompanionsPanelPr
                   <div className="text-xs font-medium text-center text-muted-foreground mt-1">
                     {relationship}
                   </div>
-                  {companion.memories && companion.memories.length > 0 && (
-                    <div className="w-full mt-2 pt-2 border-t border-border/50">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                        <Brain className="w-3 h-3" />
-                        <span>Memories</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground italic text-left space-y-1">
-                        {companion.memories.slice(0, 2).map((memory, idx) => (
-                          <p key={idx} className="line-clamp-2">{memory.text}</p>
-                        ))}
-                        {companion.memories.length > 2 && (
-                          <p className="text-primary">+{companion.memories.length - 2} more...</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -785,22 +769,6 @@ export function NPCsPanel({ encounteredCharacters, onEntityClick }: NPCsPanelPro
                     >
                       {relDisplay.label}
                     </span>
-                    {character.memories && character.memories.length > 0 && (
-                      <div className="w-full mt-2 pt-2 border-t border-border/50">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                          <Brain className="w-3 h-3" />
-                          <span>Memories</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground italic text-left space-y-1">
-                          {character.memories.slice(0, 2).map((memory, idx) => (
-                            <p key={idx} className="line-clamp-2">{memory.text}</p>
-                          ))}
-                          {character.memories.length > 2 && (
-                            <p className="text-primary">+{character.memories.length - 2} more...</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
