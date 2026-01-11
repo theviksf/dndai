@@ -127,12 +127,12 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
   const defaults = createDefaultConfig();
   
   // Check if any prompts are missing - only fetch from API if needed
-  // Use nullish coalescing to properly check for undefined/null (not empty strings)
-  const needsPrompts = config.dmSystemPrompt == null || config.parserSystemPrompt == null || 
-                       config.characterImagePrompt == null || config.locationImagePrompt == null ||
-                       config.backstorySystemPrompt == null || config.revelationsSystemPrompt == null ||
-                       config.memoriesSystemPrompt == null || config.loreSystemPrompt == null || 
-                       config.checkerSystemPrompt == null;
+  // Check for null, undefined, OR empty strings (empty prompts should be loaded)
+  const needsPrompts = !config.dmSystemPrompt || !config.parserSystemPrompt || 
+                       !config.characterImagePrompt || !config.locationImagePrompt ||
+                       !config.backstorySystemPrompt || !config.revelationsSystemPrompt ||
+                       !config.memoriesSystemPrompt || !config.loreSystemPrompt || 
+                       !config.checkerSystemPrompt;
   
   const prompts = needsPrompts ? await loadDefaultPromptsFromAPI() : null;
   
@@ -147,22 +147,22 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     memoriesLLM: config.memoriesLLM ?? defaults.memoriesLLM,
     loreLLM: config.loreLLM ?? defaults.loreLLM,
     checkerLLM: config.checkerLLM ?? defaults.checkerLLM,
-    // Use nullish coalescing (??) instead of OR (||) to preserve empty strings and falsy values
-    characterImagePrompt: config.characterImagePrompt ?? (prompts?.imageCharacter ?? defaults.characterImagePrompt),
-    locationImagePrompt: config.locationImagePrompt ?? (prompts?.imageLocation ?? defaults.locationImagePrompt),
+    // Use OR (||) to also replace empty strings with defaults (prompts should never be empty)
+    characterImagePrompt: config.characterImagePrompt || prompts?.imageCharacter || defaults.characterImagePrompt,
+    locationImagePrompt: config.locationImagePrompt || prompts?.imageLocation || defaults.locationImagePrompt,
     imageProvider: config.imageProvider ?? defaults.imageProvider,
     autoGenerateImages: config.autoGenerateImages ?? defaults.autoGenerateImages,
-    backstorySystemPrompt: config.backstorySystemPrompt ?? (prompts?.backstory ?? defaults.backstorySystemPrompt),
+    backstorySystemPrompt: config.backstorySystemPrompt || prompts?.backstory || defaults.backstorySystemPrompt,
     autoGenerateBackstories: config.autoGenerateBackstories ?? defaults.autoGenerateBackstories,
-    revelationsSystemPrompt: config.revelationsSystemPrompt ?? (prompts?.revelations ?? defaults.revelationsSystemPrompt),
+    revelationsSystemPrompt: config.revelationsSystemPrompt || prompts?.revelations || defaults.revelationsSystemPrompt,
     autoGenerateRevelations: config.autoGenerateRevelations ?? defaults.autoGenerateRevelations,
-    memoriesSystemPrompt: config.memoriesSystemPrompt ?? (prompts?.memories ?? defaults.memoriesSystemPrompt),
+    memoriesSystemPrompt: config.memoriesSystemPrompt || prompts?.memories || defaults.memoriesSystemPrompt,
     autoGenerateMemories: config.autoGenerateMemories ?? defaults.autoGenerateMemories,
-    loreSystemPrompt: config.loreSystemPrompt ?? (prompts?.lore ?? defaults.loreSystemPrompt),
+    loreSystemPrompt: config.loreSystemPrompt || prompts?.lore || defaults.loreSystemPrompt,
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
-    checkerSystemPrompt: config.checkerSystemPrompt ?? (prompts?.checker ?? defaults.checkerSystemPrompt),
-    dmSystemPrompt: config.dmSystemPrompt ?? (prompts?.primary ?? defaults.dmSystemPrompt),
-    parserSystemPrompt: config.parserSystemPrompt ?? (prompts?.parser ?? defaults.parserSystemPrompt),
+    checkerSystemPrompt: config.checkerSystemPrompt || prompts?.checker || defaults.checkerSystemPrompt,
+    dmSystemPrompt: config.dmSystemPrompt || prompts?.primary || defaults.dmSystemPrompt,
+    parserSystemPrompt: config.parserSystemPrompt || prompts?.parser || defaults.parserSystemPrompt,
     uiScale: config.uiScale ?? defaults.uiScale,
   };
 }
