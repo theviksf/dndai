@@ -13,6 +13,7 @@ import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChange
 import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
+import { generateMemories } from '@/lib/memories-generation';
 import * as fuzz from 'fuzzball';
 
 // Memoized narrative message component to prevent expensive re-renders
@@ -1380,6 +1381,105 @@ export default function NarrativePanel({
             // Return state unchanged - lore updates happen in nested setGameState calls
             return freshState;
           });
+
+          // Generate memories for existing characters who interacted this turn
+          if (primaryResponse?.content) {
+            setGameState(freshState => {
+              generateMemories({
+                narrative: primaryResponse.content,
+                gameState: freshState,
+                config,
+              }).then(memoriesResult => {
+                // Add debug log
+                if (memoriesResult.debugLogEntry) {
+                  setGameState(prev => ({
+                    ...prev,
+                    debugLog: [...(prev.debugLog || []), memoriesResult.debugLogEntry!].slice(-100),
+                  }));
+                }
+
+                // Add memories to companions and NPCs
+                if (memoriesResult.memories && Object.keys(memoriesResult.memories).length > 0) {
+                  setGameState(prev => {
+                    const updated = { ...prev };
+                    const currentTurn = updated.turnCount;
+                    
+                    Object.entries(memoriesResult.memories).forEach(([characterName, memoryTexts]) => {
+                      if (!Array.isArray(memoryTexts) || memoryTexts.length === 0) return;
+                      
+                      const nameLower = characterName.toLowerCase();
+                      
+                      // Check companions first
+                      let companionIndex = updated.companions?.findIndex(comp => 
+                        comp.name.toLowerCase() === nameLower
+                      ) ?? -1;
+                      
+                      // Try fuzzy matching for companions
+                      if (companionIndex < 0 && updated.companions) {
+                        const fuzzyMatches = updated.companions.map((comp, idx) => ({
+                          idx,
+                          score: fuzz.token_set_ratio(comp.name.toLowerCase(), nameLower)
+                        })).filter(m => m.score >= 80);
+                        
+                        if (fuzzyMatches.length > 0) {
+                          fuzzyMatches.sort((a, b) => b.score - a.score);
+                          companionIndex = fuzzyMatches[0].idx;
+                        }
+                      }
+                      
+                      if (companionIndex >= 0 && updated.companions) {
+                        const existingMemories = updated.companions[companionIndex].memories || [];
+                        const memoriesToAdd = memoryTexts.map(text => ({ text, turn: currentTurn }));
+                        updated.companions = [...updated.companions];
+                        updated.companions[companionIndex] = {
+                          ...updated.companions[companionIndex],
+                          memories: [...existingMemories, ...memoriesToAdd],
+                        };
+                        console.log(`[MEMORIES] Added ${memoryTexts.length} memory(ies) to companion "${updated.companions[companionIndex].name}"`);
+                        return;
+                      }
+                      
+                      // Check NPCs
+                      let npcIndex = updated.encounteredCharacters?.findIndex(npc => 
+                        npc.name.toLowerCase() === nameLower
+                      ) ?? -1;
+                      
+                      // Try fuzzy matching for NPCs
+                      if (npcIndex < 0 && updated.encounteredCharacters) {
+                        const fuzzyMatches = updated.encounteredCharacters.map((npc, idx) => ({
+                          idx,
+                          score: fuzz.token_set_ratio(npc.name.toLowerCase(), nameLower)
+                        })).filter(m => m.score >= 80);
+                        
+                        if (fuzzyMatches.length > 0) {
+                          fuzzyMatches.sort((a, b) => b.score - a.score);
+                          npcIndex = fuzzyMatches[0].idx;
+                        }
+                      }
+                      
+                      if (npcIndex >= 0 && updated.encounteredCharacters) {
+                        const existingMemories = updated.encounteredCharacters[npcIndex].memories || [];
+                        const memoriesToAdd = memoryTexts.map(text => ({ text, turn: currentTurn }));
+                        updated.encounteredCharacters = [...updated.encounteredCharacters];
+                        updated.encounteredCharacters[npcIndex] = {
+                          ...updated.encounteredCharacters[npcIndex],
+                          memories: [...existingMemories, ...memoriesToAdd],
+                        };
+                        console.log(`[MEMORIES] Added ${memoryTexts.length} memory(ies) to NPC "${updated.encounteredCharacters[npcIndex].name}"`);
+                      }
+                    });
+
+                    console.log(`[MEMORIES] Total memories generated: ${Object.values(memoriesResult.memories).flat().length}`);
+                    return updated;
+                  });
+                }
+              }).catch(error => {
+                console.error('[MEMORIES] Error generating memories:', error);
+              });
+              
+              return freshState;
+            });
+          }
         }, 10);
       }
 

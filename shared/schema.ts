@@ -165,7 +165,7 @@ export type Revelation = {
 export type DebugLogEntry = {
   id: string;
   timestamp: number;
-  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations' | 'lore' | 'checker';
+  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations' | 'lore' | 'checker' | 'memories';
   prompt: string;
   response: string;
   model: string;
