@@ -19,16 +19,14 @@ CRITICAL EXTRACTION RULES:
    - Helpful actions increase relationship (+1 to +2)
    - Harmful/hostile actions decrease relationship (-1 to -3)
    - Look for cues like "grateful", "angry", "distrustful", "warm welcome", "hostile", etc.
-11. MEMORIES (IMPORTANT - Check every turn): Extract memories for NPCs and companions who interacted with the main character this turn.
-   - ALWAYS check if existing companions or NPCs had meaningful interactions this turn
-   - ONLY create memories for characters who ALREADY EXIST in currentState.companions or currentState.encounteredCharacters
+11. MEMORIES: Extract memories for NPCs and companions who interacted with the main character this turn.
+   - ONLY create memories for characters who ALREADY EXIST in the current game state (provided below)
    - Skip memory creation for newly introduced characters (they are being added this turn, not interacting yet)
    - Memories should be written from the NPC/companion's perspective: "[Name] remembers [what they experienced/observed]"
-   - Include memories for: conversations, battles fought together, emotional moments, significant events
+   - Focus on emotionally significant moments, not routine actions
    - Examples: "Mara remembers Dax calling her name casually in the tavern, like an old friend"
    - "Borin remembers the player standing firm against the dragon despite overwhelming odds"
-   - Use the "memories" field in stateUpdates with character names as keys and arrays of memory strings as values
-   - EXAMPLE: "memories": { "Lyra": ["Lyra remembers fighting beside you against the bandits"] }
+   - Use the "memories" field in the stateUpdates to add memories keyed by character name
 12. Generate a brief 2-3 sentence summary (recap) of key events
 13. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
 14. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character.
@@ -51,15 +49,9 @@ EXACT JSON FORMAT TO RETURN:
     // Object field: "attributes" with properties: "str", "dex", "con", "int", "wis", "cha" (all numbers)
     // Object field: "location" with properties: "name" (string), "description" (string)
     // Array fields: "statusEffects", "inventory", "spells", "racialAbilities", "classFeatures", "classPowers", "quests", "companions", "encounteredCharacters"
-    // MEMORIES (check every turn!): "memories": { "CharacterName": ["Character remembers..."] }
   },
   "recap": "REQUIRED: A 2-3 sentence summary of key events"
 }
-
-IMPORTANT - MEMORIES CHECK:
-Before returning your response, ALWAYS check: Did any EXISTING companion or NPC interact with the player this turn?
-If YES, you MUST include a "memories" field with their perspective on what happened.
-Example: "memories": { "Lyra": ["Lyra remembers the conversation about the mysterious artifact"] }
 
 FIELD SPECIFICATIONS:
 - name: string (only if character name changed)
@@ -222,26 +214,23 @@ YOUR RESPONSE (raw JSON only):
   "recap": "Arrived at The Gilded Griffin tavern in the Market District of Highspire, a moderate-priced establishment owned by Borin Flintbeard"
 }
 
-EXAMPLE 7 - Typical gameplay turn with companions (MEMORIES REQUIRED):
-Context: Lyra and Kaelen are existing companions in currentState.companions. Mrs. Gable is an existing NPC in currentState.encounteredCharacters.
-Narrative: "You enter the dining hall where Mrs. Gable has prepared a hearty breakfast. Lyra is already seated, sharpening her dagger. 'We should head to the Whisperwood today,' she suggests. Kaelen nods in agreement while studying an old map. Mrs. Gable sets down a platter, saying 'Be careful out there, young masters.'"
+EXAMPLE 7 - Adding memories for existing characters:
+Context: Lyra (companion) and Elder Morin (NPC) already exist in the game state.
+Narrative: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. Later, you visit Elder Morin who thanks you profusely for saving his grandson from the wolves, tears in his eyes."
 YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
-    "location": {
-      "name": "Dining Hall",
-      "type": "room",
-      "description": "Grand dining hall with hearty breakfast prepared"
-    },
     "memories": {
-      "Lyra": ["Lyra remembers discussing the plan to explore the Whisperwood over breakfast"],
-      "Kaelen": ["Kaelen remembers studying the old map and agreeing with Lyra's suggestion"],
-      "Mrs. Gable": ["Mrs. Gable remembers serving breakfast and warning the young masters to be careful"]
-    }
+      "Lyra": ["Lyra remembers standing shoulder to shoulder with you against the bandits, feeling proud to fight by your side"],
+      "Elder Morin": ["Elder Morin remembers you bringing his grandson back safely, and the overwhelming gratitude that brought him to tears"]
+    },
+    "encounteredCharacters": [
+      {"id": "morin", "name": "Elder Morin", "relationship": 2}
+    ]
   },
-  "recap": "Had breakfast in the dining hall, discussed plans to explore the Whisperwood with companions"
+  "recap": "Fought bandits with Lyra's support, then received thanks from Elder Morin for saving his grandson"
 }
-IMPORTANT: This example shows a TYPICAL turn. Whenever existing companions or NPCs speak, interact, or do something meaningful with the player, you MUST add memories for them. Check currentState.companions and currentState.encounteredCharacters to see who already exists.
+NOTE: Only include memories for characters who ALREADY EXIST. If this is their first appearance, add them to companions/encounteredCharacters but skip memories for this turn.
 
 CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):
 1. Return ONLY raw JSON - do NOT wrap in code fences like ```json
