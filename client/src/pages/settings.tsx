@@ -42,7 +42,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
   useEffect(() => {
     const loadMissingPrompts = async () => {
       // Check if any prompts are empty
-      if (!config.backstorySystemPrompt || !config.revelationsSystemPrompt || !config.loreSystemPrompt || !config.checkerSystemPrompt) {
+      if (!config.backstorySystemPrompt || !config.revelationsSystemPrompt || !config.memoriesSystemPrompt || !config.loreSystemPrompt || !config.checkerSystemPrompt) {
         console.log('[SETTINGS] Loading missing prompts for existing session');
         const defaults = await loadDefaultPrompts();
         if (defaults) {
@@ -50,6 +50,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             ...prev,
             backstorySystemPrompt: prev.backstorySystemPrompt || defaults.backstory,
             revelationsSystemPrompt: prev.revelationsSystemPrompt || defaults.revelations,
+            memoriesSystemPrompt: prev.memoriesSystemPrompt || defaults.memories,
             loreSystemPrompt: prev.loreSystemPrompt || defaults.lore,
             checkerSystemPrompt: prev.checkerSystemPrompt || defaults.checker,
           }));
@@ -58,6 +59,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             ...config,
             backstorySystemPrompt: config.backstorySystemPrompt || defaults.backstory,
             revelationsSystemPrompt: config.revelationsSystemPrompt || defaults.revelations,
+            memoriesSystemPrompt: config.memoriesSystemPrompt || defaults.memories,
             loreSystemPrompt: config.loreSystemPrompt || defaults.lore,
             checkerSystemPrompt: config.checkerSystemPrompt || defaults.checker,
           });
@@ -65,7 +67,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
       }
     };
     loadMissingPrompts();
-  }, [config.backstorySystemPrompt, config.revelationsSystemPrompt, config.loreSystemPrompt, config.checkerSystemPrompt]);
+  }, [config.backstorySystemPrompt, config.revelationsSystemPrompt, config.memoriesSystemPrompt, config.loreSystemPrompt, config.checkerSystemPrompt]);
 
   // Apply UI scale immediately when changed (preview)
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
     }
   };
 
-  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'revelations' | 'lore' | 'checker') => {
+  const handleResetPrompt = async (promptType: 'primary' | 'parser' | 'imageCharacter' | 'imageLocation' | 'backstory' | 'revelations' | 'memories' | 'lore' | 'checker') => {
     const defaults = await loadDefaultPrompts();
     if (!defaults) return;
 
@@ -100,6 +102,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
       imageLocation: 'locationImagePrompt',
       backstory: 'backstorySystemPrompt',
       revelations: 'revelationsSystemPrompt',
+      memories: 'memoriesSystemPrompt',
       lore: 'loreSystemPrompt',
       checker: 'checkerSystemPrompt',
     };
@@ -790,6 +793,35 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                   rows={10}
                   className="font-mono text-xs bg-input border-border"
                   data-testid="textarea-revelations-prompt"
+                />
+              </div>
+
+              {/* Memories Prompt */}
+              <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-foreground">
+                    Memories Prompt <span className="text-primary">(Character Memory Tracking)</span>
+                  </label>
+                  <Button
+                    onClick={() => handleResetPrompt('memories')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="button-reset-memories-prompt"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Reset to Default
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  System prompt for generating character memories when NPCs and companions interact with the player
+                </p>
+                <Textarea
+                  value={localConfig.memoriesSystemPrompt}
+                  onChange={(e) => setLocalConfig(prev => ({ ...prev, memoriesSystemPrompt: e.target.value }))}
+                  rows={10}
+                  className="font-mono text-xs bg-input border-border"
+                  data-testid="textarea-memories-prompt"
                 />
               </div>
 

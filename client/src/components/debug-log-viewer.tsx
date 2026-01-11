@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { DebugLogEntry } from '@shared/schema';
-import { Terminal, Brain, Clock, Image, Copy, Book, Sparkles, Globe, Shield } from 'lucide-react';
+import { Terminal, Brain, Clock, Image, Copy, Book, Sparkles, Globe, Shield, HeartHandshake } from 'lucide-react';
 
 interface DebugLogViewerProps {
   debugLog: DebugLogEntry[];
@@ -54,6 +54,7 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
   const backstoryLogs = debugLog.filter(log => log.type === 'backstory');
   const checkerLogs = debugLog.filter(log => log.type === 'checker');
   const revelationsLogs = debugLog.filter(log => log.type === 'revelations');
+  const memoriesLogs = debugLog.filter(log => log.type === 'memories');
   const loreLogs = debugLog.filter(log => log.type === 'lore');
 
   return (
@@ -67,14 +68,15 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
         </DialogHeader>
 
         <Tabs defaultValue="all" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="all">All ({debugLog.length})</TabsTrigger>
-            <TabsTrigger value="primary">Primary DM ({primaryLogs.length})</TabsTrigger>
+            <TabsTrigger value="primary">Primary ({primaryLogs.length})</TabsTrigger>
             <TabsTrigger value="parser">Parser ({parserLogs.length})</TabsTrigger>
-            <TabsTrigger value="image">Image Gen ({imageLogs.length})</TabsTrigger>
+            <TabsTrigger value="image">Image ({imageLogs.length})</TabsTrigger>
             <TabsTrigger value="backstory">Backstory ({backstoryLogs.length})</TabsTrigger>
             <TabsTrigger value="checker">Checker ({checkerLogs.length})</TabsTrigger>
-            <TabsTrigger value="revelations">Revelations ({revelationsLogs.length})</TabsTrigger>
+            <TabsTrigger value="revelations">Reveals ({revelationsLogs.length})</TabsTrigger>
+            <TabsTrigger value="memories">Memories ({memoriesLogs.length})</TabsTrigger>
             <TabsTrigger value="lore">Lore ({loreLogs.length})</TabsTrigger>
           </TabsList>
 
@@ -102,11 +104,13 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
                             <Shield className="w-4 h-4 text-orange-500" />
                           ) : log.type === 'revelations' ? (
                             <Sparkles className="w-4 h-4 text-yellow-500" />
+                          ) : log.type === 'memories' ? (
+                            <HeartHandshake className="w-4 h-4 text-pink-500" />
                           ) : (
                             <Globe className="w-4 h-4 text-green-500" />
                           )}
                           <span className="font-semibold text-sm">
-                            {log.type === 'primary' ? 'Primary DM' : log.type === 'parser' ? 'Parser' : log.type === 'image' ? 'Image Generation' : log.type === 'backstory' ? 'Backstory' : log.type === 'checker' ? 'Checker' : log.type === 'revelations' ? 'Revelations' : 'World Lore'}
+                            {log.type === 'primary' ? 'Primary DM' : log.type === 'parser' ? 'Parser' : log.type === 'image' ? 'Image Generation' : log.type === 'backstory' ? 'Backstory' : log.type === 'checker' ? 'Checker' : log.type === 'revelations' ? 'Revelations' : log.type === 'memories' ? 'Memories' : 'World Lore'}
                           </span>
                           <span className="text-xs text-muted-foreground font-mono">{log.model}</span>
                         </div>
@@ -601,6 +605,81 @@ export default function DebugLogViewer({ debugLog, isOpen, onClose }: DebugLogVi
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-xs font-semibold text-foreground">Revelations Response:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.response, 'Response')}
+                            data-testid={`copy-response-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.response}
+                        </pre>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="memories" className="flex-1 min-h-0">
+            <ScrollArea className="h-[500px] w-full rounded-md border p-4">
+              <div className="space-y-4">
+                {memoriesLogs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No character memories logs yet.
+                  </div>
+                ) : (
+                  memoriesLogs.map((log) => (
+                    <div key={log.id} className="border rounded-lg p-4 space-y-3 bg-pink-500/5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <HeartHandshake className="w-4 h-4 text-pink-500" />
+                          <span className="text-xs text-muted-foreground font-mono">{log.model}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {formatTimestamp(log.timestamp)}
+                        </div>
+                      </div>
+
+                      {log.tokens && (
+                        <div className="text-xs text-muted-foreground">
+                          Tokens: {log.tokens.prompt} prompt + {log.tokens.completion} completion = {log.tokens.prompt + log.tokens.completion} total
+                        </div>
+                      )}
+
+                      {log.error && (
+                        <div className="text-xs text-red-500">Error: {log.error}</div>
+                      )}
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Prompt:</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(log.prompt, 'Prompt')}
+                            data-testid={`copy-prompt-${log.id}`}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                        <pre className="bg-background border rounded p-2 text-xs overflow-x-auto max-h-[200px] overflow-y-auto">
+                          {log.prompt}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-semibold text-foreground">Memories Response:</div>
                           <Button
                             variant="ghost"
                             size="sm"
