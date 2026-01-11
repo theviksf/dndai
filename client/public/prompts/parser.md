@@ -19,14 +19,16 @@ CRITICAL EXTRACTION RULES:
    - Helpful actions increase relationship (+1 to +2)
    - Harmful/hostile actions decrease relationship (-1 to -3)
    - Look for cues like "grateful", "angry", "distrustful", "warm welcome", "hostile", etc.
-11. MEMORIES: Extract memories for NPCs and companions who interacted with the main character this turn.
-   - ONLY create memories for characters who ALREADY EXIST in the current game state (provided below)
+11. MEMORIES (IMPORTANT - Check every turn): Extract memories for NPCs and companions who interacted with the main character this turn.
+   - ALWAYS check if existing companions or NPCs had meaningful interactions this turn
+   - ONLY create memories for characters who ALREADY EXIST in currentState.companions or currentState.encounteredCharacters
    - Skip memory creation for newly introduced characters (they are being added this turn, not interacting yet)
    - Memories should be written from the NPC/companion's perspective: "[Name] remembers [what they experienced/observed]"
-   - Focus on emotionally significant moments, not routine actions
+   - Include memories for: conversations, battles fought together, emotional moments, significant events
    - Examples: "Mara remembers Dax calling her name casually in the tavern, like an old friend"
    - "Borin remembers the player standing firm against the dragon despite overwhelming odds"
-   - Use the "memories" field in the stateUpdates to add memories keyed by character name
+   - Use the "memories" field in stateUpdates with character names as keys and arrays of memory strings as values
+   - EXAMPLE: "memories": { "Lyra": ["Lyra remembers fighting beside you against the bandits"] }
 12. Generate a brief 2-3 sentence summary (recap) of key events
 13. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
 14. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character.

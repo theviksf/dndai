@@ -1033,6 +1033,7 @@ export default function NarrativePanel({
           }
 
           // Process memories for existing NPCs and companions
+          console.log('[MEMORIES DEBUG] Raw stateUpdates.memories:', stateUpdates.memories);
           if (stateUpdates.memories !== undefined && typeof stateUpdates.memories === 'object') {
             const currentTurn = prev.turnCount + 1;
             const memoriesObj = stateUpdates.memories as Record<string, string[]>;
