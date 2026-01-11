@@ -7,18 +7,20 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
   imageLocation: string;
   backstory: string;
   revelations: string;
+  memories: string;
   lore: string;
   checker: string;
 } | null> {
   try {
     // Load prompts directly from static files in /prompts/ directory
-    const [primary, parser, imageCharacter, imageLocation, backstory, revelations, lore, checker] = await Promise.all([
+    const [primary, parser, imageCharacter, imageLocation, backstory, revelations, memories, lore, checker] = await Promise.all([
       fetch('/prompts/primary.md').then(r => r.text()),
       fetch('/prompts/parser.md').then(r => r.text()),
       fetch('/prompts/image-character.md').then(r => r.text()),
       fetch('/prompts/image-location.md').then(r => r.text()),
       fetch('/prompts/backstory.md').then(r => r.text()),
       fetch('/prompts/revelations.md').then(r => r.text()),
+      fetch('/prompts/memories.md').then(r => r.text()),
       fetch('/prompts/lore.md').then(r => r.text()),
       fetch('/prompts/checker.md').then(r => r.text()),
     ]);
@@ -30,6 +32,7 @@ export async function loadDefaultPromptsFromAPI(): Promise<{
       imageLocation,
       backstory,
       revelations,
+      memories,
       lore,
       checker,
     };
@@ -94,6 +97,7 @@ export function createDefaultConfig(): GameConfig {
     parserLLM: 'deepseek/deepseek-chat-v3.1',
     backstoryLLM: 'deepseek/deepseek-chat-v3.1',
     revelationsLLM: 'deepseek/deepseek-chat-v3.1',
+    memoriesLLM: 'deepseek/deepseek-chat-v3.1',
     loreLLM: 'deepseek/deepseek-chat-v3.1',
     checkerLLM: 'deepseek/deepseek-chat-v3.1',
     difficulty: 'normal',
@@ -106,12 +110,14 @@ export function createDefaultConfig(): GameConfig {
     locationImagePrompt: '',
     backstorySystemPrompt: '',
     revelationsSystemPrompt: '',
+    memoriesSystemPrompt: '',
     loreSystemPrompt: '',
     checkerSystemPrompt: '',
     imageProvider: 'flux',
     autoGenerateImages: false,
     autoGenerateBackstories: true,
     autoGenerateRevelations: true,
+    autoGenerateMemories: true,
     autoGenerateLore: true,
     uiScale: 'compact',
   };
@@ -125,7 +131,8 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
   const needsPrompts = config.dmSystemPrompt == null || config.parserSystemPrompt == null || 
                        config.characterImagePrompt == null || config.locationImagePrompt == null ||
                        config.backstorySystemPrompt == null || config.revelationsSystemPrompt == null ||
-                       config.loreSystemPrompt == null || config.checkerSystemPrompt == null;
+                       config.memoriesSystemPrompt == null || config.loreSystemPrompt == null || 
+                       config.checkerSystemPrompt == null;
   
   const prompts = needsPrompts ? await loadDefaultPromptsFromAPI() : null;
   
@@ -137,6 +144,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     parserLLM: config.parserLLM ?? defaults.parserLLM,
     backstoryLLM: config.backstoryLLM ?? defaults.backstoryLLM,
     revelationsLLM: config.revelationsLLM ?? defaults.revelationsLLM,
+    memoriesLLM: config.memoriesLLM ?? defaults.memoriesLLM,
     loreLLM: config.loreLLM ?? defaults.loreLLM,
     checkerLLM: config.checkerLLM ?? defaults.checkerLLM,
     // Use nullish coalescing (??) instead of OR (||) to preserve empty strings and falsy values
@@ -148,6 +156,8 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     autoGenerateBackstories: config.autoGenerateBackstories ?? defaults.autoGenerateBackstories,
     revelationsSystemPrompt: config.revelationsSystemPrompt ?? (prompts?.revelations ?? defaults.revelationsSystemPrompt),
     autoGenerateRevelations: config.autoGenerateRevelations ?? defaults.autoGenerateRevelations,
+    memoriesSystemPrompt: config.memoriesSystemPrompt ?? (prompts?.memories ?? defaults.memoriesSystemPrompt),
+    autoGenerateMemories: config.autoGenerateMemories ?? defaults.autoGenerateMemories,
     loreSystemPrompt: config.loreSystemPrompt ?? (prompts?.lore ?? defaults.loreSystemPrompt),
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
     checkerSystemPrompt: config.checkerSystemPrompt ?? (prompts?.checker ?? defaults.checkerSystemPrompt),

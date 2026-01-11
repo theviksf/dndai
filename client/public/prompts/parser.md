@@ -19,18 +19,10 @@ CRITICAL EXTRACTION RULES:
    - Helpful actions increase relationship (+1 to +2)
    - Harmful/hostile actions decrease relationship (-1 to -3)
    - Look for cues like "grateful", "angry", "distrustful", "warm welcome", "hostile", etc.
-11. MEMORIES: Extract memories for NPCs and companions who interacted with the main character this turn.
-   - ONLY create memories for characters who ALREADY EXIST in the current game state (provided below)
-   - Skip memory creation for newly introduced characters (they are being added this turn, not interacting yet)
-   - Memories should be written from the NPC/companion's perspective: "[Name] remembers [what they experienced/observed]"
-   - Focus on emotionally significant moments, not routine actions
-   - Examples: "Mara remembers Dax calling her name casually in the tavern, like an old friend"
-   - "Borin remembers the player standing firm against the dragon despite overwhelming odds"
-   - Use the "memories" field in the stateUpdates to add memories keyed by character name
-12. Generate a brief 2-3 sentence summary (recap) of key events
-13. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
-14. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character.
-15. BUSINESSES & PROPERTIES: If the narrative describes a character purchasing, selling, owning, managing, or upgrading a business or property (e.g., tavern, shop, guildhall, farm, ship, temple, etc.), extract it under the businesses field in stateUpdates. Include details such as the business name, type, purchase cost, weekly income, running costs, manager (if mentioned), and a brief description. If the business already exists, update its entry rather than creating a duplicate. Reflect ownership or status changes (e.g., Owned, Sold, Closed, Destroyed) as appropriate. Always include a clear recap summarizing the business-related event.
+11. Generate a brief 2-3 sentence summary (recap) of key events
+12. The DM is also going to create a notes section - make sure everything in the notes section is something you pay special attention to.
+13. When adding items to inventory - make sure the DM clearly states that the item is possesed by the character or has successfully been purchaced by the character.
+14. BUSINESSES & PROPERTIES: If the narrative describes a character purchasing, selling, owning, managing, or upgrading a business or property (e.g., tavern, shop, guildhall, farm, ship, temple, etc.), extract it under the businesses field in stateUpdates. Include details such as the business name, type, purchase cost, weekly income, running costs, manager (if mentioned), and a brief description. If the business already exists, update its entry rather than creating a duplicate. Reflect ownership or status changes (e.g., Owned, Sold, Closed, Destroyed) as appropriate. Always include a clear recap summarizing the business-related event.
 
 === CRITICAL: YOU MUST RETURN ONLY RAW JSON - NO OTHER TEXT ===
 
@@ -84,7 +76,6 @@ FIELD SPECIFICATIONS:
 - companions: array of objects, each with "id", "name", "race", "age", "sex", "hairColor", "outfit", "class", "level" (number), "appearance", "personality", "criticalMemories", "feelingsTowardsPlayer", "relationship"
 - encounteredCharacters: array of objects, each with "id", "name", "age" (string), "sex", "hairColor", "outfit", "role", "location" (where met/lives), "appearance", "description", "status" ("alive" or "dead"), "relationship" (number -3 to +3: -3=Hostile, -2=Unfriendly, -1=Cold, 0=Neutral, +1=Warm, +2=Friendly, +3=Devoted)
 - businesses: array of objects, each with "id", "name", "weeklyIncome" (number), "purchaseCost" (number), "manager" (string), "owner" (string - ALWAYS set to the main character's name when they purchase/own a business), "runningCost" (number), "description"
-- memories: object with character names as keys and arrays of memory strings as values - ONLY for characters who ALREADY EXIST in companions or encounteredCharacters
 - recap: string (ALWAYS REQUIRED - never omit this field)
 
 EXAMPLE 1 - Character level up:
@@ -213,24 +204,6 @@ YOUR RESPONSE (raw JSON only):
   },
   "recap": "Arrived at The Gilded Griffin tavern in the Market District of Highspire, a moderate-priced establishment owned by Borin Flintbeard"
 }
-
-EXAMPLE 7 - Adding memories for existing characters:
-Context: Lyra (companion) and Elder Morin (NPC) already exist in the game state.
-Narrative: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. Later, you visit Elder Morin who thanks you profusely for saving his grandson from the wolves, tears in his eyes."
-YOUR RESPONSE (raw JSON only):
-{
-  "stateUpdates": {
-    "memories": {
-      "Lyra": ["Lyra remembers standing shoulder to shoulder with you against the bandits, feeling proud to fight by your side"],
-      "Elder Morin": ["Elder Morin remembers you bringing his grandson back safely, and the overwhelming gratitude that brought him to tears"]
-    },
-    "encounteredCharacters": [
-      {"id": "morin", "name": "Elder Morin", "relationship": 2}
-    ]
-  },
-  "recap": "Fought bandits with Lyra's support, then received thanks from Elder Morin for saving his grandson"
-}
-NOTE: Only include memories for characters who ALREADY EXIST. If this is their first appearance, add them to companions/encounteredCharacters but skip memories for this turn.
 
 CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):
 1. Return ONLY raw JSON - do NOT wrap in code fences like ```json

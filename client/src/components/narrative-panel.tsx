@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { generateEntityImage, needsImageGeneration, hasCharacterAppearanceChanged } from '@/lib/image-generation';
 import { generateEntityBackstory, needsBackstoryGeneration } from '@/lib/backstory-generation';
 import { trackRevelations } from '@/lib/revelations-tracking';
+import { trackMemories, applyMemoriesToGameState } from '@/lib/memories-tracking';
 import { generateWorldLore, needsWorldLoreGeneration } from '@/lib/lore-generation';
 import * as fuzz from 'fuzzball';
 
@@ -1159,6 +1160,10 @@ export default function NarrativePanel({
           // Save the current game state (which was just updated by parser's setGameState)
           saveGameState();
           
+          // Track which companions and NPCs were newly added (for first-meeting memories)
+          const prevCompanionIds = new Set((gameState.companions || []).map(c => c.id));
+          const prevNPCIds = new Set((gameState.encounteredCharacters || []).map(n => n.id));
+          
           // Track revelations with fresh state (after parser updates are committed)
           if (config.autoGenerateRevelations && primaryResponse?.content) {
             // Get fresh state by using functional update
@@ -1313,6 +1318,65 @@ export default function NarrativePanel({
               });
               
               // Return state unchanged - revelations updates happen in nested setGameState calls
+              return freshState;
+            });
+          }
+
+          // Track memories for NPCs and companions after state updates
+          if (config.autoGenerateMemories && primaryResponse?.content) {
+            setGameState(freshState => {
+              // Identify newly added companions and NPCs (for first-meeting memories)
+              const currentCompanionIds = (freshState.companions || []).map(c => c.id);
+              const currentNPCIds = (freshState.encounteredCharacters || []).map(n => n.id);
+              
+              const newCompanionIds = currentCompanionIds.filter(id => !prevCompanionIds.has(id));
+              const newNPCIds = currentNPCIds.filter(id => !prevNPCIds.has(id));
+              
+              trackMemories({
+                narrative: primaryResponse.content,
+                gameState: freshState,
+                config,
+                newCompanionIds,
+                newNPCIds,
+              }).then(memoriesResult => {
+                // Update cost tracker with memories cost
+                if (memoriesResult.usage) {
+                  const memoriesModel = models.find(m => m.id === config.memoriesLLM);
+                  if (memoriesModel) {
+                    const memoriesCost = 
+                      (memoriesResult.usage.prompt_tokens * parseFloat(memoriesModel.pricing.prompt)) +
+                      (memoriesResult.usage.completion_tokens * parseFloat(memoriesModel.pricing.completion));
+                    
+                    setCostTracker(prev => ({
+                      ...prev,
+                      memoriesCost: (prev.memoriesCost || 0) + memoriesCost,
+                      lastTurnMemoriesCost: memoriesCost,
+                      sessionCost: prev.sessionCost + memoriesCost,
+                    }));
+                  }
+                }
+
+                // Add debug log
+                if (memoriesResult.debugLogEntry) {
+                  setGameState(prev => ({
+                    ...prev,
+                    debugLog: [...(prev.debugLog || []), memoriesResult.debugLogEntry!].slice(-100),
+                  }));
+                }
+
+                // Apply memories to game state
+                if (memoriesResult.memories && memoriesResult.memories.length > 0) {
+                  setGameState(prev => {
+                    const updated = applyMemoriesToGameState(prev, memoriesResult.memories);
+                    console.log(`[MEMORIES] Added memories for ${memoriesResult.memories.length} characters`);
+                    return updated;
+                  });
+                }
+              }).catch(error => {
+                console.error('[MEMORIES] Error tracking memories:', error);
+              });
+              
+              // Return state unchanged - memories updates happen in nested setGameState calls
               return freshState;
             });
           }

@@ -165,7 +165,7 @@ export type Revelation = {
 export type DebugLogEntry = {
   id: string;
   timestamp: number;
-  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations' | 'lore' | 'checker';
+  type: 'primary' | 'parser' | 'image' | 'backstory' | 'revelations' | 'lore' | 'checker' | 'memories';
   prompt: string;
   response: string;
   model: string;
@@ -293,6 +293,7 @@ export type GameConfig = {
   parserLLM: string;
   backstoryLLM: string;
   revelationsLLM: string;
+  memoriesLLM: string;
   loreLLM: string;
   checkerLLM: string;
   difficulty: 'easy' | 'normal' | 'hard' | 'deadly';
@@ -305,12 +306,14 @@ export type GameConfig = {
   locationImagePrompt: string;
   backstorySystemPrompt: string;
   revelationsSystemPrompt: string;
+  memoriesSystemPrompt: string;
   loreSystemPrompt: string;
   checkerSystemPrompt: string;
   imageProvider: 'flux' | 'gemini';
   autoGenerateImages: boolean;
   autoGenerateBackstories: boolean;
   autoGenerateRevelations: boolean;
+  autoGenerateMemories: boolean;
   autoGenerateLore: boolean;
   uiScale: 'compact' | 'comfortable';
 };
@@ -354,6 +357,8 @@ export type CostTracker = {
   revelationsCost?: number;
   lastTurnRevelationsCost?: number;
   loreCost?: number;
+  memoriesCost?: number;
+  lastTurnMemoriesCost?: number;
 };
 
 // Database tables
