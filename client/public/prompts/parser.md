@@ -222,23 +222,26 @@ YOUR RESPONSE (raw JSON only):
   "recap": "Arrived at The Gilded Griffin tavern in the Market District of Highspire, a moderate-priced establishment owned by Borin Flintbeard"
 }
 
-EXAMPLE 7 - Adding memories for existing characters:
-Context: Lyra (companion) and Elder Morin (NPC) already exist in the game state.
-Narrative: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. Later, you visit Elder Morin who thanks you profusely for saving his grandson from the wolves, tears in his eyes."
+EXAMPLE 7 - Typical gameplay turn with companions (MEMORIES REQUIRED):
+Context: Lyra and Kaelen are existing companions in currentState.companions. Mrs. Gable is an existing NPC in currentState.encounteredCharacters.
+Narrative: "You enter the dining hall where Mrs. Gable has prepared a hearty breakfast. Lyra is already seated, sharpening her dagger. 'We should head to the Whisperwood today,' she suggests. Kaelen nods in agreement while studying an old map. Mrs. Gable sets down a platter, saying 'Be careful out there, young masters.'"
 YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
-    "memories": {
-      "Lyra": ["Lyra remembers standing shoulder to shoulder with you against the bandits, feeling proud to fight by your side"],
-      "Elder Morin": ["Elder Morin remembers you bringing his grandson back safely, and the overwhelming gratitude that brought him to tears"]
+    "location": {
+      "name": "Dining Hall",
+      "type": "room",
+      "description": "Grand dining hall with hearty breakfast prepared"
     },
-    "encounteredCharacters": [
-      {"id": "morin", "name": "Elder Morin", "relationship": 2}
-    ]
+    "memories": {
+      "Lyra": ["Lyra remembers discussing the plan to explore the Whisperwood over breakfast"],
+      "Kaelen": ["Kaelen remembers studying the old map and agreeing with Lyra's suggestion"],
+      "Mrs. Gable": ["Mrs. Gable remembers serving breakfast and warning the young masters to be careful"]
+    }
   },
-  "recap": "Fought bandits with Lyra's support, then received thanks from Elder Morin for saving his grandson"
+  "recap": "Had breakfast in the dining hall, discussed plans to explore the Whisperwood with companions"
 }
-NOTE: Only include memories for characters who ALREADY EXIST. If this is their first appearance, add them to companions/encounteredCharacters but skip memories for this turn.
+IMPORTANT: This example shows a TYPICAL turn. Whenever existing companions or NPCs speak, interact, or do something meaningful with the player, you MUST add memories for them. Check currentState.companions and currentState.encounteredCharacters to see who already exists.
 
 CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):
 1. Return ONLY raw JSON - do NOT wrap in code fences like ```json
