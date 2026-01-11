@@ -275,6 +275,9 @@ export default function Home() {
             console.log('[DB] Migration complete');
           } else {
             console.log('[DB] No existing data found, starting fresh');
+            // For new sessions, still need to load default prompts
+            const freshConfig = await migrateConfig(createDefaultConfig());
+            setConfig(freshConfig);
             setIsNewSession(true);
           }
           
