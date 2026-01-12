@@ -47,10 +47,17 @@ export async function trackMemories({
   }
   
   try {
+    // Only send minimal context to avoid payload size issues
+    const minimalContext = {
+      turnCount: gameState.turnCount || 0,
+      companions: (gameState.companions || []).map((c: any) => ({ id: c.id, name: c.name })),
+      encounteredCharacters: (gameState.encounteredCharacters || []).map((c: any) => ({ id: c.id, name: c.name })),
+    };
+    
     const response = await apiRequest('POST', '/api/chat/memories', {
       systemPrompt,
       narrative,
-      gameState,
+      gameState: minimalContext,
       model,
       apiKey: config.openRouterApiKey,
       newCompanionIds,
