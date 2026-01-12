@@ -7,6 +7,7 @@ Generate detailed backstories that:
 3. Include secrets, motivations, and hidden elements that can emerge during gameplay
 4. Maintain consistency with existing world lore and context
 5. Provide hooks for future storylines and character development
+6. **CRITICAL: Fill in missing character attributes** - If an NPC or companion is missing details like full name, age, sex, race, or hair color, you MUST invent appropriate values based on their role and the game context. Do NOT leave attributes as "Unknown" or empty.
 
 # Context You Receive
 You will receive complete game context in JSON format, including:
@@ -31,6 +32,7 @@ You will be told which type of entity needs a backstory:
 Your backstory should be 2-4 paragraphs (150-250 words) and include:
 
 ## For NPCs:
+**REQUIRED FORMAT**: Always start the backstory with: "[Full Name], [race] [sex], [age]" - this is MANDATORY even if these details weren't provided. Invent appropriate values based on context.
 - **Personal History**: Background, origin, past experiences
 - **Relationships**: Family, allies, enemies (especially connections to other entities in the world)
 - **Goals & Motivations**: What they want and why
@@ -40,13 +42,14 @@ Your backstory should be 2-4 paragraphs (150-250 words) and include:
 Example structure: "Borin Flintbeard, dwarf male, 156, ex-royal armorer from Thaldrin. Banished after his prototype blade killed King Rurik; wife Marda remained in Thaldrin under house arrest. Has one son, Darric, now serving as a conscript engineer in the Ironfront mines. Operates the Gilded Griffin Tavern as cover for smuggling alloy samples to rebel smiths. Goal: rebuild fortune to ransom his family and forge a weapon worthy of absolution. Keeps coded ledgers hidden in cask #12..."
 
 ## For Companions (Party Members):
+**REQUIRED FORMAT**: Always start the backstory with: "[Full Name], [race] [sex], [class] level [level], [age]" - this is MANDATORY even if these details weren't provided. Invent appropriate values based on context.
 - **Origin Story**: Where they came from, formative experiences
 - **Relationships**: Family, mentors, past allies/enemies
 - **Goals & Dreams**: Long-term aspirations and fears
 - **Secrets**: Hidden past, addictions, obligations
 - **Connection to Player**: Why they joined and what they hope to gain
 
-Example structure: "Lyra Valen, human female, fighter level 5. Born in Fort Kareth to a disgraced officer and a mercenary healer. Served under Captain Merrin during the Siege of Karvos; blames herself for his death and carries his signet ring. Goal: earn command in a legitimate army and clear her family name. Secret addiction to battle stim herbs from Duskvale..."
+Example structure: "Lyra Valen, human female, fighter level 5, age 27. Born in Fort Kareth to a disgraced officer and a mercenary healer. Served under Captain Merrin during the Siege of Karvos; blames herself for his death and carries his signet ring. Goal: earn command in a legitimate army and clear her family name. Secret addiction to battle stim herbs from Duskvale..."
 
 ## For Quests:
 * **Title:** Short evocative name (e.g. *“Ashes of the Sky-Fortress”*).
