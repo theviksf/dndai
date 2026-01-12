@@ -6,6 +6,7 @@ Analyze the DM's narrative response and:
 2. Extract memories written from each character's perspective
 3. Create a "first meeting" memory for any NEW characters introduced this turn
 4. Focus on emotionally significant moments, not routine actions
+5. Make sure to capture anything that could be a story, a lie, or anything that the character would want to remember in the future. 
 
 # Context You Receive
 You will receive:
@@ -20,7 +21,7 @@ You will receive:
 A memory is a character's personal recollection of:
 - **Emotional Moments**: Times they felt strong emotions (gratitude, fear, admiration, anger)
 - **Shared Experiences**: Fighting alongside the player, traveling together, surviving danger
-- **Conversations**: Meaningful things the player said or did that affected them
+- **Conversations**: Meaningful things such as stories, lies, jokes, the player said or did that affected them
 - **First Meetings**: How they first encountered the player character
 - **Impressions**: What they think of the player based on actions witnessed
 
@@ -28,7 +29,8 @@ A memory is a character's personal recollection of:
 1. **Write from character's perspective**: "[Name] remembers [what they experienced]"
 2. **Focus on feelings and impressions**: Not just facts, but how it affected them
 3. **Be specific**: Reference concrete details from the narrative
-4. **Keep it concise**: 1-2 sentences per memory
+4. **Keep it concise**: 1-4 sentences per memory
+5. **Multiple memories per character**: A character can have MULTIPLE memories from a single turn if different memorable things happened (e.g., a joke they told, a story they shared, a personal detail they revealed, and an emotional moment - each is a separate memory)
 
 # Special Rule: First Meeting Memories
 For any character listed in newCompanions or newNPCs, you MUST create a "first meeting" memory describing:
@@ -175,7 +177,41 @@ REQUIRED FIELDS:
   ]
 }
 
-## Example 6: No memorable interactions
+## Example 6: Multiple memories from SAME character in one turn
+**Narrative**: "As you rest by the campfire, Mara leans against your shoulder, sighing contentedly. 'I feel safe here with you,' she whispers. Later, she tells you a joke about a gnome who walked into a bar and asked for a 'short' drink. You both laugh. Before sleep, she grows quiet and mentions her brother Tomas, who went missing three years ago. 'I've never told anyone about him before.'"
+
+**Existing Companions**: [{"id": "mara", "name": "Mara"}]
+**New Companions**: []
+**Turn**: 18
+
+**YOUR RESPONSE** (raw JSON only):
+{
+  "memories": [
+    {
+      "characterType": "companion",
+      "characterName": "Mara",
+      "characterId": "mara",
+      "text": "Mara remembers leaning against you by the campfire, feeling safe and content in a way she hasn't felt in years",
+      "turn": 18
+    },
+    {
+      "characterType": "companion",
+      "characterName": "Mara",
+      "characterId": "mara",
+      "text": "Mara remembers telling you the joke about the gnome asking for a 'short' drink, and how good it felt to make you laugh",
+      "turn": 18
+    },
+    {
+      "characterType": "companion",
+      "characterName": "Mara",
+      "characterId": "mara",
+      "text": "Mara remembers opening up about her missing brother Tomas for the first time, trusting you with something she's never shared with anyone",
+      "turn": 18
+    }
+  ]
+}
+
+## Example 7: No memorable interactions
 **Narrative**: "You walk through the quiet marketplace. The merchants call out their wares but pay you no special attention. You buy some supplies and continue on your way."
 
 **Existing NPCs**: []
