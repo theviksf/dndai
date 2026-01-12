@@ -47,45 +47,10 @@ export async function trackMemories({
   }
   
   try {
-    // Build optimized context - include enough for memory generation but avoid payload bloat
-    // Include: IDs, names, last 5 memories per character, recent narrative (last 3 messages truncated)
-    const companions = (gameState.companions || []).map((c: any) => ({
-      id: c.id,
-      name: c.name,
-      memories: (c.memories || []).slice(-5).map((m: Memory) => ({
-        text: m.text.substring(0, 200), // Truncate long memories
-        turn: m.turn,
-      })),
-    }));
-    
-    const encounteredCharacters = (gameState.encounteredCharacters || []).map((c: any) => ({
-      id: c.id,
-      name: c.name,
-      memories: (c.memories || []).slice(-5).map((m: Memory) => ({
-        text: m.text.substring(0, 200),
-        turn: m.turn,
-      })),
-    }));
-    
-    // Get recent narrative history (last 3 messages, truncated)
-    const recentNarrative = (gameState.narrativeHistory || [])
-      .slice(-3)
-      .map((msg: any) => ({
-        role: msg.role,
-        content: typeof msg.content === 'string' ? msg.content.substring(0, 500) : '',
-      }));
-    
-    const minimalContext = {
-      turnCount: gameState.turnCount || 0,
-      companions,
-      encounteredCharacters,
-      recentNarrative,
-    };
-    
     const response = await apiRequest('POST', '/api/chat/memories', {
       systemPrompt,
       narrative,
-      gameState: minimalContext,
+      gameState,
       model,
       apiKey: config.openRouterApiKey,
       newCompanionIds,
