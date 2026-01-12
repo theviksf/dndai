@@ -5,8 +5,15 @@ CRITICAL EXTRACTION RULES:
 2. Look for ability score changes: If narrative says "+2 CHA" or "CHA 17", extract attributes.cha:17
 3. Look for XP thresholds: If narrative says "650/1800 XP" or "enough XP for level X", extract xp:650 AND nextLevelXp:1800
 4. Look for HP changes: If narrative says "33/33 HP", extract hp:33 AND maxHp:33
+4b. GENERATE NAMES FOR UNNAMED CHARACTERS: If the DM introduces a character without giving them a name (e.g., "a mysterious merchant", "the innkeeper", "a hooded stranger", "a guard"), YOU MUST create an appropriate fantasy name for them. NEVER use "Unknown" as a name. Generate names fitting the character's apparent race/role:
+   - Human: Marcus, Elena, Aldric, Sera, Thomas, Mira
+   - Dwarf: Borin, Thorak, Helga, Grundi
+   - Elf: Aelindra, Faelen, Sylvara, Caelum
+   - Halfling: Pip, Milo, Rosie, Bramble
+   - Generic fantasy: Varen, Kira, Nox, Zara, Finn
+   The name should fit the character's described role and appearance.
 5. COMPANIONS vs ENCOUNTERED CHARACTERS:
-   - companions = party members who travel with the player (Lyra the fighter, Borin the cleric, etc.)
+   - companions = party members who travel with the player 
    - encounteredCharacters = other NPCs met during adventure (village elders, quest givers, enemies, etc.)
 6. SPELLS: Each spell must be a separate object with: id, name, level (number 0-9), school, description, icon
    - DO NOT group spells by level or use nested structures
