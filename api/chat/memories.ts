@@ -5,42 +5,74 @@ function buildMemoriesContext(gameState: any, newCompanionIds: string[] = [], ne
   sections.push(`Turn: ${gameState.turnCount || 0}`);
   sections.push('');
   
-  // Existing companions
+  // Recent narrative context
+  if (gameState.recentNarrative && gameState.recentNarrative.length > 0) {
+    sections.push('# Recent Narrative Context');
+    gameState.recentNarrative.forEach((msg: any) => {
+      const role = msg.role === 'assistant' ? 'DM' : 'Player';
+      sections.push(`[${role}]: ${msg.content}`);
+    });
+    sections.push('');
+  }
+  
+  // Companions with existing memories
   if (gameState.companions && gameState.companions.length > 0) {
-    sections.push('# Existing Companions');
-    gameState.companions.forEach((comp: any) => {
-      sections.push(`- ID: ${comp.id}, Name: ${comp.name}`);
-    });
-    sections.push('');
+    const existingCompanions = gameState.companions.filter((c: any) => !newCompanionIds.includes(c.id));
+    const newCompanions = gameState.companions.filter((c: any) => newCompanionIds.includes(c.id));
+    
+    if (existingCompanions.length > 0) {
+      sections.push('# Existing Companions');
+      existingCompanions.forEach((comp: any) => {
+        sections.push(`## ${comp.name} (ID: ${comp.id})`);
+        if (comp.memories && comp.memories.length > 0) {
+          sections.push('Existing memories:');
+          comp.memories.forEach((m: any) => {
+            sections.push(`- Turn ${m.turn}: ${m.text}`);
+          });
+        } else {
+          sections.push('(No memories yet)');
+        }
+        sections.push('');
+      });
+    }
+    
+    if (newCompanions.length > 0) {
+      sections.push('# NEW Companions (need first meeting memories)');
+      newCompanions.forEach((comp: any) => {
+        sections.push(`- ID: ${comp.id}, Name: ${comp.name}`);
+      });
+      sections.push('');
+    }
   }
   
-  // New companions (need first meeting memories)
-  const newCompanions = gameState.companions?.filter((c: any) => newCompanionIds.includes(c.id)) || [];
-  if (newCompanions.length > 0) {
-    sections.push('# NEW Companions (need first meeting memories)');
-    newCompanions.forEach((comp: any) => {
-      sections.push(`- ID: ${comp.id}, Name: ${comp.name}`);
-    });
-    sections.push('');
-  }
-  
-  // Existing NPCs
+  // NPCs with existing memories
   if (gameState.encounteredCharacters && gameState.encounteredCharacters.length > 0) {
-    sections.push('# Existing NPCs');
-    gameState.encounteredCharacters.forEach((npc: any) => {
-      sections.push(`- ID: ${npc.id}, Name: ${npc.name}`);
-    });
-    sections.push('');
-  }
-  
-  // New NPCs (need first meeting memories)
-  const newNPCs = gameState.encounteredCharacters?.filter((c: any) => newNPCIds.includes(c.id)) || [];
-  if (newNPCs.length > 0) {
-    sections.push('# NEW NPCs (need first meeting memories)');
-    newNPCs.forEach((npc: any) => {
-      sections.push(`- ID: ${npc.id}, Name: ${npc.name}`);
-    });
-    sections.push('');
+    const existingNPCs = gameState.encounteredCharacters.filter((c: any) => !newNPCIds.includes(c.id));
+    const newNPCs = gameState.encounteredCharacters.filter((c: any) => newNPCIds.includes(c.id));
+    
+    if (existingNPCs.length > 0) {
+      sections.push('# Existing NPCs');
+      existingNPCs.forEach((npc: any) => {
+        sections.push(`## ${npc.name} (ID: ${npc.id})`);
+        if (npc.memories && npc.memories.length > 0) {
+          sections.push('Existing memories:');
+          npc.memories.forEach((m: any) => {
+            sections.push(`- Turn ${m.turn}: ${m.text}`);
+          });
+        } else {
+          sections.push('(No memories yet)');
+        }
+        sections.push('');
+      });
+    }
+    
+    if (newNPCs.length > 0) {
+      sections.push('# NEW NPCs (need first meeting memories)');
+      newNPCs.forEach((npc: any) => {
+        sections.push(`- ID: ${npc.id}, Name: ${npc.name}`);
+      });
+      sections.push('');
+    }
   }
   
   return sections.join('\n');
