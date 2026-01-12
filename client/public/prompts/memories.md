@@ -27,10 +27,22 @@ A memory is a character's personal recollection of:
 
 # Memory Writing Rules
 1. **Write from character's perspective**: "[Name] remembers [what they experienced]"
-2. **Focus on feelings and impressions**: Not just facts, but how it affected them
-3. **Be specific**: Reference concrete details from the narrative
-4. **Keep it concise**: 1-4 sentences per memory
-5. **Multiple memories per character**: A character can have MULTIPLE memories from a single turn if different memorable things happened (e.g., a joke they told, a story they shared, a personal detail they revealed, and an emotional moment - each is a separate memory)
+2. **Include the METHOD/HOW**: Don't just say what happened - describe HOW the player did it (the spell used, the weapon swung, the words spoken, the trick employed)
+3. **Add sensory details**: Include what they saw, heard, or felt - the crash of wood, the flash of magic, the warmth of a hand
+4. **Capture emotional reactions**: Their specific feelings in that moment - relief flooding through them, heart pounding, tears welling up
+5. **Create callback hooks**: Include specific details that could be referenced in future conversation ("that time you shattered the chair with a wave of your hand")
+6. **Keep it concise but rich**: 1-3 sentences that pack in meaningful detail
+7. **Multiple memories per character**: A character can have MULTIPLE memories from a single turn if different memorable things happened
+
+# Rich Memory Checklist
+Each memory should include AS MANY of these as applicable:
+- [ ] **The Method**: HOW the player acted (magic, combat, clever words, etc.)
+- [ ] **A Sensory Detail**: Something they saw, heard, felt, smelled
+- [ ] **Their Emotional State**: How they felt in that moment
+- [ ] **A Callback Hook**: A specific detail that can be referenced later
+
+BAD (too shallow): "Elena remembers being rescued from the aggressive dockworker"
+GOOD (rich detail): "Elena remembers the flash of magic and the crash of splintering wood as you shattered the dockworker's chair beneath him, sending him tumbling to the floor - the relief that washed over her knowing someone had finally stood up for her"
 
 # Special Rule: First Meeting Memories
 For any character listed in newCompanions or newNPCs, you MUST create a "first meeting" memory describing:
@@ -71,7 +83,7 @@ REQUIRED FIELDS:
 # Example Scenarios
 
 ## Example 1: Companion forms memory during combat
-**Narrative**: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. Together you cut through the outlaws, watching each other's flanks."
+**Narrative**: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. Together you cut through the outlaws, watching each other's flanks. When one bandit nearly catches you from behind, Lyra's blade intercepts his."
 
 **Existing Companions**: [{"id": "lyra", "name": "Lyra"}]
 **New Companions**: []
@@ -84,14 +96,14 @@ REQUIRED FIELDS:
       "characterType": "companion",
       "characterName": "Lyra",
       "characterId": "lyra",
-      "text": "Lyra remembers fighting side by side with you against the bandits, feeling the trust between warriors who watch each other's backs",
+      "text": "Lyra remembers the clang of steel as her blade caught the bandit's sword inches from your back - the fierce grin you shared in the heat of battle, fighting as one, each covering the other's blind spots",
       "turn": 12
     }
   ]
 }
 
 ## Example 2: NPC grateful for help
-**Narrative**: "Elder Morin rushes to embrace his grandson as you bring the boy back safely. Tears stream down the old man's weathered face. 'I can never repay you for this,' he says, voice cracking with emotion."
+**Narrative**: "You carry the unconscious boy through the village gates just as dawn breaks. Elder Morin rushes forward, his walking stick clattering to the ground as he embraces his grandson. Tears stream down the old man's weathered face. 'I can never repay you for this,' he says, voice cracking with emotion."
 
 **Existing NPCs**: [{"id": "morin", "name": "Elder Morin"}]
 **New NPCs**: []
@@ -104,14 +116,14 @@ REQUIRED FIELDS:
       "characterType": "npc",
       "characterName": "Elder Morin",
       "characterId": "morin",
-      "text": "Elder Morin remembers the overwhelming relief and gratitude when you brought his grandson back safely, the tears he couldn't hold back",
+      "text": "Elder Morin remembers the sight of you carrying his grandson through the village gates at dawn - his walking stick clattering forgotten to the ground as he rushed to embrace the boy, tears streaming freely, his voice breaking as he tried to find words for a gratitude too deep to express",
       "turn": 8
     }
   ]
 }
 
 ## Example 3: New NPC first meeting
-**Narrative**: "You enter the Gilded Griffin tavern and approach the bar. A stout dwarf with a braided beard looks up from polishing a mug. 'Name's Borin,' he grunts. 'What'll it be, stranger?'"
+**Narrative**: "You enter the Gilded Griffin tavern, rainwater dripping from your cloak. A stout dwarf with a braided beard looks up from polishing a mug, his eyes narrowing as he takes in your travel-worn gear and the sword at your hip. 'Name's Borin,' he grunts. 'What'll it be, stranger?'"
 
 **Existing NPCs**: []
 **New NPCs**: [{"id": "borin", "name": "Borin"}]
@@ -124,14 +136,14 @@ REQUIRED FIELDS:
       "characterType": "npc",
       "characterName": "Borin",
       "characterId": "borin",
-      "text": "Borin remembers the first time you walked into his tavern - just another stranger looking for a drink, but something about you caught his attention",
+      "text": "Borin remembers the stranger who walked into his tavern on that rainy night - rainwater dripping from a worn traveling cloak, a sword at the hip, eyes that had seen things. Not the usual drunk looking for trouble.",
       "turn": 3
     }
   ]
 }
 
 ## Example 4: New companion joins party
-**Narrative**: "After seeing your courage against the goblins, the elven ranger steps forward. 'I am Sylara. My bow is yours, if you'll have me.' She extends her hand in the warriors' greeting."
+**Narrative**: "You stand over the fallen goblin chieftain, blood dripping from your blade. The elven ranger who'd been watching from the treeline steps forward, lowering her bow. 'I am Sylara. I've tracked these goblins for three days, but you... you cut through them like wheat. My bow is yours, if you'll have me.' She extends her hand in the warriors' greeting."
 
 **Existing Companions**: []
 **New Companions**: [{"id": "sylara", "name": "Sylara"}]
@@ -144,14 +156,14 @@ REQUIRED FIELDS:
       "characterType": "companion",
       "characterName": "Sylara",
       "characterId": "sylara",
-      "text": "Sylara remembers witnessing your courage against the goblins and knowing immediately that you were someone worth following",
+      "text": "Sylara remembers watching from the treeline as you cut through the goblin war band she'd tracked for three days - standing over their fallen chieftain with blood still dripping from your blade. In that moment, she knew she'd found someone worth following.",
       "turn": 15
     }
   ]
 }
 
 ## Example 5: Multiple characters, mixed situations
-**Narrative**: "Lyra claps you on the shoulder after the battle. 'That was some fine fighting!' Meanwhile, a young woman in merchant's clothes approaches nervously. 'I'm Sara. Thank you for driving off those bandits. They've been terrorizing our village for weeks.'"
+**Narrative**: "Lyra claps you on the shoulder after the battle, laughing breathlessly. 'That move with the torch - setting their supplies ablaze while I held the line? Brilliant!' Meanwhile, a young woman in merchant's clothes emerges from behind an overturned cart, trembling. 'I'm Sara. Thank you... they've been terrorizing us for weeks. I thought I was going to die today.'"
 
 **Existing Companions**: [{"id": "lyra", "name": "Lyra"}]
 **New NPCs**: [{"id": "sara", "name": "Sara"}]
@@ -164,21 +176,21 @@ REQUIRED FIELDS:
       "characterType": "companion",
       "characterName": "Lyra",
       "characterId": "lyra",
-      "text": "Lyra remembers the thrill of victory after the battle, impressed by your fighting prowess",
+      "text": "Lyra remembers the brilliant chaos of the battle - her holding the line while you circled around and set their supplies ablaze with a torch, the bandits scattering as smoke and flame engulfed their camp. She laughed breathlessly at the sheer audacity of it.",
       "turn": 20
     },
     {
       "characterType": "npc",
       "characterName": "Sara",
       "characterId": "sara",
-      "text": "Sara remembers meeting you as her village's savior, the relief washing over her as the bandits finally fled",
+      "text": "Sara remembers emerging trembling from behind an overturned cart, certain she was going to die - until you and your companion scattered the bandits who had terrorized her village for weeks. The relief of being alive hit her like a wave.",
       "turn": 20
     }
   ]
 }
 
 ## Example 6: Multiple memories from SAME character in one turn
-**Narrative**: "As you rest by the campfire, Mara leans against your shoulder, sighing contentedly. 'I feel safe here with you,' she whispers. Later, she tells you a joke about a gnome who walked into a bar and asked for a 'short' drink. You both laugh. Before sleep, she grows quiet and mentions her brother Tomas, who went missing three years ago. 'I've never told anyone about him before.'"
+**Narrative**: "As you rest by the campfire, Mara leans against your shoulder, the warmth of the flames dancing on her face. 'I feel safe here with you,' she whispers. Later, she tells you a joke about a gnome who walked into a bar and asked for a 'short' drink - 'He got so offended when they gave him a child's cup!' You both laugh until your sides hurt. Before sleep, she grows quiet, watching the embers. 'My brother Tomas... he went missing three years ago. I've never told anyone about him before. He loved campfires like this one.'"
 
 **Existing Companions**: [{"id": "mara", "name": "Mara"}]
 **New Companions**: []
@@ -191,21 +203,21 @@ REQUIRED FIELDS:
       "characterType": "companion",
       "characterName": "Mara",
       "characterId": "mara",
-      "text": "Mara remembers leaning against you by the campfire, feeling safe and content in a way she hasn't felt in years",
+      "text": "Mara remembers the warmth of the campfire on her face as she leaned against your shoulder, whispering that she felt safe - a feeling she hadn't known in so long",
       "turn": 18
     },
     {
       "characterType": "companion",
       "characterName": "Mara",
       "characterId": "mara",
-      "text": "Mara remembers telling you the joke about the gnome asking for a 'short' drink, and how good it felt to make you laugh",
+      "text": "Mara remembers telling you the joke about the gnome asking for a 'short' drink and getting a child's cup - the way you both laughed until your sides hurt, tears streaming down your faces",
       "turn": 18
     },
     {
       "characterType": "companion",
       "characterName": "Mara",
       "characterId": "mara",
-      "text": "Mara remembers opening up about her missing brother Tomas for the first time, trusting you with something she's never shared with anyone",
+      "text": "Mara remembers watching the embers of the campfire as she finally spoke of her brother Tomas, missing for three years - how he loved campfires like this one. She'd never trusted anyone enough to share that pain before.",
       "turn": 18
     }
   ]
