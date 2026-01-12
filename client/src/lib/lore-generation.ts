@@ -27,6 +27,9 @@ export async function generateWorldLore({
   const systemPrompt = config.loreSystemPrompt;
   const model = config.loreLLM;
   
+  // Sanitize gameState to remove large unnecessary fields before sending
+  const { debugLog, turnSnapshots, ...sanitizedGameState } = gameState;
+  
   try {
     // Build context for lore generation
     const context = buildLoreContext(gameState);
@@ -34,7 +37,7 @@ export async function generateWorldLore({
     const response = await apiRequest('POST', '/api/generate-lore', {
       systemPrompt,
       context,
-      gameState,
+      gameState: sanitizedGameState,
       model,
       apiKey: config.openRouterApiKey,
     });

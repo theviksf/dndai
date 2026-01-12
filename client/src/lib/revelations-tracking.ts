@@ -37,11 +37,14 @@ export async function trackRevelations({
   const systemPrompt = config.revelationsSystemPrompt;
   const model = config.revelationsLLM;
   
+  // Sanitize gameState to remove large unnecessary fields before sending
+  const { debugLog, turnSnapshots, ...sanitizedGameState } = gameState;
+  
   try {
     const response = await apiRequest('POST', '/api/chat/revelations', {
       systemPrompt,
       narrative,
-      gameState,
+      gameState: sanitizedGameState,
       model,
       apiKey: config.openRouterApiKey,
     });

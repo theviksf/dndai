@@ -46,11 +46,14 @@ export async function trackMemories({
     return { memories: [] };
   }
   
+  // Sanitize gameState to remove large unnecessary fields before sending
+  const { debugLog, turnSnapshots, ...sanitizedGameState } = gameState;
+  
   try {
     const response = await apiRequest('POST', '/api/chat/memories', {
       systemPrompt,
       narrative,
-      gameState,
+      gameState: sanitizedGameState,
       model,
       apiKey: config.openRouterApiKey,
       newCompanionIds,
