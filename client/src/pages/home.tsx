@@ -21,9 +21,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle, MoreVertical, Menu, Database, Trash2, FolderOpen } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Settings, Save, Terminal, Undo2, Download, Upload, PlusCircle, MoreVertical, Menu, Database, Trash2, FolderOpen, AlertTriangle, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateEntityImage } from '@/lib/image-generation';
+import { useAgentErrors, setGlobalErrorHandler } from '@/lib/agent-error-context';
 
 // Helper to get or create session ID
 function getOrCreateSessionId(): string {
@@ -43,6 +45,9 @@ export default function Home() {
   // Use consistent session ID across all initializers
   const [sessionId] = useState<string>(getOrCreateSessionId);
   const [isNewSession, setIsNewSession] = useState(false);
+  
+  // Agent error tracking
+  const { errors: agentErrors, addError, dismissError, dismissAllErrors, hasErrors } = useAgentErrors();
   
   // Ref to always have latest gameState (avoids stale closures)
   const gameStateRef = useRef<GameStateData | null>(null);
@@ -97,6 +102,12 @@ export default function Home() {
     }
   }, [isNewSession, defaultPrompts, config]);
 
+  // Wire up global error handler for agent errors
+  useEffect(() => {
+    setGlobalErrorHandler(addError);
+    return () => setGlobalErrorHandler(() => {});
+  }, [addError]);
+  
   // Apply UI scale based on config
   useEffect(() => {
     const scale = config.uiScale === 'compact' ? '80%' : '100%';
@@ -1586,6 +1597,55 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Agent Error Banner */}
+      {hasErrors && (
+        <div className="bg-destructive/10 border-b border-destructive/30" data-testid="alert-agent-errors">
+          <div className="max-w-[1920px] mx-auto px-4 py-3">
+            <Alert variant="destructive" className="bg-transparent border-0 p-0">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle className="text-sm font-medium">Agent Error{agentErrors.length > 1 ? 's' : ''}</AlertTitle>
+              <AlertDescription className="text-xs mt-1">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    {agentErrors.slice(0, 3).map((err) => (
+                      <div key={err.id} className="flex items-center gap-2 py-0.5">
+                        <span className="font-medium">{err.agentName}</span>
+                        {err.entityName && <span className="text-muted-foreground">({err.entityName})</span>}
+                        <span className="text-muted-foreground">-</span>
+                        <span className="truncate max-w-[300px]">{err.errorMessage}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 hover:bg-destructive/20"
+                          onClick={() => dismissError(err.id)}
+                          data-testid={`dismiss-error-${err.id}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    {agentErrors.length > 3 && (
+                      <div className="text-muted-foreground py-0.5">
+                        +{agentErrors.length - 3} more error{agentErrors.length - 3 > 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs border-destructive/50 hover:bg-destructive/20"
+                    onClick={dismissAllErrors}
+                    data-testid="dismiss-all-errors"
+                  >
+                    Dismiss All
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      )}
 
       {/* Character Stats Bar */}
       <CharacterStatsBar 

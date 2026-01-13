@@ -1,6 +1,7 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, GameConfig, DebugLogEntry } from '@shared/schema';
 import { nanoid } from 'nanoid';
+import { reportAgentError } from './agent-error-context';
 
 export interface ImageGenerationOptions {
   entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
@@ -83,7 +84,11 @@ export async function generateEntityImage({
           await new Promise(resolve => setTimeout(resolve, 5000));
           continue; // Retry with the existing job ID
         } else {
-          // Max retries reached, return an error
+          // Max retries reached, return an error and report it
+          const errorMsg = `Image generation still in queue after ${retryCount} attempts. Please try again later.`;
+          const entityName = 'name' in entity ? entity.name : 'Unknown';
+          reportAgentError('Image Agent', errorMsg, entityName);
+          
           const debugLogEntry: DebugLogEntry = {
             id,
             timestamp,
@@ -98,7 +103,7 @@ export async function generateEntityImage({
             model: 'flux-1.1-schnell',
             entityType,
             imageUrl: null,
-            error: `Image generation still in queue after ${retryCount} attempts. Please try again later.`,
+            error: errorMsg,
           };
           
           return {
@@ -118,6 +123,10 @@ export async function generateEntityImage({
           errorData = { error: errorText };
         }
         
+        const errorMsg = `HTTP ${response.status}: ${errorData.error || response.statusText}`;
+        const entityName = 'name' in entity ? entity.name : 'Unknown';
+        reportAgentError('Image Agent', errorMsg, entityName);
+        
         const debugLogEntry: DebugLogEntry = {
           id,
           timestamp,
@@ -131,7 +140,7 @@ export async function generateEntityImage({
           model: config.imageProvider === 'flux' ? 'flux-1.1-schnell' : 'google/gemini-2.5-flash-image-preview',
           entityType,
           imageUrl: null,
-          error: `HTTP ${response.status}: ${errorData.error || response.statusText}`,
+          error: errorMsg,
         };
         
         return { 

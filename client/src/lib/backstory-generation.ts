@@ -2,6 +2,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { GameCharacter, Companion, EncounteredCharacter, Location, Quest, GameConfig, DebugLogEntry, GameStateData } from '@shared/schema';
 import { nanoid } from 'nanoid';
 import { checkEntityConsistency } from './check-entity-consistency';
+import { reportAgentError } from './agent-error-context';
 
 export interface BackstoryGenerationOptions {
   entityType: 'character' | 'companion' | 'npc' | 'location' | 'quest';
@@ -184,8 +185,11 @@ export async function generateEntityBackstory({
     }
   }
   
-  // All retries exhausted
-  console.error(`[BACKSTORY GEN] All ${MAX_RETRIES} attempts failed for ${entityType}`);
+  // All retries exhausted - report the error
+  const entityName = 'name' in entity ? entity.name : ('title' in entity ? (entity as any).title : 'Unknown');
+  console.error(`[BACKSTORY GEN] All ${MAX_RETRIES} attempts failed for ${entityType}: ${entityName}`);
+  reportAgentError('Backstory Agent', lastError || 'Unknown error after retries', entityName);
+  
   return { 
     backstory: null,
     debugLogEntry: lastDebugLogEntry || {
