@@ -1,6 +1,11 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameConfig, DebugLogEntry, GameStateData, Memory } from '@shared/schema';
 import { nanoid } from 'nanoid';
+import { runWithRetry } from './agent-retry';
+import { reportAgentError } from './agent-error-context';
+
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
 
 export interface MemoriesTrackingOptions {
   narrative: string;
@@ -49,8 +54,8 @@ export async function trackMemories({
   // Sanitize gameState to remove large unnecessary fields before sending
   const { debugLog, turnSnapshots, ...sanitizedGameState } = gameState;
   
-  try {
-    const response = await apiRequest('POST', '/api/chat/memories', {
+  const result = await runWithRetry(
+    () => apiRequest('POST', '/api/chat/memories', {
       systemPrompt,
       narrative,
       gameState: sanitizedGameState,
@@ -58,70 +63,26 @@ export async function trackMemories({
       apiKey: config.openRouterApiKey,
       newCompanionIds,
       newNPCIds,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { error: errorText };
-      }
-      
-      const debugLogEntry: DebugLogEntry = {
-        id,
-        timestamp,
-        type: 'memories',
-        prompt: errorData.fullPrompt || systemPrompt,
-        response: errorData.rawResponse || JSON.stringify({ 
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData 
-        }, null, 2),
-        model,
-        error: `HTTP ${response.status}: ${errorData.error || response.statusText}`,
-      };
-      
-      return { 
-        memories: [],
-        debugLogEntry,
-      };
+    }),
+    async (response) => response.json(),
+    {
+      agentName: 'Memories Agent',
+      maxRetries: MAX_RETRIES,
+      baseDelayMs: BASE_DELAY_MS,
     }
+  );
 
-    const data = await response.json();
-    
-    const debugLogEntry: DebugLogEntry = {
-      id,
-      timestamp,
-      type: 'memories',
-      prompt: data.fullPrompt || systemPrompt,
-      response: data.rawResponse || JSON.stringify({ memories: data.memories, model: data.model }, null, 2),
-      model: data.model || model,
-      tokens: data.usage,
-    };
-    
-    return {
-      memories: data.memories || [],
-      usage: data.usage,
-      model: data.model,
-      debugLogEntry,
-    };
-  } catch (error: any) {
-    console.error('Failed to track memories:', error);
+  if (!result.success) {
+    reportAgentError('Memories Agent', result.error || 'Unknown error');
     
     const debugLogEntry: DebugLogEntry = {
       id,
       timestamp,
       type: 'memories',
       prompt: systemPrompt,
-      response: JSON.stringify({ 
-        error: error.message,
-        stack: error.stack,
-        name: error.name 
-      }, null, 2),
+      response: JSON.stringify({ error: result.error }),
       model,
-      error: error.message || 'Unknown error',
+      error: result.error,
     };
     
     return { 
@@ -129,6 +90,25 @@ export async function trackMemories({
       debugLogEntry,
     };
   }
+
+  const data = result.data;
+  
+  const debugLogEntry: DebugLogEntry = {
+    id,
+    timestamp,
+    type: 'memories',
+    prompt: data.fullPrompt || systemPrompt,
+    response: data.rawResponse || JSON.stringify({ memories: data.memories, model: data.model }, null, 2),
+    model: data.model || model,
+    tokens: data.usage,
+  };
+  
+  return {
+    memories: data.memories || [],
+    usage: data.usage,
+    model: data.model,
+    debugLogEntry,
+  };
 }
 
 export function applyMemoriesToGameState(

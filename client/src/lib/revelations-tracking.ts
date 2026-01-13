@@ -1,6 +1,11 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameConfig, DebugLogEntry, GameStateData, Revelation } from '@shared/schema';
 import { nanoid } from 'nanoid';
+import { runWithRetry } from './agent-retry';
+import { reportAgentError } from './agent-error-context';
+
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
 
 export interface RevelationsTrackingOptions {
   narrative: string;
@@ -40,77 +45,33 @@ export async function trackRevelations({
   // Sanitize gameState to remove large unnecessary fields before sending
   const { debugLog, turnSnapshots, ...sanitizedGameState } = gameState;
   
-  try {
-    const response = await apiRequest('POST', '/api/chat/revelations', {
+  const result = await runWithRetry(
+    () => apiRequest('POST', '/api/chat/revelations', {
       systemPrompt,
       narrative,
       gameState: sanitizedGameState,
       model,
       apiKey: config.openRouterApiKey,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { error: errorText };
-      }
-      
-      const debugLogEntry: DebugLogEntry = {
-        id,
-        timestamp,
-        type: 'revelations',
-        prompt: errorData.fullPrompt || systemPrompt,
-        response: errorData.rawResponse || JSON.stringify({ 
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData 
-        }, null, 2),
-        model,
-        error: `HTTP ${response.status}: ${errorData.error || response.statusText}`,
-      };
-      
-      return { 
-        revelations: [],
-        debugLogEntry,
-      };
+    }),
+    async (response) => response.json(),
+    {
+      agentName: 'Revelations Agent',
+      maxRetries: MAX_RETRIES,
+      baseDelayMs: BASE_DELAY_MS,
     }
+  );
 
-    const data = await response.json();
-    
-    const debugLogEntry: DebugLogEntry = {
-      id,
-      timestamp,
-      type: 'revelations',
-      prompt: data.fullPrompt || systemPrompt,
-      response: data.rawResponse || JSON.stringify({ revelations: data.revelations, model: data.model }, null, 2),
-      model: data.model || model,
-      tokens: data.usage,
-    };
-    
-    return {
-      revelations: data.revelations || [],
-      usage: data.usage,
-      model: data.model,
-      debugLogEntry,
-    };
-  } catch (error: any) {
-    console.error('Failed to track revelations:', error);
+  if (!result.success) {
+    reportAgentError('Revelations Agent', result.error || 'Unknown error');
     
     const debugLogEntry: DebugLogEntry = {
       id,
       timestamp,
       type: 'revelations',
       prompt: systemPrompt,
-      response: JSON.stringify({ 
-        error: error.message,
-        stack: error.stack,
-        name: error.name 
-      }, null, 2),
+      response: JSON.stringify({ error: result.error }),
       model,
-      error: error.message || 'Unknown error',
+      error: result.error,
     };
     
     return { 
@@ -118,4 +79,23 @@ export async function trackRevelations({
       debugLogEntry,
     };
   }
+
+  const data = result.data;
+  
+  const debugLogEntry: DebugLogEntry = {
+    id,
+    timestamp,
+    type: 'revelations',
+    prompt: data.fullPrompt || systemPrompt,
+    response: data.rawResponse || JSON.stringify({ revelations: data.revelations, model: data.model }, null, 2),
+    model: data.model || model,
+    tokens: data.usage,
+  };
+  
+  return {
+    revelations: data.revelations || [],
+    usage: data.usage,
+    model: data.model,
+    debugLogEntry,
+  };
 }

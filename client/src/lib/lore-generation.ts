@@ -1,6 +1,11 @@
 import { apiRequest } from '@/lib/queryClient';
 import type { GameConfig, DebugLogEntry, GameStateData } from '@shared/schema';
 import { nanoid } from 'nanoid';
+import { runWithRetry } from './agent-retry';
+import { reportAgentError } from './agent-error-context';
+
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
 
 export interface LoreGenerationOptions {
   gameState: GameStateData;
@@ -30,80 +35,36 @@ export async function generateWorldLore({
   // Sanitize gameState to remove large unnecessary fields before sending
   const { debugLog, turnSnapshots, ...sanitizedGameState } = gameState;
   
-  try {
-    // Build context for lore generation
-    const context = buildLoreContext(gameState);
-    
-    const response = await apiRequest('POST', '/api/generate-lore', {
+  // Build context for lore generation
+  const context = buildLoreContext(gameState);
+  
+  const result = await runWithRetry(
+    () => apiRequest('POST', '/api/generate-lore', {
       systemPrompt,
       context,
       gameState: sanitizedGameState,
       model,
       apiKey: config.openRouterApiKey,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { error: errorText };
-      }
-      
-      const debugLogEntry: DebugLogEntry = {
-        id,
-        timestamp,
-        type: 'lore',
-        prompt: errorData.fullPrompt || systemPrompt,
-        response: errorData.rawResponse || JSON.stringify({ 
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData 
-        }, null, 2),
-        model,
-        error: `HTTP ${response.status}: ${errorData.error || response.statusText}`,
-      };
-      
-      return { 
-        worldLore: null,
-        debugLogEntry,
-      };
+    }),
+    async (response) => response.json(),
+    {
+      agentName: 'Lore Agent',
+      maxRetries: MAX_RETRIES,
+      baseDelayMs: BASE_DELAY_MS,
     }
+  );
 
-    const data = await response.json();
-    
-    const debugLogEntry: DebugLogEntry = {
-      id,
-      timestamp,
-      type: 'lore',
-      prompt: data.fullPrompt || systemPrompt,
-      response: data.rawResponse || JSON.stringify({ worldLore: data.worldLore, model: data.model }, null, 2),
-      model: data.model || model,
-      tokens: data.usage,
-    };
-    
-    return {
-      worldLore: data.worldLore || null,
-      usage: data.usage,
-      model: data.model,
-      debugLogEntry,
-    };
-  } catch (error: any) {
-    console.error('Failed to generate world lore:', error);
+  if (!result.success) {
+    reportAgentError('Lore Agent', result.error || 'Unknown error');
     
     const debugLogEntry: DebugLogEntry = {
       id,
       timestamp,
       type: 'lore',
       prompt: systemPrompt,
-      response: JSON.stringify({ 
-        error: error.message,
-        stack: error.stack,
-        name: error.name 
-      }, null, 2),
+      response: JSON.stringify({ error: result.error }),
       model,
-      error: error.message || 'Unknown error',
+      error: result.error,
     };
     
     return { 
@@ -111,6 +72,25 @@ export async function generateWorldLore({
       debugLogEntry,
     };
   }
+
+  const data = result.data;
+  
+  const debugLogEntry: DebugLogEntry = {
+    id,
+    timestamp,
+    type: 'lore',
+    prompt: data.fullPrompt || systemPrompt,
+    response: data.rawResponse || JSON.stringify({ worldLore: data.worldLore, model: data.model }, null, 2),
+    model: data.model || model,
+    tokens: data.usage,
+  };
+  
+  return {
+    worldLore: data.worldLore || null,
+    usage: data.usage,
+    model: data.model,
+    debugLogEntry,
+  };
 }
 
 function buildLoreContext(gameState: GameStateData): string {
