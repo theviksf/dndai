@@ -181,6 +181,11 @@ export async function generateEntityImage({
   } catch (error: any) {
     console.error(`Failed to generate image for ${entityType}:`, error);
     
+    // Report error to global handler
+    const entityName = 'name' in entity ? entity.name : 'Unknown';
+    const errorMsg = error.message || 'Unknown error';
+    reportAgentError('Image Agent', errorMsg, entityName);
+    
     // Create debug log entry for error
     const debugLogEntry: DebugLogEntry = {
       id,
@@ -195,7 +200,7 @@ export async function generateEntityImage({
       model: config.imageProvider === 'flux' ? 'flux-1.1-schnell' : 'google/gemini-2.5-flash-image-preview',
       entityType,
       imageUrl: null,
-      error: error.message || 'Unknown error',
+      error: errorMsg,
     };
     
     return { 

@@ -95,8 +95,10 @@ export async function generateEntityBackstory({
           continue;
         }
         
-        // Non-retryable error or max retries reached
-        console.error(`[BACKSTORY GEN] Failed after ${attempt} attempts:`, lastError);
+        // Non-retryable error or max retries reached - report to global handler
+        const entityName = 'name' in entity ? entity.name : ('title' in entity ? (entity as any).title : 'Unknown');
+        console.error(`[BACKSTORY GEN] Failed after ${attempt} attempts for ${entityName}:`, lastError);
+        reportAgentError('Backstory Agent', lastError || 'Unknown error', entityName);
         return { 
           backstory: null,
           debugLogEntry: lastDebugLogEntry,
