@@ -23,6 +23,13 @@ export interface BackstoryGenerationResult {
   checkerDebugLogEntry?: DebugLogEntry;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export async function generateEntityBackstory({ 
   entityType, 
   entity, 
@@ -33,51 +40,74 @@ export async function generateEntityBackstory({
   const id = `backstory-${timestamp}-${nanoid(6)}`;
   const systemPrompt = config.backstorySystemPrompt;
   const model = config.backstoryLLM;
+  const context = buildBackstoryContext(entityType, entity, gameState);
   
-  try {
-    // Build context for backstory generation
-    const context = buildBackstoryContext(entityType, entity, gameState);
-    
-    const response = await apiRequest('POST', '/api/generate-backstory', {
-      systemPrompt,
-      context,
-      entity,
-      entityType,
-      model,
-      apiKey: config.openRouterApiKey,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { error: errorText };
-      }
+  let lastError: string | null = null;
+  let lastDebugLogEntry: DebugLogEntry | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const entityName = 'name' in entity ? entity.name : ('title' in entity ? entity.title : 'Unknown');
+      console.log(`[BACKSTORY GEN] Attempt ${attempt}/${MAX_RETRIES} for ${entityType}: ${entityName}`);
       
-      const debugLogEntry: DebugLogEntry = {
-        id,
-        timestamp,
-        type: 'backstory',
-        prompt: errorData.fullPrompt || systemPrompt,
-        response: errorData.rawResponse || JSON.stringify({ 
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData 
-        }, null, 2),
-        model,
+      const response = await apiRequest('POST', '/api/generate-backstory', {
+        systemPrompt,
+        context,
+        entity,
         entityType,
-        error: `HTTP ${response.status}: ${errorData.error || response.statusText}`,
-      };
-      
-      return { 
-        backstory: null,
-        debugLogEntry,
-      };
-    }
+        model,
+        apiKey: config.openRouterApiKey,
+      });
 
-    const data = await response.json();
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
+        lastError = `HTTP ${response.status}: ${errorData.error || response.statusText}`;
+        lastDebugLogEntry = {
+          id: `${id}-attempt${attempt}`,
+          timestamp: Date.now(),
+          type: 'backstory',
+          prompt: errorData.fullPrompt || systemPrompt,
+          response: errorData.rawResponse || JSON.stringify({ 
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData 
+          }, null, 2),
+          model,
+          entityType,
+          error: lastError,
+        };
+        
+        // Check if it's a JSON parsing error (500) - worth retrying
+        const isRetryable = response.status === 500 && 
+          (errorData.error?.includes('parse') || errorData.error?.includes('JSON'));
+        
+        if (isRetryable && attempt < MAX_RETRIES) {
+          console.log(`[BACKSTORY GEN] Retryable error, waiting ${RETRY_DELAY_MS}ms before retry...`);
+          await sleep(RETRY_DELAY_MS * attempt); // Exponential backoff
+          continue;
+        }
+        
+        // Non-retryable error or max retries reached
+        console.error(`[BACKSTORY GEN] Failed after ${attempt} attempts:`, lastError);
+        return { 
+          backstory: null,
+          debugLogEntry: lastDebugLogEntry,
+        };
+      }
+
+      const data = await response.json();
+      
+      // Success!
+      if (attempt > 1) {
+        console.log(`[BACKSTORY GEN] Succeeded on attempt ${attempt}`);
+      }
     
     const debugLogEntry: DebugLogEntry = {
       id,
@@ -120,37 +150,55 @@ export async function generateEntityBackstory({
       }
     }
     
-    return {
-      backstory,
-      entityUpdates,
-      usage: data.usage,
-      model: data.model,
-      debugLogEntry,
-      checkerDebugLogEntry,
-    };
-  } catch (error: any) {
-    console.error(`Failed to generate backstory for ${entityType}:`, error);
-    
-    const debugLogEntry: DebugLogEntry = {
+      return {
+        backstory,
+        entityUpdates,
+        usage: data.usage,
+        model: data.model,
+        debugLogEntry,
+        checkerDebugLogEntry,
+      };
+    } catch (error: any) {
+      console.error(`[BACKSTORY GEN] Attempt ${attempt} caught error:`, error.message);
+      lastError = error.message || 'Unknown error';
+      lastDebugLogEntry = {
+        id: `${id}-attempt${attempt}`,
+        timestamp: Date.now(),
+        type: 'backstory',
+        prompt: systemPrompt,
+        response: JSON.stringify({ 
+          error: error.message,
+          stack: error.stack,
+          name: error.name 
+        }, null, 2),
+        model,
+        entityType,
+        error: lastError || undefined,
+      };
+      
+      if (attempt < MAX_RETRIES) {
+        console.log(`[BACKSTORY GEN] Retrying after error, waiting ${RETRY_DELAY_MS * attempt}ms...`);
+        await sleep(RETRY_DELAY_MS * attempt);
+        continue;
+      }
+    }
+  }
+  
+  // All retries exhausted
+  console.error(`[BACKSTORY GEN] All ${MAX_RETRIES} attempts failed for ${entityType}`);
+  return { 
+    backstory: null,
+    debugLogEntry: lastDebugLogEntry || {
       id,
       timestamp,
       type: 'backstory',
       prompt: systemPrompt,
-      response: JSON.stringify({ 
-        error: error.message,
-        stack: error.stack,
-        name: error.name 
-      }, null, 2),
+      response: JSON.stringify({ error: lastError }),
       model,
       entityType,
-      error: error.message || 'Unknown error',
-    };
-    
-    return { 
-      backstory: null,
-      debugLogEntry,
-    };
-  }
+      error: lastError || 'Unknown error after retries',
+    },
+  };
 }
 
 function buildBackstoryContext(
