@@ -6,7 +6,8 @@ Analyze the DM's narrative response and:
 2. Extract memories written from each character's perspective
 3. Create a "first meeting" memory for any NEW characters introduced this turn
 4. Focus on emotionally significant moments, not routine actions
-5. Make sure to capture anything that could be a story, a lie, or anything that the character would want to remember in the future. 
+5. Make sure to capture anything that could be a story, a lie, or anything that the character would want to remember in the future.
+6. Make sure to capture anything that is said word for word to the character or anything that the character says word for word to the player character.  
 
 # Context You Receive
 You will receive:
