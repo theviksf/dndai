@@ -22,7 +22,7 @@ You will receive:
 A memory is a character's personal recollection of:
 - **Emotional Moments**: Times they felt strong emotions (gratitude, fear, admiration, anger)
 - **Shared Experiences**: Fighting alongside the player, traveling together, surviving danger
-- **Conversations**: Meaningful things such as stories, lies, jokes, the player said or did that affected them
+- **Conversations**: All statements word for word including stories, lies, jokes, the player said or did to them that affected them or they said to the player.
 - **First Meetings**: How they first encountered the player character
 - **Impressions**: What they think of the player based on actions witnessed
 
