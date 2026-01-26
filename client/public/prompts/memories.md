@@ -20,9 +20,10 @@ You will receive:
 
 # What Counts as a Memory
 A memory is a character's personal recollection of:
+- **Dialogue Exchanges**: EXACT word-for-word quotes of what was said - both what the character said AND what the player said to them. This is CRITICAL.
 - **Emotional Moments**: Times they felt strong emotions (gratitude, fear, admiration, anger)
 - **Shared Experiences**: Fighting alongside the player, traveling together, surviving danger
-- **Conversations**: All statements word for word including stories, lies, jokes, the player said or did to them that affected them or they said to the player.
+- **Conversations**: Stories told, lies spoken, jokes shared, promises made, secrets revealed - capture the exact words
 - **First Meetings**: How they first encountered the player character
 - **Impressions**: What they think of the player based on actions witnessed
 
@@ -37,13 +38,16 @@ A memory is a character's personal recollection of:
 
 # Rich Memory Checklist
 Each memory should include AS MANY of these as applicable:
+- [ ] **Exact Dialogue**: Word-for-word quotes of what was said (HIGHEST PRIORITY)
 - [ ] **The Method**: HOW the player acted (magic, combat, clever words, etc.)
 - [ ] **A Sensory Detail**: Something they saw, heard, felt, smelled
 - [ ] **Their Emotional State**: How they felt in that moment
 - [ ] **A Callback Hook**: A specific detail that can be referenced later
 
 BAD (too shallow): "Elena remembers being rescued from the aggressive dockworker"
-GOOD (rich detail): "Elena remembers the flash of magic and the crash of splintering wood as you shattered the dockworker's chair beneath him, sending him tumbling to the floor - the relief that washed over her knowing someone had finally stood up for her"
+BAD (missing dialogue): "Elena remembers you standing up for her against the dockworker"
+GOOD (with dialogue): "Elena remembers you stepping between her and the dockworker, your voice cutting through the noise: 'Touch her again and you'll answer to me.' The dockworker's sneer faded as you stood your ground."
+GOOD (rich detail + dialogue): "Elena remembers the flash of magic and the crash of splintering wood as you shattered the dockworker's chair beneath him. When he scrambled up sputtering threats, you said coldly, 'The next spell won't miss.' The relief that washed over her knowing someone had finally stood up for her."
 
 # Special Rule: First Meeting Memories
 For any character listed in newCompanions or newNPCs, you MUST create a "first meeting" memory describing:
@@ -83,8 +87,8 @@ REQUIRED FIELDS:
 
 # Example Scenarios
 
-## Example 1: Companion forms memory during combat
-**Narrative**: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. Together you cut through the outlaws, watching each other's flanks. When one bandit nearly catches you from behind, Lyra's blade intercepts his."
+## Example 1: Companion forms memory during combat (with dialogue)
+**Narrative**: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. You nod and reply, 'Then let's show them what we're made of.' Together you cut through the outlaws, watching each other's flanks. When one bandit nearly catches you from behind, Lyra's blade intercepts his."
 
 **Existing Companions**: [{"id": "lyra", "name": "Lyra"}]
 **New Companions**: []
@@ -97,14 +101,14 @@ REQUIRED FIELDS:
       "characterType": "companion",
       "characterName": "Lyra",
       "characterId": "lyra",
-      "text": "Lyra remembers the clang of steel as her blade caught the bandit's sword inches from your back - the fierce grin you shared in the heat of battle, fighting as one, each covering the other's blind spots",
+      "text": "Lyra remembers telling you 'I've got your back' before the fight, and your confident reply: 'Then let's show them what we're made of.' The clang of steel as her blade caught the bandit's sword inches from your back - fighting as one, each covering the other's blind spots",
       "turn": 12
     }
   ]
 }
 
-## Example 2: NPC grateful for help
-**Narrative**: "You carry the unconscious boy through the village gates just as dawn breaks. Elder Morin rushes forward, his walking stick clattering to the ground as he embraces his grandson. Tears stream down the old man's weathered face. 'I can never repay you for this,' he says, voice cracking with emotion."
+## Example 2: NPC grateful for help (with dialogue)
+**Narrative**: "You carry the unconscious boy through the village gates just as dawn breaks. Elder Morin rushes forward, his walking stick clattering to the ground as he embraces his grandson. Tears stream down the old man's weathered face. 'I can never repay you for this,' he says, voice cracking with emotion. You place a hand on his shoulder and say, 'His life is payment enough. Keep him safe.'"
 
 **Existing NPCs**: [{"id": "morin", "name": "Elder Morin"}]
 **New NPCs**: []
@@ -117,7 +121,7 @@ REQUIRED FIELDS:
       "characterType": "npc",
       "characterName": "Elder Morin",
       "characterId": "morin",
-      "text": "Elder Morin remembers the sight of you carrying his grandson through the village gates at dawn - his walking stick clattering forgotten to the ground as he rushed to embrace the boy, tears streaming freely, his voice breaking as he tried to find words for a gratitude too deep to express",
+      "text": "Elder Morin remembers sobbing 'I can never repay you for this' as you carried his grandson through the gates at dawn. Your hand on his shoulder, your words: 'His life is payment enough. Keep him safe.' A debt of gratitude he will carry forever.",
       "turn": 8
     }
   ]
@@ -236,14 +240,64 @@ REQUIRED FIELDS:
   "memories": []
 }
 
+## Example 8: Deep conversation with full dialogue exchange
+**Narrative**: "Around the campfire, Kira stares into the flames. 'Can I ask you something?' she says quietly. You nod. 'Why did you save me back there? You didn't have to. Most people would have just... kept walking.' You consider her question carefully. 'Because I know what it's like to be abandoned when you need help most. I won't do that to someone else.' Kira's eyes glisten. 'Thank you for being honest. Most people lie and say it was nothing.' She pauses. 'My father used to say the same thing - that we have a duty to help others because someone once helped us.'"
+
+**Existing Companions**: [{"id": "kira", "name": "Kira"}]
+**New Companions**: []
+**Turn**: 22
+
+**YOUR RESPONSE** (raw JSON only):
+{
+  "memories": [
+    {
+      "characterType": "companion",
+      "characterName": "Kira",
+      "characterId": "kira",
+      "text": "Kira remembers asking you by the campfire: 'Why did you save me back there? You didn't have to. Most people would have just... kept walking.' Your answer struck her deeply: 'Because I know what it's like to be abandoned when you need help most. I won't do that to someone else.'",
+      "turn": 22
+    },
+    {
+      "characterType": "companion",
+      "characterName": "Kira",
+      "characterId": "kira",
+      "text": "Kira remembers telling you 'Thank you for being honest. Most people lie and say it was nothing.' She shared that her father used to say the same thing - that we have a duty to help others because someone once helped us. A rare moment of connection by firelight.",
+      "turn": 22
+    }
+  ]
+}
+
+## Example 9: Player asks NPC for information
+**Narrative**: "You approach the old librarian and ask, 'What can you tell me about the Curse of Thornwood?' She peers at you over her spectacles. 'Ah, curious about the dark history, are we? The curse was cast by Witch Helena over two hundred years ago. She was betrayed by her lover, the Baron, and with her dying breath she swore his bloodline would never know peace.' You press further: 'Is there a way to break it?' She shakes her head slowly. 'Only one who carries the Baron's blood can end it - by sacrificing something they love.'"
+
+**Existing NPCs**: [{"id": "librarian-mabel", "name": "Mabel"}]
+**New NPCs**: []
+**Turn**: 14
+
+**YOUR RESPONSE** (raw JSON only):
+{
+  "memories": [
+    {
+      "characterType": "npc",
+      "characterName": "Mabel",
+      "characterId": "librarian-mabel",
+      "text": "Mabel remembers when you asked her 'What can you tell me about the Curse of Thornwood?' She told you of Witch Helena, betrayed by the Baron two hundred years ago, who cursed his bloodline with her dying breath. When you asked 'Is there a way to break it?' she explained only one who carries the Baron's blood can end it - by sacrificing something they love.",
+      "turn": 14
+    }
+  ]
+}
+
 # Important Guidelines
 
-1. **Always create first meeting memories** for characters in newCompanions or newNPCs lists
-2. **Be selective for existing characters**: Not every interaction warrants a memory
-3. **Focus on emotional impact**: What made this moment meaningful to the character?
-4. **Use the character's voice**: The memory should feel personal to them
-5. **Include turn numbers**: Always use the provided current turn
-6. **Match IDs exactly**: Use the exact characterId from the game context
-7. **Empty arrays are valid**: Return empty if no memories were formed
+1. **CAPTURE EXACT DIALOGUE**: When the narrative contains spoken words (in quotes), include the exact quotes in the memory. This is the MOST IMPORTANT rule.
+   - What the character said TO the player: "She said: 'I trust you with my life.'"
+   - What the player said TO the character: "You told her: 'I won't let you down.'"
+2. **Always create first meeting memories** for characters in newCompanions or newNPCs lists
+3. **Be selective for existing characters**: Not every interaction warrants a memory
+4. **Focus on emotional impact**: What made this moment meaningful to the character?
+5. **Use the character's voice**: The memory should feel personal to them
+6. **Include turn numbers**: Always use the provided current turn
+7. **Match IDs exactly**: Use the exact characterId from the game context
+8. **Empty arrays are valid**: Return empty if no memories were formed
 
-Remember: Memories are personal - they reflect how the CHARACTER experienced the moment, not just what happened.
+Remember: Memories are personal - they reflect how the CHARACTER experienced the moment, not just what happened. When dialogue is exchanged, the EXACT WORDS are what characters remember most vividly.
