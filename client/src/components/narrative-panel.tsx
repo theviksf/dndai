@@ -377,6 +377,7 @@ export default function NarrativePanel({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
+  const [parsingStatus, setParsingStatus] = useState('Updating game state...');
   const [streamingContent, setStreamingContent] = useState('');
   const narrativeRef = useRef<HTMLDivElement>(null);
   const isUserNearBottom = useRef(true);
@@ -528,6 +529,7 @@ export default function NarrativePanel({
 
       // Show parser progress
       setIsParsing(true);
+      setParsingStatus('Updating game state...');
 
       // Now call Parser LLM to extract state updates with ESSENTIAL state
       // Include last recap for context (e.g., "She hands back the amulet" needs to know who "she" is)
@@ -1111,6 +1113,7 @@ export default function NarrativePanel({
           
           // Track revelations with fresh state (after parser updates are committed)
           if (config.autoGenerateRevelations && primaryResponse?.content) {
+            setParsingStatus('Checking for revelations...');
             // Get fresh state by using functional update
             setGameState(freshState => {
               // Call revelations tracking with the committed state
@@ -1269,6 +1272,7 @@ export default function NarrativePanel({
 
           // Track memories for NPCs and companions after state updates
           if (config.autoGenerateMemories && primaryResponse?.content) {
+            setParsingStatus('Recording memories...');
             setGameState(freshState => {
               // Identify newly added companions and NPCs (for first-meeting memories)
               const currentCompanionIds = (freshState.companions || []).map(c => c.id);
@@ -1329,6 +1333,7 @@ export default function NarrativePanel({
           // Generate world lore if needed (first location visited)
           setGameState(freshState => {
             if (config.autoGenerateLore && needsWorldLoreGeneration(freshState)) {
+              setParsingStatus('Building world lore...');
               generateWorldLore({
                 gameState: freshState,
                 config,
@@ -1500,6 +1505,8 @@ export default function NarrativePanel({
 
         // Generate images in the background
         if (imagesToGenerate.length > 0) {
+          setIsParsing(true);
+          setParsingStatus('Creating images...');
           Promise.allSettled(
             imagesToGenerate.map(async ({ entityType, entity, id }) => {
               const result = await generateEntityImage({
@@ -1598,6 +1605,9 @@ export default function NarrativePanel({
                 sessionCost: prev.sessionCost + totalImageCost,
               }));
             }
+            
+            // Hide progress after images complete (if no backstories pending)
+            setIsParsing(false);
           });
         }
 
@@ -1654,6 +1664,8 @@ export default function NarrativePanel({
 
           // Generate backstories in the background
           if (backstoriesToGenerate.length > 0) {
+            setIsParsing(true);
+            setParsingStatus('Generating backstories...');
             Promise.allSettled(
               backstoriesToGenerate.map(async ({ entityType, entity, id }) => {
                 const result = await generateEntityBackstory({
@@ -1737,6 +1749,9 @@ export default function NarrativePanel({
 
                 return updated;
               });
+              
+              // Hide progress after backstories complete
+              setIsParsing(false);
             });
           }
         }
@@ -1817,12 +1832,12 @@ export default function NarrativePanel({
         </div>
       </div>
 
-      {/* Parser Progress Indicator */}
+      {/* Agent Progress Indicator */}
       {isParsing && (
         <div className="bg-accent/10 border border-accent rounded-lg p-4 flex items-center gap-3" data-testid="parser-progress">
           <Loader2 className="w-5 h-5 text-accent animate-spin" />
           <div className="flex-1">
-            <div className="text-sm font-medium text-accent mb-1">Analyzing narrative...</div>
+            <div className="text-sm font-medium text-accent mb-1">{parsingStatus}</div>
             <Progress value={100} className="h-2" />
           </div>
         </div>
