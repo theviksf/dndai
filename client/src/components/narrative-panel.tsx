@@ -1492,8 +1492,10 @@ export default function NarrativePanel({
       setIsParsing(false);
       setStreamingContent('');
 
-      // Auto-generate images for new entities (async, non-blocking)
-      setGameState(currentState => {
+      // Auto-generate images and backstories for new entities (async, non-blocking)
+      // Use setTimeout to ensure parser's setGameState has committed first
+      setTimeout(() => {
+        setGameState(currentState => {
         // Track entities needing images
         const imagesToGenerate: Array<{
           entityType: 'character' | 'companion' | 'npc' | 'location' | 'business';
@@ -1796,7 +1798,8 @@ export default function NarrativePanel({
         }
 
         return currentState;
-      });
+        });
+      }, 0);
     } catch (error: any) {
       toast({
         title: 'Error',
