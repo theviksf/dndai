@@ -88,6 +88,7 @@ When an NPC joins the party as a companion, the system automatically migrates th
    - **imageUrl**: AI-generated portrait preserved
    - **backstory**: Generated backstory preserved
    - **revelations**: Discovered revelations preserved
+   - **memories**: Character memories preserved
    - **id**: Entity ID maintained for continuity
 3. **Field Mapping**: NPC fields are intelligently mapped to companion equivalents:
    - `role` → `class` (e.g., "Merchant" → "Merchant")

@@ -867,6 +867,7 @@ export default function NarrativePanel({
                     imageUrl: matchingNPC.imageUrl || newComp.imageUrl,
                     backstory: matchingNPC.backstory || newComp.backstory,
                     revelations: matchingNPC.revelations || newComp.revelations,
+                    memories: matchingNPC.memories || newComp.memories || [], // Preserve memories from NPC
                     // Map NPC fields to companion fields where appropriate
                     appearance: newComp.appearance || matchingNPC.appearance || matchingNPC.description,
                     class: newComp.class || matchingNPC.role || 'Unknown',
@@ -882,7 +883,7 @@ export default function NarrativePanel({
                   mergedCompanions.push(migratedCompanion);
                   // Mark NPC for removal
                   npcsToRemove.push(matchingNPC.id);
-                  console.log(`[MIGRATION] NPC "${matchingNPC.name}" migrated to companion, preserving imageUrl and backstory`);
+                  console.log(`[MIGRATION] NPC "${matchingNPC.name}" migrated to companion, preserving imageUrl, backstory, and memories`);
                 } else {
                   // Add new companion (not from NPC)
                   mergedCompanions.push(newComp);
