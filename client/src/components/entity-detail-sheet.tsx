@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star, Pencil, Check, X, Brain } from 'lucide-react';
+import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star, Pencil, Check, X, Brain, UserPlus } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +40,7 @@ interface EntityDetailSheetProps {
   onUpdate?: (updates: Partial<GameCharacter | Companion | EncounteredCharacter | Location | Business | Quest>) => void;
   statusEffects?: StatusEffect[];
   businesses?: Business[];
+  onAddToParty?: (npc: EncounteredCharacter) => void;
 }
 
 export function EntityDetailSheet({ 
@@ -51,7 +52,8 @@ export function EntityDetailSheet({
   isRefreshing = false,
   onUpdate,
   statusEffects = [],
-  businesses = []
+  businesses = [],
+  onAddToParty
 }: EntityDetailSheetProps) {
   const [isEditingBackstory, setIsEditingBackstory] = useState(false);
   const [backstoryEditValue, setBackstoryEditValue] = useState('');
@@ -1010,6 +1012,18 @@ export function EntityDetailSheet({
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                     {isRefreshing ? 'Generating...' : 'Refresh Image'}
+                  </Button>
+                )}
+                
+                {/* Add to Party Button for NPCs */}
+                {entityType === 'npc' && onAddToParty && (
+                  <Button
+                    onClick={() => onAddToParty(entity as EncounteredCharacter)}
+                    className="w-full mt-2 h-11 text-sm font-medium bg-primary hover:bg-primary/90"
+                    data-testid="button-add-to-party"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add to Party
                   </Button>
                 )}
               </div>

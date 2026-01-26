@@ -991,6 +991,52 @@ export default function Home() {
     }
   };
 
+  // Handler for adding NPC to party
+  const handleAddToParty = (npc: EncounteredCharacter) => {
+    // Create companion from NPC, preserving important fields
+    const newCompanion: Companion = {
+      id: npc.id,
+      name: npc.name,
+      race: 'Unknown', // NPCs don't track race
+      age: npc.age || '',
+      sex: npc.sex || '',
+      hairColor: npc.hairColor,
+      outfit: npc.outfit,
+      class: npc.role || 'Unknown',
+      level: 1,
+      appearance: npc.appearance || npc.description || '',
+      personality: '', // NPCs don't track personality
+      criticalMemories: '',
+      feelingsTowardsPlayer: '',
+      relationship: 
+        npc.relationship >= 2 ? 'Ally' :
+        npc.relationship >= 1 ? 'Friendly' :
+        npc.relationship <= -2 ? 'Hostile' :
+        npc.relationship <= -1 ? 'Unfriendly' :
+        'Neutral',
+      imageUrl: npc.imageUrl,
+      backstory: npc.backstory,
+      revelations: npc.revelations || [],
+      memories: npc.memories || [],
+    };
+
+    // Add to companions and remove from NPCs
+    const updatedCompanions = [...gameState.companions, newCompanion];
+    const updatedNPCs = gameState.encounteredCharacters.filter(c => c.id !== npc.id);
+    
+    updateGameState({ 
+      companions: updatedCompanions, 
+      encounteredCharacters: updatedNPCs,
+      updatedTabs: [...(gameState.updatedTabs || []), 'companions']
+    });
+    
+    // Close the sheet since the NPC no longer exists
+    setDetailSheetOpen(false);
+    setDetailEntity(null);
+    
+    console.log(`[PARTY] Manually added NPC "${npc.name}" to party, preserving imageUrl, backstory, revelations, and memories`);
+  };
+
   const createSnapshot = () => {
     // Deep copy of game state to ensure nested objects are captured
     // Exclude turnSnapshots from the snapshot to avoid circular reference
@@ -1702,6 +1748,7 @@ export default function Home() {
         onRefresh={handleDetailRefreshImage}
         isRefreshing={isRefreshingImage}
         onUpdate={handleDetailUpdate}
+        onAddToParty={detailEntityType === 'npc' ? handleAddToParty : undefined}
       />
 
       {/* Debug Log Viewer */}

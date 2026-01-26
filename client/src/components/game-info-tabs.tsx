@@ -24,6 +24,7 @@ interface GameInfoTabsProps {
   onUpdate?: (updates: Partial<GameStateData>) => void;
   onTabChange?: (tabId: string) => void;
   onRefreshImage?: (entityType: 'companion' | 'npc' | 'location' | 'business', entityId?: string) => Promise<void>;
+  onAddToParty?: (npc: EncounteredCharacter) => void;
 }
 
 function getRelationshipDisplay(score: number): { label: string; textColor: string; description: string } {
@@ -50,6 +51,7 @@ export default function GameInfoTabs({
   onUpdate,
   onTabChange,
   onRefreshImage,
+  onAddToParty,
 }: GameInfoTabsProps) {
   const [npcSortBy, setNpcSortBy] = useState<'name' | 'role' | 'location'>('name');
   const [spellSortBy, setSpellSortBy] = useState<'name' | 'level' | 'school'>('name');
@@ -710,6 +712,11 @@ export default function GameInfoTabs({
               setDetailEntity(updated[index]);
             }
           }
+        } : undefined}
+        onAddToParty={detailEntityType === 'npc' && onAddToParty ? (npc) => {
+          onAddToParty(npc);
+          setDetailSheetOpen(false);
+          setDetailEntity(null);
         } : undefined}
       />
     </Tabs>

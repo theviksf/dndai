@@ -808,12 +808,10 @@ export default function NarrativePanel({
           }
           
           // Update companions - NEVER DELETE, only merge/add
-          // Also migrate NPCs to companions when they join the party
+          // Note: NPC-to-companion migration is now manual via "Add to Party" button
           if (stateUpdates.companions !== undefined) {
             const existingCompanions = prev.companions || [];
             const newCompanions = stateUpdates.companions;
-            const existingNPCs = prev.encounteredCharacters || [];
-            const npcsToRemove: string[] = [];
             
             // Merge companions - update existing ones or add new ones
             const mergedCompanions = [...existingCompanions];
@@ -839,66 +837,12 @@ export default function NarrativePanel({
                 // Update existing companion, preserving fields like imageUrl, backstory, revelations
                 mergedCompanions[existingIndex] = { ...mergedCompanions[existingIndex], ...newComp };
               } else {
-                // Check if this companion was previously an NPC (exact or fuzzy match)
-                let matchingNPC = existingNPCs.find(npc => 
-                  npc.name.toLowerCase() === newComp.name.toLowerCase() ||
-                  npc.id === newComp.id
-                );
-                
-                // Try fuzzy matching for NPC migration
-                if (!matchingNPC) {
-                  const fuzzyNPCMatches = existingNPCs.map(npc => ({
-                    npc,
-                    score: fuzz.token_set_ratio(npc.name.toLowerCase(), newComp.name.toLowerCase())
-                  })).filter(m => m.score >= 85);
-                  
-                  if (fuzzyNPCMatches.length > 0) {
-                    fuzzyNPCMatches.sort((a, b) => b.score - a.score);
-                    matchingNPC = fuzzyNPCMatches[0].npc;
-                    console.log(`[COMPANION FUZZY] Migrating NPC "${matchingNPC.name}" to companion "${newComp.name}" (${fuzzyNPCMatches[0].score}% similar)`);
-                  }
-                }
-                
-                if (matchingNPC) {
-                  // Migrate NPC data to companion, preserving important fields
-                  const migratedCompanion = {
-                    ...newComp,
-                    id: matchingNPC.id, // Keep the same ID
-                    imageUrl: matchingNPC.imageUrl || newComp.imageUrl,
-                    backstory: matchingNPC.backstory || newComp.backstory,
-                    revelations: matchingNPC.revelations || newComp.revelations,
-                    memories: matchingNPC.memories || newComp.memories || [], // Preserve memories from NPC
-                    // Map NPC fields to companion fields where appropriate
-                    appearance: newComp.appearance || matchingNPC.appearance || matchingNPC.description,
-                    class: newComp.class || matchingNPC.role || 'Unknown',
-                    // Convert relationship number to string if needed
-                    relationship: newComp.relationship || (
-                      matchingNPC.relationship >= 2 ? 'Ally' :
-                      matchingNPC.relationship >= 1 ? 'Friendly' :
-                      matchingNPC.relationship <= -2 ? 'Hostile' :
-                      matchingNPC.relationship <= -1 ? 'Unfriendly' :
-                      'Neutral'
-                    ),
-                  };
-                  mergedCompanions.push(migratedCompanion);
-                  // Mark NPC for removal
-                  npcsToRemove.push(matchingNPC.id);
-                  console.log(`[MIGRATION] NPC "${matchingNPC.name}" migrated to companion, preserving imageUrl, backstory, and memories`);
-                } else {
-                  // Add new companion (not from NPC)
-                  mergedCompanions.push(newComp);
-                }
+                // Add new companion (NPC migration is done manually via "Add to Party" button)
+                mergedCompanions.push(newComp);
               }
             });
             
             updated.companions = mergedCompanions;
-            
-            // Remove migrated NPCs from encounteredCharacters
-            if (npcsToRemove.length > 0) {
-              updated.encounteredCharacters = existingNPCs.filter(npc => !npcsToRemove.includes(npc.id));
-              console.log(`[MIGRATION] Removed ${npcsToRemove.length} NPC(s) from encounters after migration to companions`);
-            }
-            
             updatedTabsSet.add('companions');
           }
           
