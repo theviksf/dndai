@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star, Pencil, Check, X, Brain, UserPlus } from 'lucide-react';
+import { RefreshCw, User, MapPin, Heart, Skull, Shield, Coins, Sparkles, Star, Pencil, Check, X, Brain, UserPlus, ScrollText } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { Textarea } from '@/components/ui/textarea';
@@ -59,6 +60,10 @@ export function EntityDetailSheet({
   const [backstoryEditValue, setBackstoryEditValue] = useState('');
   const [editingMemoryIndex, setEditingMemoryIndex] = useState<number | null>(null);
   const [memoryEditValue, setMemoryEditValue] = useState('');
+  const [activeTab, setActiveTab] = useState('info');
+  
+  // Check if this entity type should use tabs (NPCs and companions)
+  const useTabs = entityType === 'npc' || entityType === 'companion';
   
   // Reset editing state when entity changes or sheet opens/closes
   useEffect(() => {
@@ -68,6 +73,7 @@ export function EntityDetailSheet({
       setBackstoryEditValue('');
       setEditingMemoryIndex(null);
       setMemoryEditValue('');
+      setActiveTab('info');
     }
   }, [open]);
   
@@ -78,6 +84,7 @@ export function EntityDetailSheet({
       setBackstoryEditValue('');
       setEditingMemoryIndex(null);
       setMemoryEditValue('');
+      setActiveTab('info');
     }
   }, [entity, open]);
   
@@ -1030,192 +1037,343 @@ export function EntityDetailSheet({
             )}
 
             {/* Right: Content */}
-            <div className={`flex-1 space-y-6 ${entityType === 'quest' ? 'lg:w-full' : ''}`}>
-              {/* Metadata */}
-              <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-                <h3 className="font-serif font-bold text-lg mb-4 text-foreground border-b border-border pb-2">
-                  Details
-                </h3>
-                {renderMetadata()}
-              </div>
+            <div className={`flex-1 ${entityType === 'quest' ? 'lg:w-full' : ''}`}>
+              {useTabs ? (
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                    <TabsTrigger value="info" className="flex items-center gap-2" data-testid="tab-info">
+                      <User className="w-4 h-4" /> Info
+                    </TabsTrigger>
+                    <TabsTrigger value="memories" className="flex items-center gap-2" data-testid="tab-memories">
+                      <Brain className="w-4 h-4" /> Memories
+                      {'memories' in entity && entity.memories && entity.memories.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                          {entity.memories.length}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="revelations" className="flex items-center gap-2" data-testid="tab-revelations">
+                      <Sparkles className="w-4 h-4" /> Revelations
+                      {'revelations' in entity && entity.revelations && entity.revelations.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                          {entity.revelations.length}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
 
-              {/* Backstory */}
-              {'backstory' in entity && entity.backstory && (
-                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
-                    <h3 className="font-serif font-bold text-lg text-foreground flex items-center gap-2">
-                      <span>📜</span> Backstory
-                    </h3>
-                    {onUpdate && !isEditingBackstory && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setBackstoryEditValue(entity.backstory || '');
-                          setIsEditingBackstory(true);
-                        }}
-                        data-testid="button-edit-backstory"
-                      >
-                        <Pencil className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                  {isEditingBackstory ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        value={backstoryEditValue}
-                        onChange={(e) => setBackstoryEditValue(e.target.value)}
-                        className="min-h-[200px] font-mono text-sm"
-                        data-testid="textarea-backstory"
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            if (onUpdate) {
-                              onUpdate({ backstory: backstoryEditValue } as any);
-                            }
-                            setIsEditingBackstory(false);
-                          }}
-                          data-testid="button-save-backstory"
-                        >
-                          <Check className="w-4 h-4 mr-1" />
-                          Save
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setBackstoryEditValue(entity.backstory || '');
-                            setIsEditingBackstory(false);
-                          }}
-                          data-testid="button-cancel-backstory"
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Cancel
-                        </Button>
-                      </div>
+                  {/* Info Tab */}
+                  <TabsContent value="info" className="space-y-6 mt-0">
+                    {/* Metadata */}
+                    <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                      <h3 className="font-serif font-bold text-lg mb-4 text-foreground border-b border-border pb-2">
+                        Details
+                      </h3>
+                      {renderMetadata()}
                     </div>
-                  ) : (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {entity.backstory}
-                      </ReactMarkdown>
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {/* Revelations */}
-              {'revelations' in entity && entity.revelations && entity.revelations.length > 0 && (
-                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-                  <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
-                    <Sparkles className="w-5 h-5" /> Revelations
-                  </h3>
-                  <div className="space-y-3" data-testid="entity-revelations-list">
-                    {entity.revelations.map((revelation, index) => (
-                      <div key={index} className="bg-muted/30 border-l-4 border-primary rounded-r-lg p-3">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-1">
-                            <Badge variant="outline" className="font-mono text-xs">
-                              Turn {revelation.revealedAtTurn}
-                            </Badge>
-                          </div>
-                          <p className="text-foreground text-sm leading-relaxed flex-1">
-                            {revelation.text}
-                          </p>
+                    {/* Backstory */}
+                    {'backstory' in entity && entity.backstory && (
+                      <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
+                          <h3 className="font-serif font-bold text-lg text-foreground flex items-center gap-2">
+                            <ScrollText className="w-5 h-5" /> Backstory
+                          </h3>
+                          {onUpdate && !isEditingBackstory && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setBackstoryEditValue(entity.backstory || '');
+                                setIsEditingBackstory(true);
+                              }}
+                              data-testid="button-edit-backstory"
+                            >
+                              <Pencil className="w-4 h-4 mr-1" />
+                              Edit
+                            </Button>
+                          )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Memories */}
-              {'memories' in entity && entity.memories && entity.memories.length > 0 && (
-                <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
-                  <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
-                    <Brain className="w-5 h-5" /> Memories
-                  </h3>
-                  <div className="space-y-3" data-testid="entity-memories-list">
-                    {entity.memories.map((memory, index) => (
-                      <div key={index} className="bg-muted/30 border-l-4 border-accent rounded-r-lg p-3">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-1">
-                            <Badge variant="outline" className="font-mono text-xs">
-                              Turn {memory.turn}
-                            </Badge>
+                        {isEditingBackstory ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={backstoryEditValue}
+                              onChange={(e) => setBackstoryEditValue(e.target.value)}
+                              className="min-h-[200px] font-mono text-sm"
+                              data-testid="textarea-backstory"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  if (onUpdate) {
+                                    onUpdate({ backstory: backstoryEditValue } as any);
+                                  }
+                                  setIsEditingBackstory(false);
+                                }}
+                                data-testid="button-save-backstory"
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setBackstoryEditValue(entity.backstory || '');
+                                  setIsEditingBackstory(false);
+                                }}
+                                data-testid="button-cancel-backstory"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            {editingMemoryIndex === index ? (
-                              <div className="space-y-2">
-                                <Textarea
-                                  value={memoryEditValue}
-                                  onChange={(e) => setMemoryEditValue(e.target.value)}
-                                  className="min-h-[60px] text-sm"
-                                  data-testid={`textarea-memory-${index}`}
-                                />
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleMemorySave(index)}
-                                    className="h-7"
-                                    data-testid={`button-save-memory-${index}`}
-                                  >
-                                    <Check className="w-3 h-3 mr-1" /> Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setEditingMemoryIndex(null);
-                                      setMemoryEditValue('');
-                                    }}
-                                    className="h-7"
-                                    data-testid={`button-cancel-memory-${index}`}
-                                  >
-                                    <X className="w-3 h-3 mr-1" /> Cancel
-                                  </Button>
+                        ) : (
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {entity.backstory}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Memories Tab */}
+                  <TabsContent value="memories" className="mt-0">
+                    <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                      <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
+                        <Brain className="w-5 h-5" /> Memories
+                      </h3>
+                      {'memories' in entity && entity.memories && entity.memories.length > 0 ? (
+                        <div className="space-y-3" data-testid="entity-memories-list">
+                          {[...entity.memories]
+                            .sort((a, b) => b.turn - a.turn)
+                            .map((memory, sortedIndex) => {
+                              const originalIndex = entity.memories!.findIndex(m => m === memory);
+                              return (
+                                <div key={sortedIndex} className="bg-muted/30 border-l-4 border-accent rounded-r-lg p-3">
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-1">
+                                      <Badge variant="outline" className="font-mono text-xs">
+                                        Turn {memory.turn}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex-1">
+                                      {editingMemoryIndex === originalIndex ? (
+                                        <div className="space-y-2">
+                                          <Textarea
+                                            value={memoryEditValue}
+                                            onChange={(e) => setMemoryEditValue(e.target.value)}
+                                            className="min-h-[60px] text-sm"
+                                            data-testid={`textarea-memory-${originalIndex}`}
+                                          />
+                                          <div className="flex gap-2">
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleMemorySave(originalIndex)}
+                                              className="h-7"
+                                              data-testid={`button-save-memory-${originalIndex}`}
+                                            >
+                                              <Check className="w-3 h-3 mr-1" /> Save
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => {
+                                                setEditingMemoryIndex(null);
+                                                setMemoryEditValue('');
+                                              }}
+                                              className="h-7"
+                                              data-testid={`button-cancel-memory-${originalIndex}`}
+                                            >
+                                              <X className="w-3 h-3 mr-1" /> Cancel
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="group flex items-start gap-2">
+                                          <p className="text-foreground text-sm leading-relaxed flex-1 italic">
+                                            {memory.text}
+                                          </p>
+                                          {onUpdate && (
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0"
+                                                onClick={() => {
+                                                  setEditingMemoryIndex(originalIndex);
+                                                  setMemoryEditValue(memory.text);
+                                                }}
+                                                data-testid={`button-edit-memory-${originalIndex}`}
+                                              >
+                                                <Pencil className="w-3 h-3" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                                onClick={() => handleMemoryDelete(originalIndex)}
+                                                data-testid={`button-delete-memory-${originalIndex}`}
+                                              >
+                                                <X className="w-3 h-3" />
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                          No memories recorded yet. Interact with this character to create memories.
+                        </p>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  {/* Revelations Tab */}
+                  <TabsContent value="revelations" className="mt-0">
+                    <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                      <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
+                        <Sparkles className="w-5 h-5" /> Revelations
+                      </h3>
+                      {'revelations' in entity && entity.revelations && entity.revelations.length > 0 ? (
+                        <div className="space-y-3" data-testid="entity-revelations-list">
+                          {[...entity.revelations]
+                            .sort((a, b) => (b.revealedAtTurn || 0) - (a.revealedAtTurn || 0))
+                            .map((revelation, index) => (
+                              <div key={index} className="bg-muted/30 border-l-4 border-primary rounded-r-lg p-3">
+                                <div className="flex items-start gap-3">
+                                  <div className="flex-shrink-0 mt-1">
+                                    <Badge variant="outline" className="font-mono text-xs">
+                                      Turn {revelation.revealedAtTurn}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-foreground text-sm leading-relaxed flex-1">
+                                    {revelation.text}
+                                  </p>
                                 </div>
                               </div>
-                            ) : (
-                              <div className="group flex items-start gap-2">
-                                <p className="text-foreground text-sm leading-relaxed flex-1 italic">
-                                  {memory.text}
-                                </p>
-                                {onUpdate && (
-                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0"
-                                      onClick={() => {
-                                        setEditingMemoryIndex(index);
-                                        setMemoryEditValue(memory.text);
-                                      }}
-                                      data-testid={`button-edit-memory-${index}`}
-                                    >
-                                      <Pencil className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                                      onClick={() => handleMemoryDelete(index)}
-                                      data-testid={`button-delete-memory-${index}`}
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                          No revelations discovered yet. Uncover this character's secrets through gameplay.
+                        </p>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <div className="space-y-6">
+                  {/* Metadata */}
+                  <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                    <h3 className="font-serif font-bold text-lg mb-4 text-foreground border-b border-border pb-2">
+                      Details
+                    </h3>
+                    {renderMetadata()}
+                  </div>
+
+                  {/* Backstory */}
+                  {'backstory' in entity && entity.backstory && (
+                    <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                      <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
+                        <h3 className="font-serif font-bold text-lg text-foreground flex items-center gap-2">
+                          <ScrollText className="w-5 h-5" /> Backstory
+                        </h3>
+                        {onUpdate && !isEditingBackstory && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setBackstoryEditValue(entity.backstory || '');
+                              setIsEditingBackstory(true);
+                            }}
+                            data-testid="button-edit-backstory"
+                          >
+                            <Pencil className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                        )}
+                      </div>
+                      {isEditingBackstory ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={backstoryEditValue}
+                            onChange={(e) => setBackstoryEditValue(e.target.value)}
+                            className="min-h-[200px] font-mono text-sm"
+                            data-testid="textarea-backstory"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (onUpdate) {
+                                  onUpdate({ backstory: backstoryEditValue } as any);
+                                }
+                                setIsEditingBackstory(false);
+                              }}
+                              data-testid="button-save-backstory"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setBackstoryEditValue(entity.backstory || '');
+                                setIsEditingBackstory(false);
+                              }}
+                              data-testid="button-cancel-backstory"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Cancel
+                            </Button>
                           </div>
                         </div>
+                      ) : (
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {entity.backstory}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Revelations (for non-tabbed entities) */}
+                  {'revelations' in entity && entity.revelations && entity.revelations.length > 0 && (
+                    <div className="bg-card border-2 border-border rounded-xl p-6 shadow-sm">
+                      <h3 className="font-serif font-bold text-lg mb-4 text-foreground flex items-center gap-2 border-b border-border pb-2">
+                        <Sparkles className="w-5 h-5" /> Revelations
+                      </h3>
+                      <div className="space-y-3" data-testid="entity-revelations-list">
+                        {entity.revelations.map((revelation, index) => (
+                          <div key={index} className="bg-muted/30 border-l-4 border-primary rounded-r-lg p-3">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-1">
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  Turn {revelation.revealedAtTurn}
+                                </Badge>
+                              </div>
+                              <p className="text-foreground text-sm leading-relaxed flex-1">
+                                {revelation.text}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
