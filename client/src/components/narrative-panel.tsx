@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, NarrativeMessage } from '@shared/schema';
 import { callLLM, callLLMStream } from '@/lib/openrouter';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -377,9 +377,33 @@ export default function NarrativePanel({
   const [isParsing, setIsParsing] = useState(false);
   const [parsingStatus, setParsingStatus] = useState('Updating game state...');
   const [streamingContent, setStreamingContent] = useState('');
+  const [parsingElapsed, setParsingElapsed] = useState(0);
   const narrativeRef = useRef<HTMLDivElement>(null);
   const isUserNearBottom = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const parsingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isParsing) {
+      setParsingElapsed(0);
+      const start = Date.now();
+      parsingTimerRef.current = setInterval(() => {
+        setParsingElapsed(Math.floor((Date.now() - start) / 1000));
+      }, 1000);
+    } else {
+      if (parsingTimerRef.current) {
+        clearInterval(parsingTimerRef.current);
+        parsingTimerRef.current = null;
+      }
+      setParsingElapsed(0);
+    }
+    return () => {
+      if (parsingTimerRef.current) {
+        clearInterval(parsingTimerRef.current);
+      }
+    };
+  }, [isParsing]);
 
   // Track if user is near the bottom of the scroll container
   const handleScroll = () => {
@@ -404,6 +428,7 @@ export default function NarrativePanel({
     createSnapshot();
 
     setIsProcessing(true);
+    abortControllerRef.current = new AbortController();
 
     try {
       const playerTimestamp = Date.now();
@@ -464,9 +489,9 @@ export default function NarrativePanel({
         1600,
         config.openRouterApiKey,
         (chunk) => {
-          // Update state immediately - React will batch renders naturally
           setStreamingContent(prev => prev + chunk);
-        }
+        },
+        abortControllerRef.current?.signal
       );
 
       setIsStreaming(false);
@@ -549,16 +574,38 @@ export default function NarrativePanel({
         recentContext: updatedStateForParser.parsedRecaps.slice(-1)[0] || 'Adventure just beginning',
       });
       
-      const parserResponse = await callLLM(
-        config.parserLLM,
-        [{
-          role: 'user',
-          content: parserPrompt
-        }],
-        config.parserSystemPrompt,
-        4000,  // Increased to 4000 to handle complex game states with many items, quests, companions, NPCs
-        config.openRouterApiKey
-      );
+      const PARSER_TIMEOUT_MS = 90000;
+      const PARSER_MAX_RETRIES = 2;
+      let parserResponse: Awaited<ReturnType<typeof callLLM>>;
+
+      for (let attempt = 1; attempt <= PARSER_MAX_RETRIES; attempt++) {
+        try {
+          if (abortControllerRef.current?.signal.aborted) {
+            throw new Error('Request cancelled by user');
+          }
+          if (attempt > 1) {
+            setParsingStatus(`Updating game state... (retry ${attempt}/${PARSER_MAX_RETRIES})`);
+          }
+          parserResponse = await callLLM(
+            config.parserLLM,
+            [{
+              role: 'user',
+              content: parserPrompt
+            }],
+            config.parserSystemPrompt,
+            4000,
+            config.openRouterApiKey,
+            { timeoutMs: PARSER_TIMEOUT_MS, signal: abortControllerRef.current?.signal }
+          );
+          break;
+        } catch (retryErr: any) {
+          if (retryErr.message?.includes('cancelled by user')) throw retryErr;
+          if (attempt === PARSER_MAX_RETRIES) throw retryErr;
+          console.warn(`[PARSER] Attempt ${attempt} failed: ${retryErr.message}. Retrying...`);
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+        }
+      }
+      parserResponse = parserResponse!;
 
       // Log parser LLM call to debug log
       // IMPORTANT: Strip all imageUrls from parser input to prevent localStorage bloat
@@ -1756,15 +1803,30 @@ export default function NarrativePanel({
         });
       }, 0);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to process action',
-        variant: 'destructive',
-      });
+      if (error.name === 'AbortError' || error.message?.includes('cancelled by user')) {
+        toast({
+          title: 'Cancelled',
+          description: 'Action processing was cancelled.',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to process action',
+          variant: 'destructive',
+        });
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsProcessing(false);
       setIsStreaming(false);
       setIsParsing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
@@ -1839,11 +1901,24 @@ export default function NarrativePanel({
       {/* Agent Progress Indicator */}
       {isParsing && (
         <div className="bg-accent/10 border border-accent rounded-lg p-4 flex items-center gap-3" data-testid="parser-progress">
-          <Loader2 className="w-5 h-5 text-accent animate-spin" />
+          <Loader2 className="w-5 h-5 text-accent animate-spin flex-shrink-0" />
           <div className="flex-1">
-            <div className="text-sm font-medium text-accent mb-1">{parsingStatus}</div>
+            <div className="text-sm font-medium text-accent mb-1 flex items-center justify-between">
+              <span>{parsingStatus}</span>
+              <span className="text-xs text-muted-foreground font-mono">{parsingElapsed}s</span>
+            </div>
             <Progress value={100} className="h-2" />
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCancel}
+            className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+            data-testid="button-cancel-processing"
+            title="Cancel processing"
+          >
+            <X className="w-4 h-4" />
+          </Button>
         </div>
       )}
 

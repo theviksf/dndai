@@ -12,7 +12,8 @@ export async function callLLM(
   messages: { role: string; content: string }[],
   systemPrompt: string,
   maxTokens: number = 1000,
-  apiKey?: string
+  apiKey?: string,
+  options?: { timeoutMs?: number; signal?: AbortSignal }
 ): Promise<{
   content: string;
   usage: {
@@ -22,15 +23,40 @@ export async function callLLM(
   };
   model: string;
 }> {
-  const response = await apiRequest('POST', '/api/llm/chat', {
-    modelId,
-    messages,
-    systemPrompt,
-    maxTokens,
-    apiKey,
-  });
-  
-  return await response.json();
+  const timeoutMs = options?.timeoutMs ?? 90000;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (options?.signal) {
+    if (options.signal.aborted) {
+      clearTimeout(timeoutId);
+      throw new Error('Request cancelled by user');
+    }
+    options.signal.addEventListener('abort', () => controller.abort());
+  }
+
+  try {
+    const response = await apiRequest('POST', '/api/llm/chat', {
+      modelId,
+      messages,
+      systemPrompt,
+      maxTokens,
+      apiKey,
+    }, controller.signal);
+
+    return await response.json();
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      if (options?.signal?.aborted) {
+        throw new Error('Request cancelled by user');
+      }
+      throw new Error(`LLM request timed out after ${Math.round(timeoutMs / 1000)}s — the model may be overloaded. Try again or switch to a faster model.`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function callLLMStream(
@@ -39,7 +65,8 @@ export async function callLLMStream(
   systemPrompt: string,
   maxTokens: number = 1000,
   apiKey: string | undefined,
-  onChunk: (chunk: string) => void
+  onChunk: (chunk: string) => void,
+  signal?: AbortSignal
 ): Promise<{
   content: string;
   usage: {
@@ -61,6 +88,7 @@ export async function callLLMStream(
       maxTokens,
       apiKey,
     }),
+    signal,
   });
 
   if (!response.ok) {
