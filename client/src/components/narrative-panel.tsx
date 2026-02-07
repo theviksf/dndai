@@ -45,7 +45,6 @@ const MemoizedMessage = memo(function MemoizedMessage({ message }: { message: Na
 interface NarrativePanelProps {
   gameState: GameStateData;
   setGameState: (state: GameStateData | ((prev: GameStateData) => GameStateData)) => void;
-  saveGameState: () => void;
   config: GameConfig;
   costTracker: CostTracker;
   setCostTracker: (tracker: CostTracker | ((prev: CostTracker) => CostTracker)) => void;
@@ -365,7 +364,6 @@ function validateAndCoerceParserData(data: any, characterName: string = 'Unknown
 export default function NarrativePanel({ 
   gameState, 
   setGameState,
-  saveGameState,
   config, 
   costTracker, 
   setCostTracker,
@@ -1101,12 +1099,9 @@ export default function NarrativePanel({
         return updated;
       });
 
-      // Trigger save and revelations after parser updates - use setTimeout to ensure setGameState completes first
+      // Trigger revelations and other agents after parser updates - use setTimeout to ensure setGameState completes first
       if (!parsingFailed && parsedData && parsedData.stateUpdates) {
         setTimeout(() => {
-          // Save the current game state (which was just updated by parser's setGameState)
-          saveGameState();
-          
           // Track which companions and NPCs were newly added (for first-meeting memories)
           const prevCompanionIds = new Set((gameState.companions || []).map(c => c.id));
           const prevNPCIds = new Set((gameState.encounteredCharacters || []).map(n => n.id));

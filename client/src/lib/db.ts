@@ -1,6 +1,7 @@
 import Dexie, { Table } from 'dexie';
 import LZString from 'lz-string';
 import type { GameStateData, GameConfig, CostTracker, TurnSnapshot } from '@shared/schema';
+import type { WorkerResponse } from './compression-worker';
 
 export interface SessionData {
   sessionId: string;
@@ -12,7 +13,6 @@ export interface SessionData {
   lastUpdated: number;
 }
 
-// Compressed storage format
 interface CompressedSessionData {
   sessionId: string;
   compressedData: string;
@@ -25,25 +25,20 @@ export class DnDGameDB extends Dexie {
   constructor() {
     super('DnDAdventureDB');
     
-    // Version 1: Uncompressed data
     this.version(1).stores({
       sessions: 'sessionId, lastUpdated'
     });
     
-    // Version 2: Compressed data with migration
     this.version(2).stores({
       sessions: 'sessionId, lastUpdated'
     }).upgrade(async (tx) => {
-      // Migrate old uncompressed data to compressed format
       const sessions = await tx.table('sessions').toArray();
       await tx.table('sessions').clear();
       
       for (const session of sessions) {
         const sessionAny = session as any;
         
-        // Check if this is a legacy uncompressed record (has gameState field)
         if ('gameState' in sessionAny && !('compressedData' in sessionAny)) {
-          // Legacy uncompressed format - compress it
           const { sessionId, lastUpdated, ...data } = sessionAny;
           const compressed = LZString.compressToUTF16(JSON.stringify(data));
           await tx.table('sessions').put({
@@ -53,10 +48,8 @@ export class DnDGameDB extends Dexie {
           });
           console.log('[DB MIGRATION] Compressed legacy session:', sessionId);
         } else if ('compressedData' in sessionAny) {
-          // Already compressed - keep as is
           await tx.table('sessions').put(sessionAny);
         } else {
-          // Unknown format - try to compress anyway
           console.warn('[DB MIGRATION] Unknown session format, attempting compression:', sessionAny.sessionId);
           const { sessionId, lastUpdated, ...data } = sessionAny;
           const compressed = LZString.compressToUTF16(JSON.stringify(data));
@@ -74,21 +67,118 @@ export class DnDGameDB extends Dexie {
 
 export const db = new DnDGameDB();
 
+let compressionWorker: Worker | null = null;
+let workerRequestId = 0;
+const pendingWorkerRequests = new Map<number, { resolve: (v: any) => void; reject: (e: any) => void }>();
+
+function getCompressionWorker(): Worker | null {
+  if (compressionWorker) return compressionWorker;
+  
+  try {
+    compressionWorker = new Worker(
+      new URL('./compression-worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    
+    compressionWorker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+      const { id } = e.data;
+      const pending = pendingWorkerRequests.get(id);
+      if (!pending) return;
+      pendingWorkerRequests.delete(id);
+      
+      if (e.data.type === 'error') {
+        pending.reject(new Error(e.data.error));
+      } else {
+        pending.resolve(e.data);
+      }
+    };
+    
+    compressionWorker.onerror = (err) => {
+      console.error('[WORKER] Compression worker error:', err);
+      compressionWorker = null;
+      pendingWorkerRequests.forEach((pending, id) => {
+        pending.reject(new Error('Worker crashed'));
+        pendingWorkerRequests.delete(id);
+      });
+    };
+    
+    return compressionWorker;
+  } catch (err) {
+    console.warn('[WORKER] Failed to create compression worker, using main thread fallback:', err);
+    return null;
+  }
+}
+
+async function compressOffThread(jsonString: string): Promise<{ compressedData: string; uncompressedSize: number; compressedSize: number }> {
+  const worker = getCompressionWorker();
+  
+  if (!worker) {
+    const uncompressedSize = new Blob([jsonString]).size;
+    const compressedData = LZString.compressToUTF16(jsonString);
+    const compressedSize = new Blob([compressedData]).size;
+    return { compressedData, uncompressedSize, compressedSize };
+  }
+  
+  const id = ++workerRequestId;
+  
+  return new Promise((resolve, reject) => {
+    pendingWorkerRequests.set(id, { resolve, reject });
+    worker.postMessage({ type: 'compress', id, jsonString });
+    
+    setTimeout(() => {
+      if (pendingWorkerRequests.has(id)) {
+        pendingWorkerRequests.delete(id);
+        console.warn('[WORKER] Compression timed out, falling back to main thread');
+        const uncompressedSize = new Blob([jsonString]).size;
+        const compressedData = LZString.compressToUTF16(jsonString);
+        const compressedSize = new Blob([compressedData]).size;
+        resolve({ compressedData, uncompressedSize, compressedSize });
+      }
+    }, 30000);
+  });
+}
+
+async function decompressOffThread(compressedData: string): Promise<string | null> {
+  const worker = getCompressionWorker();
+  
+  if (!worker) {
+    return LZString.decompressFromUTF16(compressedData);
+  }
+  
+  const id = ++workerRequestId;
+  
+  return new Promise((resolve, reject) => {
+    pendingWorkerRequests.set(id, {
+      resolve: (data: any) => resolve(data.jsonString),
+      reject: () => {
+        console.warn('[WORKER] Decompression failed in worker, falling back to main thread');
+        resolve(LZString.decompressFromUTF16(compressedData));
+      }
+    });
+    worker.postMessage({ type: 'decompress', id, compressedData });
+    
+    setTimeout(() => {
+      if (pendingWorkerRequests.has(id)) {
+        pendingWorkerRequests.delete(id);
+        console.warn('[WORKER] Decompression timed out, falling back to main thread');
+        resolve(LZString.decompressFromUTF16(compressedData));
+      }
+    }, 15000);
+  });
+}
+
 export async function getSessionData(sessionId: string): Promise<SessionData | undefined> {
   const record = await db.sessions.get(sessionId);
   if (!record) return undefined;
   
   try {
-    // Check if this is a compressed record
     if ('compressedData' in record) {
-      const decompressed = LZString.decompressFromUTF16(record.compressedData);
+      const decompressed = await decompressOffThread(record.compressedData);
       if (!decompressed) {
         console.error('[DB GET] Failed to decompress data, attempting raw JSON parse');
-        // Fallback: try parsing as raw JSON (legacy data that wasn't properly compressed)
         try {
           const data = JSON.parse(record.compressedData);
           console.log('[DB GET] Successfully parsed as raw JSON, re-saving as compressed');
-          // Re-save in compressed format
           await saveSessionData({
             sessionId: record.sessionId,
             lastUpdated: record.lastUpdated,
@@ -112,11 +202,8 @@ export async function getSessionData(sessionId: string): Promise<SessionData | u
         ...data
       } as SessionData;
     } else {
-      // Legacy uncompressed record - this shouldn't happen after migration but handle it
       console.log('[DB GET] Found legacy uncompressed record, converting to compressed');
       const legacyData = record as any;
-      const { sessionId, lastUpdated, ...data } = legacyData;
-      // Re-save in compressed format
       await saveSessionData(legacyData as SessionData);
       return legacyData as SessionData;
     }
@@ -129,55 +216,18 @@ export async function getSessionData(sessionId: string): Promise<SessionData | u
 export async function saveSessionData(data: SessionData): Promise<string> {
   data.lastUpdated = Date.now();
   
-  // Separate sessionId and lastUpdated from the data to compress
   const { sessionId, lastUpdated, ...dataToCompress } = data;
   
-  // Diagnostic: Log size of data before compression
   const jsonString = JSON.stringify(dataToCompress);
-  const uncompressedSize = new Blob([jsonString]).size;
-  const uncompressedMB = (uncompressedSize / (1024 * 1024)).toFixed(2);
   
-  // Compress the data
-  const compressedData = LZString.compressToUTF16(jsonString);
-  const compressedSize = new Blob([compressedData]).size;
+  const { compressedData, uncompressedSize, compressedSize } = await compressOffThread(jsonString);
+  
+  const uncompressedMB = (uncompressedSize / (1024 * 1024)).toFixed(2);
   const compressedMB = (compressedSize / (1024 * 1024)).toFixed(2);
   const compressionRatio = ((1 - compressedSize / uncompressedSize) * 100).toFixed(1);
   
   console.log(`[DB SAVE] Uncompressed: ${uncompressedMB} MB → Compressed: ${compressedMB} MB (${compressionRatio}% reduction)`);
-  console.log(`[DB SAVE] Debug log entries: ${data.gameState.debugLog?.length || 0}`);
-  console.log(`[DB SAVE] Turn snapshots: ${data.turnSnapshots?.length || 0}`);
   
-  // Check if any debug log entries contain base64
-  if (data.gameState.debugLog) {
-    const base64Entries = data.gameState.debugLog.filter(log => 
-      log.response?.includes('data:image') || log.response?.includes('base64,')
-    );
-    if (base64Entries.length > 0) {
-      console.error(`[DB SAVE] WARNING: ${base64Entries.length} debug log entries contain base64 data!`);
-      console.error('[DB SAVE] Sample base64 entry response length:', base64Entries[0].response?.length);
-    }
-  }
-  
-  // Check turnSnapshots for base64
-  if (data.turnSnapshots) {
-    let snapshotWithBase64 = 0;
-    data.turnSnapshots.forEach((snapshot, idx) => {
-      if (snapshot.state.debugLog) {
-        const hasBase64 = snapshot.state.debugLog.some(log => 
-          log.response?.includes('data:image') || log.response?.includes('base64,')
-        );
-        if (hasBase64) {
-          snapshotWithBase64++;
-          console.error(`[DB SAVE] WARNING: Snapshot ${idx} contains base64 in debugLog!`);
-        }
-      }
-    });
-    if (snapshotWithBase64 > 0) {
-      console.error(`[DB SAVE] Total snapshots with base64: ${snapshotWithBase64}/${data.turnSnapshots.length}`);
-    }
-  }
-  
-  // Save compressed data
   await db.sessions.put({
     sessionId,
     compressedData,
@@ -185,6 +235,68 @@ export async function saveSessionData(data: SessionData): Promise<string> {
   });
   
   return sessionId;
+}
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingSaveData: SessionData | null = null;
+let saveInProgress = false;
+let flushResolvers: Array<() => void> = [];
+
+const SAVE_DEBOUNCE_MS = 2500;
+
+async function executeSave() {
+  if (!pendingSaveData || saveInProgress) return;
+  
+  saveInProgress = true;
+  const dataToSave = pendingSaveData;
+  pendingSaveData = null;
+  
+  try {
+    await saveSessionData(dataToSave);
+    console.log('[DB] Debounced save complete');
+  } catch (error) {
+    console.error('[DB] Debounced save failed:', error);
+  } finally {
+    saveInProgress = false;
+    const resolvers = flushResolvers;
+    flushResolvers = [];
+    resolvers.forEach(r => r());
+    
+    if (pendingSaveData) {
+      executeSave();
+    }
+  }
+}
+
+export function scheduleSave(data: SessionData) {
+  pendingSaveData = data;
+  
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+  }
+  
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    executeSave();
+  }, SAVE_DEBOUNCE_MS);
+}
+
+export function flushPendingSave(): Promise<void> {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  
+  if (!pendingSaveData && !saveInProgress) {
+    return Promise.resolve();
+  }
+  
+  return new Promise<void>((resolve) => {
+    flushResolvers.push(resolve);
+    if (!saveInProgress) {
+      executeSave();
+    }
+  });
 }
 
 export async function deleteSessionData(sessionId: string): Promise<void> {
@@ -201,11 +313,9 @@ export async function getAllSessions(): Promise<SessionData[]> {
   const sessions: SessionData[] = [];
   for (const record of records) {
     try {
-      // Check if this is a compressed record
       if ('compressedData' in record) {
-        const decompressed = LZString.decompressFromUTF16(record.compressedData);
+        const decompressed = await decompressOffThread(record.compressedData);
         if (!decompressed) {
-          // Fallback: try parsing as raw JSON
           try {
             const data = JSON.parse(record.compressedData);
             console.log('[DB GET ALL] Parsed session as raw JSON:', record.sessionId);
@@ -227,7 +337,6 @@ export async function getAllSessions(): Promise<SessionData[]> {
           ...data
         } as SessionData);
       } else {
-        // Legacy uncompressed record
         const legacyRecord = record as any;
         console.log('[DB GET ALL] Found legacy uncompressed session:', legacyRecord.sessionId);
         sessions.push(legacyRecord as SessionData);
@@ -251,7 +360,6 @@ export async function getStorageEstimate(): Promise<{ usage: number; quota: numb
   return { usage: 0, quota: 0 };
 }
 
-// Helper to calculate size of an object in bytes
 function getObjectSize(obj: any): number {
   const jsonString = JSON.stringify(obj);
   return new Blob([jsonString]).size;
@@ -301,7 +409,6 @@ export async function analyzeStorageBreakdown(sessionId: string): Promise<Storag
 
   const { gameState, gameConfig, costTracker, turnSnapshots } = sessionData;
 
-  // Calculate sizes for each gameState component
   const gameStateBreakdown = {
     character: getObjectSize(gameState.character),
     location: getObjectSize(gameState.location),
@@ -324,7 +431,6 @@ export async function analyzeStorageBreakdown(sessionId: string): Promise<Storag
   const knownGameStateSize = Object.values(gameStateBreakdown).reduce((sum, size) => sum + size, 0);
   gameStateBreakdown.other = Math.max(0, gameStateTotal - knownGameStateSize);
 
-  // Calculate sizes for snapshots
   const snapshotBreakdown = turnSnapshots.map((snapshot, idx) => ({
     turn: turnSnapshots.length - idx,
     size: getObjectSize(snapshot),
@@ -334,11 +440,9 @@ export async function analyzeStorageBreakdown(sessionId: string): Promise<Storag
   const snapshotsTotal = getObjectSize(turnSnapshots);
   const avgSnapshotSize = turnSnapshots.length > 0 ? snapshotsTotal / turnSnapshots.length : 0;
 
-  // Calculate total sizes
   const { sessionId: _, lastUpdated: __, ...dataToMeasure } = sessionData;
   const totalUncompressed = getObjectSize(dataToMeasure);
-  const compressedData = LZString.compressToUTF16(JSON.stringify(dataToMeasure));
-  const totalCompressed = new Blob([compressedData]).size;
+  const { compressedSize: totalCompressed } = await compressOffThread(JSON.stringify(dataToMeasure));
   const compressionRatio = totalUncompressed > 0 ? (1 - totalCompressed / totalUncompressed) * 100 : 0;
 
   return {

@@ -6,7 +6,7 @@ import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { createDefaultGameState, createDefaultConfig, createDefaultCostTracker, migrateConfig, migrateCostTracker } from '@/lib/game-state';
 import { getSessionIdFromUrl, setSessionIdInUrl, getSessionStorageKey, generateSessionId, buildSessionUrl } from '@/lib/session';
 import type { GameStateData, GameConfig, CostTracker, OpenRouterModel, TurnSnapshot } from '@shared/schema';
-import { db, getSessionData, saveSessionData, getStorageEstimate, deleteAllSessions, getAllSessions, type SessionData } from '@/lib/db';
+import { db, getSessionData, saveSessionData, scheduleSave, flushPendingSave, getStorageEstimate, deleteAllSessions, getAllSessions, type SessionData } from '@/lib/db';
 import CharacterStatsBar from '@/components/character-stats-bar';
 import NarrativePanel from '@/components/narrative-panel';
 import DebugLogViewer from '@/components/debug-log-viewer';
@@ -51,9 +51,6 @@ export default function Home() {
   
   // Ref to always have latest gameState (avoids stale closures)
   const gameStateRef = useRef<GameStateData | null>(null);
-  
-  // Debounce timer ref for save operations
-  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Initialize with defaults - will load from DB asynchronously
   const [gameState, setGameState] = useState<GameStateData>(createDefaultGameState);
@@ -388,16 +385,22 @@ export default function Home() {
     }
   }, [location, dbLoaded]);
 
-  // Auto-save conversation history and debug logs whenever they change (but not during load)
+  // Consolidated auto-save: schedule a debounced save whenever game state changes (but not during load)
   useEffect(() => {
     if (!isLoadingState && (gameState.narrativeHistory.length > 0 || (gameState.debugLog && gameState.debugLog.length > 0))) {
-      console.log('[HOME] Auto-saving game state');
-      console.log('[HOME] - narrativeHistory length:', gameState.narrativeHistory.length);
-      console.log('[HOME] - debugLog length:', gameState.debugLog?.length || 0);
-      saveGameStateToStorage();
+      const sanitizedState = sanitizeGameState(gameStateRef.current || gameState);
+      scheduleSave({
+        sessionId,
+        gameState: sanitizedState,
+        gameConfig: config,
+        costTracker,
+        turnSnapshots: sanitizedState.turnSnapshots || [],
+        isGameStarted,
+        lastUpdated: Date.now(),
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.narrativeHistory, gameState.debugLog, isLoadingState]);
+  }, [gameState, isLoadingState]);
 
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isDebugLogOpen, setIsDebugLogOpen] = useState(false);
@@ -663,65 +666,31 @@ export default function Home() {
     return sanitized;
   };
 
-  // Helper to save game state to IndexedDB (without updating state)
+  // Save game state to IndexedDB — uses the consolidated debounced save from db.ts
   const saveGameStateToStorage = async (stateToSave?: GameStateData) => {
-    // Use provided state or fall back to current state
     const currentGameState = stateToSave || gameStateRef.current || gameState;
-    
-    // Sanitize state to remove any base64 images before saving
     const sanitizedState = sanitizeGameState(currentGameState);
     
-    try {
-      console.log('[DB] Saving to IndexedDB, narrativeHistory length:', sanitizedState.narrativeHistory?.length || 0);
-      console.log('[DB] Character imageUrl present:', !!sanitizedState.character.imageUrl);
-      console.log('[DB] Location imageUrl present:', !!sanitizedState.location?.imageUrl);
-      console.log('[DB] Debug log entries:', sanitizedState.debugLog?.length || 0);
-      console.log('[DB] Companions:', sanitizedState.companions?.length || 0);
-      console.log('[DB] NPCs:', sanitizedState.encounteredCharacters?.length || 0);
-      
-      // Save to IndexedDB (use gameState.turnSnapshots, not the separate state variable)
-      await saveSessionData({
-        sessionId,
-        gameState: sanitizedState,
-        gameConfig: config,
-        costTracker,
-        turnSnapshots: sanitizedState.turnSnapshots || [],
-        isGameStarted,
-        lastUpdated: Date.now(),
-      });
-      
-      console.log('[DB] Save complete');
-    } catch (error) {
-      console.error('[DB] Failed to save to IndexedDB:', error);
-      toast({
-        title: "Save failed",
-        description: "Failed to save game data. Your progress may not be saved.",
-        variant: "destructive",
-      });
-    }
+    scheduleSave({
+      sessionId,
+      gameState: sanitizedState,
+      gameConfig: config,
+      costTracker,
+      turnSnapshots: sanitizedState.turnSnapshots || [],
+      isGameStarted,
+      lastUpdated: Date.now(),
+    });
   };
   
-  // Debounced version for entity edits (prevents UI freezes)
-  const debouncedSave = (stateToSave?: GameStateData) => {
-    // Clear existing timer
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
-    
-    // Set new timer to save after 500ms of no changes
-    saveTimerRef.current = setTimeout(() => {
-      saveGameStateToStorage(stateToSave);
-      saveTimerRef.current = null;
-    }, 500);
-  };
-  
-  // Flush pending saves on unmount
+  // Flush pending saves on unmount and browser close
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      flushPendingSave();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveGameStateToStorage();
-      }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      flushPendingSave();
     };
   }, []);
 
@@ -768,11 +737,6 @@ export default function Home() {
       return newState;
     });
     
-    // Save after state update using debounced save to prevent UI freezes
-    // Only debounce for entity edits - immediate narrative/debugLog saves handled by useEffect
-    if (updates.character || updates.inventory || updates.quests || updates.companions || updates.encounteredCharacters || updates.location) {
-      debouncedSave(updatedState);
-    }
   };
 
   const refreshEntityImage = async (
@@ -1712,7 +1676,6 @@ export default function Home() {
           <NarrativePanel 
             gameState={gameState}
             setGameState={setGameState}
-            saveGameState={saveGameStateToStorage}
             config={config}
             costTracker={costTracker}
             setCostTracker={setCostTracker}
