@@ -150,6 +150,7 @@ export type NarrativeMessage = {
   type: 'dm' | 'player';
   content: string;
   timestamp: number;
+  turnNumber?: number;
   diceRoll?: {
     type: string;
     result: number;

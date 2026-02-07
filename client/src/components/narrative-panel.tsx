@@ -408,12 +408,13 @@ export default function NarrativePanel({
     try {
       const playerTimestamp = Date.now();
       
-      // Add player message to history
+      // Add player message to history with turn number
       const playerMessage = {
         id: `player-${playerTimestamp}`,
         type: 'player' as const,
         content: action,
         timestamp: playerTimestamp,
+        turnNumber: gameState.turnCount + 1,
       };
 
       setGameState(prev => ({
@@ -1800,12 +1801,20 @@ export default function NarrativePanel({
           ) : (
             <>
               {gameState.narrativeHistory.map((message) => (
-                <div 
-                  key={message.id} 
-                  className={`fade-in ${message.type === 'player' ? 'flex justify-end' : ''}`}
-                  data-testid={`message-${message.type}-${message.id}`}
-                >
-                  <MemoizedMessage message={message} />
+                <div key={message.id}>
+                  {message.type === 'player' && message.turnNumber && (
+                    <div className="flex items-center gap-3 my-3" data-testid={`turn-divider-${message.turnNumber}`}>
+                      <div className="flex-1 border-t border-muted-foreground/20" />
+                      <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Turn {message.turnNumber}</span>
+                      <div className="flex-1 border-t border-muted-foreground/20" />
+                    </div>
+                  )}
+                  <div 
+                    className={`fade-in ${message.type === 'player' ? 'flex justify-end' : ''}`}
+                    data-testid={`message-${message.type}-${message.id}`}
+                  >
+                    <MemoizedMessage message={message} />
+                  </div>
                 </div>
               ))}
               
