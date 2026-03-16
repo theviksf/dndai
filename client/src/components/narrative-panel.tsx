@@ -578,6 +578,11 @@ export default function NarrativePanel({
       const PARSER_MAX_RETRIES = 2;
       let parserResponse: Awaited<ReturnType<typeof callLLM>>;
 
+      // Parse and validate JSON with robust error handling
+      let parsedData: any = null;
+      let parsingFailed = false;
+      let parserLogEntry: any = null;
+
       for (let attempt = 1; attempt <= PARSER_MAX_RETRIES; attempt++) {
         try {
           if (abortControllerRef.current?.signal.aborted) {
@@ -597,90 +602,91 @@ export default function NarrativePanel({
             config.openRouterApiKey,
             { timeoutMs: PARSER_TIMEOUT_MS, signal: abortControllerRef.current?.signal }
           );
+
+          // Log parser LLM call to debug log
+          // IMPORTANT: Strip all imageUrls from parser input to prevent localStorage bloat
+          const parserInput = JSON.parse(parserPrompt);
+          const parserInputForDebugLog = {
+            ...parserInput,
+            currentState: {
+              ...parserInput.currentState,
+              character: parserInput.currentState.character?.imageUrl ? 
+                { ...parserInput.currentState.character, imageUrl: '[removed]' } : 
+                parserInput.currentState.character,
+              location: parserInput.currentState.location?.imageUrl ? 
+                { ...parserInput.currentState.location, imageUrl: '[removed]' } : 
+                parserInput.currentState.location,
+              companions: parserInput.currentState.companions?.map((c: any) => 
+                c.imageUrl ? { ...c, imageUrl: '[removed]' } : c
+              ),
+              encounteredCharacters: parserInput.currentState.encounteredCharacters?.map((npc: any) => 
+                npc.imageUrl ? { ...npc, imageUrl: '[removed]' } : npc
+              ),
+            }
+          };
+
+          parserLogEntry = {
+            id: `parser-${Date.now()}`,
+            timestamp: Date.now(),
+            type: 'parser' as const,
+            prompt: JSON.stringify({
+              system: config.parserSystemPrompt,
+              input: parserInputForDebugLog
+            }, null, 2),
+            response: parserResponse.content,
+            model: config.parserLLM,
+            tokens: {
+              prompt: parserResponse.usage?.prompt_tokens || 0,
+              completion: parserResponse.usage?.completion_tokens || 0,
+            },
+          };
+
+          // Try to extract and validate JSON — throws if bad data
+          const extracted = extractAndParseJSON(parserResponse.content);
+
+          // Use the character name from the parser's extracted data (prioritize fresh data)
+          // Fall back to old state only if parser didn't extract a name
+          const characterName = extracted.stateUpdates?.name || 
+                                extracted.stateUpdates?.character?.name || 
+                                updatedStateForParser.character.name || 
+                                'Unknown';
+
+          console.log('[OWNER DEBUG] Character name for validation:', characterName);
+          console.log('[OWNER DEBUG] Extracted businesses (before validation):', extracted.stateUpdates?.businesses);
+
+          parsedData = validateAndCoerceParserData(extracted, characterName);
+
+          // Debug: Log what we extracted
+          console.log('[OWNER DEBUG] Validated businesses (after validation):', parsedData.stateUpdates?.businesses);
+          console.log('Parser extracted:', parsedData.stateUpdates);
+
+          // Successfully parsed — exit retry loop
+          parsingFailed = false;
           break;
         } catch (retryErr: any) {
-          if (retryErr.message?.includes('cancelled by user')) throw retryErr;
-          if (attempt === PARSER_MAX_RETRIES) throw retryErr;
-          console.warn(`[PARSER] Attempt ${attempt} failed: ${retryErr.message}. Retrying...`);
-          await new Promise(r => setTimeout(r, 1000 * attempt));
-        }
-      }
-      parserResponse = parserResponse!;
+          if (retryErr.message?.includes('cancelled by user') || retryErr.name === 'AbortError') throw retryErr;
 
-      // Log parser LLM call to debug log
-      // IMPORTANT: Strip all imageUrls from parser input to prevent localStorage bloat
-      const parserInput = JSON.parse(parserPrompt);
-      const parserInputForDebugLog = {
-        ...parserInput,
-        currentState: {
-          ...parserInput.currentState,
-          character: parserInput.currentState.character?.imageUrl ? 
-            { ...parserInput.currentState.character, imageUrl: '[removed]' } : 
-            parserInput.currentState.character,
-          location: parserInput.currentState.location?.imageUrl ? 
-            { ...parserInput.currentState.location, imageUrl: '[removed]' } : 
-            parserInput.currentState.location,
-          companions: parserInput.currentState.companions?.map((c: any) => 
-            c.imageUrl ? { ...c, imageUrl: '[removed]' } : c
-          ),
-          encounteredCharacters: parserInput.currentState.encounteredCharacters?.map((npc: any) => 
-            npc.imageUrl ? { ...npc, imageUrl: '[removed]' } : npc
-          ),
-        }
-      };
-      
-      const parserLogEntry = {
-        id: `parser-${Date.now()}`,
-        timestamp: Date.now(),
-        type: 'parser' as const,
-        prompt: JSON.stringify({
-          system: config.parserSystemPrompt,
-          input: parserInputForDebugLog
-        }, null, 2),
-        response: parserResponse.content,
-        model: config.parserLLM,
-        tokens: {
-          prompt: parserResponse.usage?.prompt_tokens || 0,
-          completion: parserResponse.usage?.completion_tokens || 0,
-        },
-      };
+          const isLastAttempt = attempt === PARSER_MAX_RETRIES;
+          console.warn(`[PARSER] Attempt ${attempt} failed: ${retryErr.message}.${isLastAttempt ? ' Giving up.' : ' Retrying...'}`);
 
-      // Parse and validate JSON with robust error handling
-      let parsedData: any = null;
-      let parsingFailed = false;
-      try {
-        const extracted = extractAndParseJSON(parserResponse.content);
-        
-        // Use the character name from the parser's extracted data (prioritize fresh data)
-        // Fall back to old state only if parser didn't extract a name
-        const characterName = extracted.stateUpdates?.name || 
-                              extracted.stateUpdates?.character?.name || 
-                              updatedStateForParser.character.name || 
-                              'Unknown';
-        
-        console.log('[OWNER DEBUG] Character name for validation:', characterName);
-        console.log('[OWNER DEBUG] Extracted businesses (before validation):', extracted.stateUpdates?.businesses);
-        
-        parsedData = validateAndCoerceParserData(extracted, characterName);
-        
-        // Debug: Log what we extracted
-        console.log('[OWNER DEBUG] Validated businesses (after validation):', parsedData.stateUpdates?.businesses);
-        console.log('Parser extracted:', parsedData.stateUpdates);
-      } catch (error: any) {
-        // Log the raw response for debugging with length info
-        console.error('Failed to parse parser response:', error.message);
-        console.log('Parser response length:', parserResponse.content.length);
-        console.log('Parser response starts with:', parserResponse.content.substring(0, 100));
-        console.log('Parser response ends with:', parserResponse.content.substring(Math.max(0, parserResponse.content.length - 100)));
-        
-        // Show non-destructive error toast
-        toast({
-          title: 'Parser Warning',
-          description: 'Could not extract game state updates. Narrative will continue without state changes.',
-          variant: 'default',
-        });
-        
-        parsingFailed = true;
+          if (parserResponse!) {
+            console.log('Parser response length:', parserResponse.content.length);
+            console.log('Parser response starts with:', parserResponse.content.substring(0, 100));
+            console.log('Parser response ends with:', parserResponse.content.substring(Math.max(0, parserResponse.content.length - 100)));
+          }
+
+          if (isLastAttempt) {
+            // All retries exhausted — continue narrative without state update
+            toast({
+              title: 'Parser Warning',
+              description: 'Could not extract game state updates. Narrative will continue without state changes.',
+              variant: 'default',
+            });
+            parsingFailed = true;
+          } else {
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+          }
+        }
       }
 
       // Update game state (with or without parsed data)
@@ -1141,7 +1147,7 @@ export default function NarrativePanel({
         updated.debugLog = [
           ...(prev.debugLog || []),
           primaryLogEntry,
-          parserLogEntry,
+          ...(parserLogEntry ? [parserLogEntry] : []),
         ].slice(-100);
 
         return updated;
@@ -1447,10 +1453,12 @@ export default function NarrativePanel({
         const primaryCost = 
           (primaryResponse.usage.prompt_tokens * parseFloat(primaryModel.pricing.prompt)) +
           (primaryResponse.usage.completion_tokens * parseFloat(primaryModel.pricing.completion));
-        
-        const parserCost = 
-          (parserResponse.usage.prompt_tokens * parseFloat(parserModel.pricing.prompt)) +
-          (parserResponse.usage.completion_tokens * parseFloat(parserModel.pricing.completion));
+
+        const parserUsage = parserResponse! ? parserResponse.usage : null;
+        const parserCost = parserUsage
+          ? (parserUsage.prompt_tokens * parseFloat(parserModel.pricing.prompt)) +
+            (parserUsage.completion_tokens * parseFloat(parserModel.pricing.completion))
+          : 0;
 
         setCostTracker(prev => ({
           ...prev,
@@ -1461,8 +1469,8 @@ export default function NarrativePanel({
             completion: prev.primaryTokens.completion + primaryResponse.usage.completion_tokens,
           },
           parserTokens: {
-            prompt: prev.parserTokens.prompt + parserResponse.usage.prompt_tokens,
-            completion: prev.parserTokens.completion + parserResponse.usage.completion_tokens,
+            prompt: prev.parserTokens.prompt + (parserUsage?.prompt_tokens || 0),
+            completion: prev.parserTokens.completion + (parserUsage?.completion_tokens || 0),
           },
           primaryCost: prev.primaryCost + primaryCost,
           parserCost: prev.parserCost + parserCost,
@@ -1471,8 +1479,8 @@ export default function NarrativePanel({
             completion: primaryResponse.usage.completion_tokens,
           },
           lastTurnParserTokens: {
-            prompt: parserResponse.usage.prompt_tokens,
-            completion: parserResponse.usage.completion_tokens,
+            prompt: parserUsage?.prompt_tokens || 0,
+            completion: parserUsage?.completion_tokens || 0,
           },
           lastTurnPrimaryCost: primaryCost,
           lastTurnParserCost: parserCost,
