@@ -42,7 +42,7 @@ A revelation is when the NARRATIVE (not the backstory) explicitly reveals:
 
 # What is NOT a Revelation
 Do NOT extract revelations for:
-- **Information only in backstory**: Just because backstory says "Borin killed the king" doesn't mean it's revealed - the DM must SAY this in the narrative
+- **Information only in backstory**: Just because backstory says "[NPC_A] committed a crime" doesn't mean it's revealed - the DM must SAY this in the narrative
 - **Entities without backstories**: If an entity has no backstory in context, ignore any secrets mentioned
 - Information that doesn't relate to any existing backstory
 - Common knowledge or obvious facts
@@ -94,39 +94,39 @@ DO NOT USE THESE FIELD NAMES (they are wrong):
 # Example Scenarios
 
 ## Example 1: NPC Secret Revealed
-**Narrative**: "Borin's hand trembles as he pours your drink. 'I shouldn't tell you this,' he whispers, 'but I was the royal armorer in Thaldrin. My prototype blade... it killed King Rurik. They banished me, but my wife Marda is still under house arrest there.'"
+**Narrative**: "[NPC_A]'s hand trembles as he pours your drink. 'I shouldn't tell you this,' he whispers, 'but I was the royal armorer in [CITY_A]. My prototype blade... it killed [MONARCH_A]. They banished me, but my wife [NPC_E] is still under house arrest there.'"
 
-**Existing Backstory** (Borin): "Borin Flintbeard, dwarf male, 156, ex-royal armorer from Thaldrin. Banished after his prototype blade killed King Rurik; wife Marda remained in Thaldrin under house arrest..."
+**Existing Backstory** ([NPC_A]): "[NPC_A Full Name], dwarf male, 156, ex-royal armorer from [CITY_A]. Banished after his prototype blade killed [MONARCH_A]; wife [NPC_E] remained in [CITY_A] under house arrest..."
 
-**Existing Revelations** (Borin): []
+**Existing Revelations** ([NPC_A]): []
 
 **YOUR RESPONSE** (raw JSON only):
 {
   "revelations": [
     {
       "entityType": "npc",
-      "entityId": "borin",
-      "entityName": "Borin Flintbeard",
-      "text": "Borin was the royal armorer in Thaldrin whose prototype blade killed King Rurik, leading to his banishment. His wife Marda remains under house arrest in Thaldrin.",
+      "entityId": "npc-a",
+      "entityName": "[NPC_A Full Name]",
+      "text": "[NPC_A] was the royal armorer in [CITY_A] whose prototype blade killed [MONARCH_A], leading to his banishment. His wife [NPC_E] remains under house arrest in [CITY_A].",
       "revealedAtTurn": 12
     }
   ]
 }
 
 ## Example 2: Location Secret Revealed
-**Narrative**: "Sara leans close and points to the cellar door. 'That door leads to the old watchtower tunnels. They connect to the pre-war passages beneath the city. Don't tell Borin I showed you.'"
+**Narrative**: "[NPC_B] leans close and points to the cellar door. 'That door leads to the old watchtower tunnels. They connect to the pre-war passages beneath the city. Don't tell [NPC_A] I showed you.'"
 
-**Existing Backstory** (Gilded Griffin Tavern): "Built on ruins of the western watchtower; sub-basement connects to pre-war tunnels..."
+**Existing Backstory** ([LOCATION_A]): "Built on ruins of the western watchtower; sub-basement connects to pre-war tunnels..."
 
-**Existing Revelations** (Gilded Griffin Tavern): []
+**Existing Revelations** ([LOCATION_A]): []
 
 **YOUR RESPONSE** (raw JSON only):
 {
   "revelations": [
     {
       "entityType": "location",
-      "entityId": "Gilded Griffin Tavern",
-      "entityName": "Gilded Griffin Tavern",
+      "entityId": "[LOCATION_A]",
+      "entityName": "[LOCATION_A]",
       "text": "The tavern's cellar connects to old watchtower tunnels that lead to pre-war passages beneath the city.",
       "revealedAtTurn": 15
     }
@@ -134,33 +134,33 @@ DO NOT USE THESE FIELD NAMES (they are wrong):
 }
 
 ## Example 3: Multiple Revelations
-**Narrative**: "Lyra grabs your arm, tears in her eyes. 'I need to tell you the truth. Captain Merrin didn't just die in the siege - I got him killed. I disobeyed orders and he covered for me. I carry his ring as penance.' She pulls out a signet ring. Meanwhile, you notice Elder Morin watching from the shadows, and Sara whispers that he's actually a former spy for House Verrin."
+**Narrative**: "[COMPANION_A] grabs your arm, tears in her eyes. 'I need to tell you the truth. [NPC_C] didn't just die in the siege - I got him killed. I disobeyed orders and he covered for me. I carry his ring as penance.' She pulls out a signet ring. Meanwhile, you notice [NPC_D] watching from the shadows, and [NPC_B] whispers that he's actually a former spy for [FACTION_A]."
 
 **Existing Backstories**:
-- Lyra: "Served under Captain Merrin during the Siege of Karvos; blames herself for his death and carries his signet ring..."
-- Elder Morin: (no backstory yet)
+- [COMPANION_A]: "Served under [NPC_C] during the [BATTLE_A]; blames herself for his death and carries his signet ring..."
+- [NPC_D]: (no backstory yet)
 
 **Existing Revelations**:
-- Lyra: []
-- Elder Morin: []
+- [COMPANION_A]: []
+- [NPC_D]: []
 
 **YOUR RESPONSE** (raw JSON only):
 {
   "revelations": [
     {
       "entityType": "companion",
-      "entityId": "lyra",
-      "entityName": "Lyra",
-      "text": "Lyra disobeyed orders during the Siege of Karvos, which led to Captain Merrin's death. She carries his signet ring as penance for getting him killed.",
+      "entityId": "companion-a",
+      "entityName": "[COMPANION_A]",
+      "text": "[COMPANION_A] disobeyed orders during the [BATTLE_A], which led to [NPC_C]'s death. She carries his signet ring as penance for getting him killed.",
       "revealedAtTurn": 8
     }
   ]
 }
 
-Note: Elder Morin's spy work is NOT extracted because Elder Morin has no existing backstory in the game context. Per the CRITICAL RULE, revelations can only be extracted for entities that already have backstories.
+Note: [NPC_D]'s spy work is NOT extracted because [NPC_D] has no existing backstory in the game context. Per the CRITICAL RULE, revelations can only be extracted for entities that already have backstories.
 
 ## Example 4: No Revelations (routine scene)
-**Narrative**: "You enter the tavern. It's busy tonight. A bard plays in the corner and patrons laugh over mugs of ale. Borin nods at you from behind the bar."
+**Narrative**: "You enter the tavern. It's busy tonight. A bard plays in the corner and patrons laugh over mugs of ale. [NPC_A] nods at you from behind the bar."
 
 **YOUR RESPONSE** (raw JSON only):
 {
@@ -168,24 +168,24 @@ Note: Elder Morin's spy work is NOT extracted because Elder Morin has no existin
 }
 
 ## Example 5: WRONG - Extracting from backstory instead of narrative
-**Narrative**: "Borin pours you an ale and asks about your travels. 'Been quiet lately,' he says. 'Too quiet for my liking.'"
+**Narrative**: "[NPC_A] pours you an ale and asks about your travels. 'Been quiet lately,' he says. 'Too quiet for my liking.'"
 
-**Existing Backstory** (Borin): "Borin Flintbeard, dwarf male, 156, ex-royal armorer from Thaldrin. Banished after his prototype blade killed King Rurik; wife Marda remained in Thaldrin under house arrest..."
+**Existing Backstory** ([NPC_A]): "[NPC_A Full Name], dwarf male, 156, ex-royal armorer from [CITY_A]. Banished after his prototype blade killed [MONARCH_A]; wife [NPC_E] remained in [CITY_A] under house arrest..."
 
 **WRONG RESPONSE** (DO NOT DO THIS):
 {
   "revelations": [
     {
       "entityType": "npc",
-      "entityId": "borin",
-      "entityName": "Borin",
-      "text": "Borin was a royal armorer who was banished from Thaldrin",
+      "entityId": "npc-a",
+      "entityName": "[NPC_A]",
+      "text": "[NPC_A] was a royal armorer who was banished from [CITY_A]",
       "revealedAtTurn": 5
     }
   ]
 }
 
-**WHY THIS IS WRONG**: The NARRATIVE only shows Borin pouring a drink and making small talk. He says NOTHING about being an armorer, Thaldrin, or being banished. That information is ONLY in the backstory. The backstory is secret - it tells YOU what to look for, but Borin hasn't revealed any of it yet.
+**WHY THIS IS WRONG**: The NARRATIVE only shows [NPC_A] pouring a drink and making small talk. He says NOTHING about being an armorer, [CITY_A], or being banished. That information is ONLY in the backstory. The backstory is secret - it tells YOU what to look for, but [NPC_A] hasn't revealed any of it yet.
 
 **CORRECT RESPONSE**:
 {
@@ -193,10 +193,10 @@ Note: Elder Morin's spy work is NOT extracted because Elder Morin has no existin
 }
 
 ## Example 6: Avoiding Duplicates
-**Narrative**: "Borin mentions again that he was banished from Thaldrin for the king's death."
+**Narrative**: "[NPC_A] mentions again that he was banished from [CITY_A] for the king's death."
 
-**Existing Revelations** (Borin): 
-- "Borin was the royal armorer in Thaldrin whose prototype blade killed King Rurik, leading to his banishment..."
+**Existing Revelations** ([NPC_A]): 
+- "[NPC_A] was the royal armorer in [CITY_A] whose prototype blade killed [MONARCH_A], leading to his banishment..."
 
 **YOUR RESPONSE** (raw JSON only):
 {

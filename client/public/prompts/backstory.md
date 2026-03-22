@@ -39,7 +39,7 @@ Your backstory should be 2-4 paragraphs (150-250 words) and include:
 - **Secrets**: Hidden information that could emerge during gameplay (past crimes, hidden identities, secret knowledge)
 - **Current Situation**: How they ended up in their current role/location
 
-Example structure: "Borin Flintbeard, dwarf male, 156, ex-royal armorer from Thaldrin. Banished after his prototype blade killed King Rurik; wife Marda remained in Thaldrin under house arrest. Has one son, Darric, now serving as a conscript engineer in the Ironfront mines. Operates the Gilded Griffin Tavern as cover for smuggling alloy samples to rebel smiths. Goal: rebuild fortune to ransom his family and forge a weapon worthy of absolution. Keeps coded ledgers hidden in cask #12..."
+Example structure: "[NPC_A Full Name], dwarf male, 156, ex-royal armorer from [CITY_A]. Banished after his prototype blade killed [MONARCH_A]; wife [NPC_E] remained in [CITY_A] under house arrest. Has one son, [FAMILY_A], now serving as a conscript engineer in the [LOCATION_B] mines. Operates [LOCATION_A] as cover for smuggling alloy samples to rebel smiths. Goal: rebuild fortune to ransom his family and forge a weapon worthy of absolution. Keeps coded ledgers hidden in cask #12..."
 
 ## For Companions (Party Members):
 **REQUIRED FORMAT**: Always start the backstory with: "[Full Name], [race] [sex], [class] level [level], [age]" - this is MANDATORY even if these details weren't provided. Invent appropriate values based on context.
@@ -49,10 +49,10 @@ Example structure: "Borin Flintbeard, dwarf male, 156, ex-royal armorer from Tha
 - **Secrets**: Hidden past, addictions, obligations
 - **Connection to Player**: Why they joined and what they hope to gain
 
-Example structure: "Lyra Valen, human female, fighter level 5, age 27. Born in Fort Kareth to a disgraced officer and a mercenary healer. Served under Captain Merrin during the Siege of Karvos; blames herself for his death and carries his signet ring. Goal: earn command in a legitimate army and clear her family name. Secret addiction to battle stim herbs from Duskvale..."
+Example structure: "[COMPANION_A Full Name], human female, fighter level 5, age 27. Born in [CITY_A] to a disgraced officer and a mercenary healer. Served under [NPC_D] during the [BATTLE_A]; blames herself for his death and carries his signet ring. Goal: earn command in a legitimate army and clear her family name. Secret addiction to battle stim herbs from [LOCATION_B]..."
 
 ## For Quests:
-* **Title:** Short evocative name (e.g. *“Ashes of the Sky-Fortress”*).
+* **Title:** Short evocative name (e.g. *"Ashes of the Sky-Fortress"*).
 * **Historical Context:** Describe major past events or conflicts that gave rise to this quest. Why now? What echoes of history drive the present urgency?
 * **Stakeholders:** Identify who benefits or suffers from the outcome—include factions, rulers, guilds, and at least one memorable NPC per side with motives, resources, and personality cues.
 * **Protagonists & Antagonists:** Define the central figures or forces in opposition—mortal, divine, or political. Explain their goals, ideals, and how their methods contrast.
@@ -67,13 +67,13 @@ Example structure: "Lyra Valen, human female, fighter level 5, age 27. Born in F
 
   * *If Successful:* Detail immediate and long-term changes to the world, balance of power, or reputation.
   * *If Failed:* Describe the tangible losses, new threats unleashed, or future quests unlocked.
-* **Moral Axis:** Note any ethical tensions—who is “right” may depend on interpretation.
+* **Moral Axis:** Note any ethical tensions—who is "right" may depend on interpretation.
 * **Connections:** Reference linked quests, shared NPCs, recurring items, or overlapping lore threads.
 * **Atmosphere / Tone (Optional):** Include sensory or emotional cues to help the DM describe mood (e.g., decaying grandeur, desperate hope, creeping dread).
 
 **Example (Condensed):**
 *The Relic of Auriel vanished in the temple fire of Year 1012. Highspire clergy demand its recovery to restore faith; the Arcanum Council fears its arcane instability; collector Lord Hesk seeks profit. Energy traces lead to flooded catacombs beneath ruined Highspire. The relic once powered the sky-fortress that caused the Shattered War. Hidden records bind its ownership to the lost Veloran bloodline.*
-**Objectives:** 1️⃣ Retrieve the relic before Hesk’s mercenaries; 2️⃣ Prevent the Arcanum from sealing the site; 3️⃣ Discover the Veloran heir.
+**Objectives:** 1️⃣ Retrieve the relic before Hesk's mercenaries; 2️⃣ Prevent the Arcanum from sealing the site; 3️⃣ Discover the Veloran heir.
 **Success:** Restores divine magic to the realm but risks another war.
 **Failure:** The relic detonates, awakening the sky-fortress and reshaping the continent.
 
@@ -84,24 +84,24 @@ Two centuries ago, the fortress-city of Ashenreach fell after its ruling oathkni
 
 **Stakeholders:**
 
-* **Ser Dalia Vorn**, Commander of the modern Oathguard — seeks to reclaim the relics to restore her order’s tarnished honor.
-* **Archmagus Teren of the Ember College** — believes the buried deity’s ember can be weaponized to restore the dying sun.
-* **The Veiled Syndic**, undercity broker — pays handsomely for proof the crown’s massacre covered a deeper sin.
+* **Ser Dalia Vorn**, Commander of the modern Oathguard — seeks to reclaim the relics to restore her order's tarnished honor.
+* **Archmagus Teren of the Ember College** — believes the buried deity's ember can be weaponized to restore the dying sun.
+* **The Veiled Syndic**, undercity broker — pays handsomely for proof the crown's massacre covered a deeper sin.
 
 **Protagonists & Antagonists:**
 
-* **Protagonists:** The party, guided by Ser Dalia’s mission, act as redeemers of a disgraced lineage.
+* **Protagonists:** The party, guided by Ser Dalia's mission, act as redeemers of a disgraced lineage.
 * **Antagonists:** The *Ashenbound*, spectral oathknights bound to the flame deity, seeking vessels to reignite their crusade.
 
 **Objectives:**
 
-1. **Recover the Oathstone** buried in the ruins — a relic binding the lost knights’ souls.
-2. **Uncover the true cause** of Ashenreach’s fall — whether betrayal, divine punishment, or royal deceit.
-3. **Decide the relic’s fate:** sanctify it with holy water (ending the curse), deliver it to the Archmagus (risking divine wrath), or sell it to the Syndic (corrupting the order further).
+1. **Recover the Oathstone** buried in the ruins — a relic binding the lost knights' souls.
+2. **Uncover the true cause** of Ashenreach's fall — whether betrayal, divine punishment, or royal deceit.
+3. **Decide the relic's fate:** sanctify it with holy water (ending the curse), deliver it to the Archmagus (risking divine wrath), or sell it to the Syndic (corrupting the order further).
 
 **Hidden Information:**
 
-* The Oathknights’ rebellion was provoked by a forged royal decree; the “forgotten deity” was a trapped celestial being.
+* The Oathknights' rebellion was provoked by a forged royal decree; the "forgotten deity" was a trapped celestial being.
 * The Oathstone feeds on guilt; whoever carries it slowly becomes bound to serve the flame.
 * Ser Dalia herself is descended from the traitor knight who led the revolt — a fact unknown even to her.
 
@@ -110,18 +110,18 @@ The ruins shift nightly, as if rearranging memories; ashstorms erase maps; and t
 
 **Consequences:**
 
-* **If Successful:** The curse is lifted, Ser Dalia’s order is reborn, and sunlight briefly returns to the realm — but the celestial being awakens, demanding the oath be fulfilled.
+* **If Successful:** The curse is lifted, Ser Dalia's order is reborn, and sunlight briefly returns to the realm — but the celestial being awakens, demanding the oath be fulfilled.
 * **If Failed:** The Oathstone ignites, spreading the cold flame through the underdark, birthing an empire of ashbound zealots.
 * **Partial Success:** Players survive but carry the Oathmark — a glowing sigil that draws divine attention and future quests.
 
 **Moral Axis:**
-Redemption versus truth: do the heroes restore honor through deception, or expose the crown’s crimes and plunge the realm into chaos?
+Redemption versus truth: do the heroes restore honor through deception, or expose the crown's crimes and plunge the realm into chaos?
 
 **Connections:**
 
-* Leads to the quest *“Heart of the Dying Sun”*, where the celestial demands its freedom.
-* Connects to NPC *Archmagus Teren* in *“The Ember College Intrigues.”*
-* The Ashenbound spirits reappear in the *“Wraiths of Crownsgate”* arc.
+* Leads to the quest *"Heart of the Dying Sun"*, where the celestial demands its freedom.
+* Connects to NPC *Archmagus Teren* in *"The Ember College Intrigues."*
+* The Ashenbound spirits reappear in the *"Wraiths of Crownsgate"* arc.
 
 ## For Locations:
 - **History**: How the place came to be, significant past events
@@ -130,7 +130,7 @@ Redemption versus truth: do the heroes restore honor through deception, or expos
 - **Secrets**: Hidden rooms, buried history, surveillance, criminal activity
 - **Notable Details**: Unusual features, mysterious elements
 
-Example structure: "Gilded Griffin Tavern, Highspire Market District, capacity 60. Built on ruins of the western watchtower; sub-basement connects to pre-war tunnels. Owned by Borin Flintbeard, managed by Sara the Barkeep, entertainer Thom the Bard (rumored Auriel cult courier). Generates ~750 gp/week net. Used by noble House Verrin for secret trade talks. A sealed door in the cellar bears military warding sigils older than the city itself..."
+Example structure: "[LOCATION_A], [CITY_B] Market District, capacity 60. Built on ruins of the western watchtower; sub-basement connects to pre-war tunnels. Owned by [NPC_A], managed by [NPC_B] the Barkeep, entertainer [NPC_C] the Bard (rumored [FACTION_A] courier). Generates ~750 gp/week net. Used by noble [FACTION_B] for secret trade talks. A sealed door in the cellar bears military warding sigils older than the city itself..."
 
 # Output Format
 
@@ -159,8 +159,8 @@ EXACT JSON FORMAT TO RETURN:
 
 # Example Full Response
 
-For an NPC named "Sara the Barkeep" at the Gilded Griffin Tavern:
+For an NPC named "[NPC_A] the Barkeep" at [LOCATION_A]:
 
 {
-  "backstory": "Sara Moonwhisper, half-elf female, 47, former intelligence officer for the Veloran royal guard. Served under Captain Aldric during the Shattered War until a failed mission in Duskvale cost her team their lives. Dismissed from service with a modest pension, she purchased the Gilded Griffin's barkeep position from Borin Flintbeard for 800 gold, using it as cover to run an independent information network. Her contacts include Magistrate Welkins, merchant lord Harren, and the mysterious 'Whisper' who pays her 50 gold weekly for reports on tavern clientele. Sara's daughter, Elise, studies at the Arcanum Academy under the patronage of Lord Hesk, who uses this leverage to ensure Sara's cooperation in his relic-hunting endeavors. She keeps encrypted correspondence hidden in a false bottom beneath the bar's coin drawer and carries a poison ring from her old guard days. Goal: earn enough to free herself from Lord Hesk's influence and retire with Elise to the coastal village of Brightshore, where her late husband's family owns a vineyard."
+  "backstory": "[NPC_A Full Name], half-elf female, 47, former intelligence officer for the royal guard. Served under Captain [NPC_D] during the Shattered War until a failed mission in [LOCATION_B] cost her team their lives. Dismissed from service with a modest pension, she purchased the barkeep position at [LOCATION_A] for 800 gold, using it as cover to run an independent information network. Her contacts include Magistrate Welkins, merchant lord Harren, and the mysterious 'Whisper' who pays her 50 gold weekly for reports on tavern clientele. Her daughter, Elise, studies at the Arcanum Academy under the patronage of Lord Hesk, who uses this leverage to ensure her cooperation in his relic-hunting endeavors. She keeps encrypted correspondence hidden in a false bottom beneath the bar's coin drawer and carries a poison ring from her old guard days. Goal: earn enough to free herself from Lord Hesk's influence and retire with Elise to the coastal village of Brightshore, where her late husband's family owns a vineyard."
 }

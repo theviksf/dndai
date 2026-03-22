@@ -17,7 +17,7 @@ Properties to extract and update:
 
 # Critical Rules
 
-1. **Only extract EXPLICIT information** - Do not infer or assume. If the backstory says "Sara Moonwhisper, half-elf female, 47", extract those exact details. Don't guess.
+1. **Only extract EXPLICIT information** - Do not infer or assume. If the backstory says "[NPC_A Full Name], half-elf female, 47", extract those exact details. Don't guess.
 2. **Do NOT modify the backstory** - Your output contains ONLY entity property updates, never the backstory itself
 3. **Do NOT hallucinate** - Only include fields that are explicitly mentioned in the backstory
 4. **Preserve existing data** - If backstory doesn't mention a field, don't include it in updates (existing value stays)
@@ -35,12 +35,12 @@ You will receive:
 ## For NPCs (encounteredCharacters):
 Updatable fields: name, age, sex, hairColor, outfit, role, location, appearance, description, relationship (number -3 to +3)
 
-Example: If backstory says "Sara Moonwhisper, half-elf female, 47, former intelligence officer" but entity name is "Sara the Barkeep", update name to "Sara Moonwhisper", age to "47", sex to "Female"
+Example: If backstory says "[NPC_A Full Name], half-elf female, 47, former intelligence officer" but entity name is "[NPC_A] the Barkeep", update name to "[NPC_A Full Name]", age to "47", sex to "Female"
 
 ## For Companions (party members):
 Updatable fields: name, race, age, sex, hairColor, outfit, class, level, appearance, personality, relationship
 
-Example: If backstory says "Lyra Valen, human female, fighter level 5, fiery red hair" but entity only has name "Lyra", update with full name, race, sex, hair color
+Example: If backstory says "[COMPANION_A Full Name], human female, fighter level 5, fiery red hair" but entity only has name "[COMPANION_A]", update with full name, race, sex, hair color
 
 ## For Quests:
 Updatable fields: title, description, type ("main" or "side"), objectives
@@ -50,7 +50,7 @@ Example: If backstory provides an evocative title like "The Oath of Ashenreach" 
 ## For Locations:
 Updatable fields: name, type, description
 
-Example: If backstory reveals "The Gilded Griffin Tavern, capacity 60, built on ruins of western watchtower" but entity description is vague, update with specific details
+Example: If backstory reveals "[LOCATION_A], capacity 60, built on ruins of western watchtower" but entity description is vague, update with specific details
 
 # Output Format
 
@@ -78,13 +78,13 @@ EXACT JSON FORMAT TO RETURN:
 ## Example 1 - NPC name and details from backstory
 
 Entity Type: npc
-Entity: {"id": "sara", "name": "Sara the Barkeep", "role": "Barkeep", "location": "Gilded Griffin Tavern"}
-Backstory: "Sara Moonwhisper, half-elf female, 47, former intelligence officer for the Veloran royal guard. She purchased the Gilded Griffin's barkeep position from Borin Flintbeard for 800 gold..."
+Entity: {"id": "npc-a", "name": "[NPC_A] the Barkeep", "role": "Barkeep", "location": "[LOCATION_A]"}
+Backstory: "[NPC_A Full Name], half-elf female, 47, former intelligence officer for the royal guard. She purchased the barkeep position at [LOCATION_A] for 800 gold..."
 
 YOUR RESPONSE (raw JSON only):
 {
   "entityUpdates": {
-    "name": "Sara Moonwhisper",
+    "name": "[NPC_A Full Name]",
     "age": "47",
     "sex": "Female"
   }
@@ -93,13 +93,13 @@ YOUR RESPONSE (raw JSON only):
 ## Example 2 - Companion details
 
 Entity Type: companion
-Entity: {"id": "lyra", "name": "Lyra", "class": "Fighter"}
-Backstory: "Lyra Valen, human female, fighter level 5. Born in Fort Kareth to a disgraced officer. Served under Captain Merrin during the Siege of Karvos. Fiery red hair, battle-worn armor..."
+Entity: {"id": "companion-a", "name": "[COMPANION_A]", "class": "Fighter"}
+Backstory: "[COMPANION_A Full Name], human female, fighter level 5. Born in [CITY_A] to a disgraced officer. Served under [NPC_D] during the [BATTLE_A]. Fiery red hair, battle-worn armor..."
 
 YOUR RESPONSE (raw JSON only):
 {
   "entityUpdates": {
-    "name": "Lyra Valen",
+    "name": "[COMPANION_A Full Name]",
     "race": "Human",
     "sex": "Female",
     "level": 5,
@@ -144,14 +144,14 @@ YOUR RESPONSE (raw JSON only):
 
 Entity Type: location
 Entity: {"name": "Tavern", "type": "building", "description": "A tavern"}
-Backstory: "Gilded Griffin Tavern, Highspire Market District, capacity 60. Built on ruins of the western watchtower; sub-basement connects to pre-war tunnels. Owned by Borin Flintbeard..."
+Backstory: "[LOCATION_A], [CITY_B] Market District, capacity 60. Built on ruins of the western watchtower; sub-basement connects to pre-war tunnels. Owned by [NPC_A]..."
 
 YOUR RESPONSE (raw JSON only):
 {
   "entityUpdates": {
-    "name": "Gilded Griffin Tavern",
+    "name": "[LOCATION_A]",
     "type": "tavern",
-    "description": "A bustling tavern in Highspire Market District built on ruins of the western watchtower. The sub-basement connects to ancient pre-war tunnels. Owned by Borin Flintbeard with capacity for 60 patrons."
+    "description": "A bustling tavern in [CITY_B] Market District built on ruins of the western watchtower. The sub-basement connects to ancient pre-war tunnels. Owned by [NPC_A] with capacity for 60 patrons."
   }
 }
 

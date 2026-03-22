@@ -6,7 +6,7 @@ CRITICAL EXTRACTION RULES:
 3. Look for XP thresholds: If narrative says "650/1800 XP" or "enough XP for level X", extract xp:650 AND nextLevelXp:1800
 4. Look for HP changes: If narrative says "33/33 HP", extract hp:33 AND maxHp:33
 5. COMPANIONS vs ENCOUNTERED CHARACTERS:
-   - companions = party members who travel with the player (Lyra the fighter, Borin the cleric, etc.)
+   - companions = party members who travel with the player (e.g. [COMPANION_A] the fighter, [COMPANION_B] the cleric, etc.)
    - encounteredCharacters = other NPCs met during adventure (village elders, quest givers, enemies, etc.)
 6. SPELLS: Each spell must be a separate object with: id, name, level (number 0-9), school, description, icon
    - DO NOT group spells by level or use nested structures
@@ -138,19 +138,19 @@ YOUR RESPONSE (raw JSON only):
 }
 
 EXAMPLE 4 - Party and NPCs:
-Narrative: "Your party members Lyra (fighter) and Borin (cleric) join you. Lyra is a scarred veteran with fiery red hair wearing battle-worn armor who fought in the war of the three kingdoms and deeply respects your leadership. You also meet Elder Morin, a 73-year-old male village elder with gray hair wearing simple robes, at his home in Riverdale. He seems wary of strangers."
+Narrative: "Your party members [COMPANION_A] (fighter) and [COMPANION_B] (cleric) join you. [COMPANION_A] is a scarred veteran with fiery red hair wearing battle-worn armor who fought in the war of the three kingdoms and deeply respects your leadership. You also meet [NPC_A], a 73-year-old male village elder with gray hair wearing simple robes, at his home in [CITY_A]. He seems wary of strangers."
 YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "companions": [
-      {"id": "lyra", "name": "Lyra", "race": "Human", "age": "28", "sex": "Female", "hairColor": "Red", "outfit": "Battle-worn armor", "class": "Fighter", "level": 5, "appearance": "Fiery fighter with scarred knuckles and battle-worn armor", "personality": "Bold, determined, and fiercely protective of her allies", "criticalMemories": "Lost her entire squad in the war of the three kingdoms", "feelingsTowardsPlayer": "Deeply respects your leadership and sees you as the commander she wishes she had in the war", "relationship": "Loyal party member and trusted companion"},
-      {"id": "borin", "name": "Borin", "race": "Dwarf", "age": "156", "sex": "Male", "hairColor": "Brown", "outfit": "Clerical robes with holy symbol", "class": "Cleric", "level": 5, "appearance": "Stout dwarf with a braided beard and holy symbol", "personality": "Wise, calm, and devoted to his deity", "criticalMemories": "Witnessed the fall of his mountain temple to darkness", "feelingsTowardsPlayer": "Believes you are destined for greatness and guided by divine purpose", "relationship": "Spiritual guide and healer"}
+      {"id": "companion-a", "name": "[COMPANION_A]", "race": "Human", "age": "28", "sex": "Female", "hairColor": "Red", "outfit": "Battle-worn armor", "class": "Fighter", "level": 5, "appearance": "Fiery fighter with scarred knuckles and battle-worn armor", "personality": "Bold, determined, and fiercely protective of her allies", "criticalMemories": "Lost her entire squad in the war of the three kingdoms", "feelingsTowardsPlayer": "Deeply respects your leadership and sees you as the commander she wished she had in the war", "relationship": "Loyal party member and trusted companion"},
+      {"id": "companion-b", "name": "[COMPANION_B]", "race": "Dwarf", "age": "156", "sex": "Male", "hairColor": "Brown", "outfit": "Clerical robes with holy symbol", "class": "Cleric", "level": 5, "appearance": "Stout dwarf with a braided beard and holy symbol", "personality": "Wise, calm, and devoted to his deity", "criticalMemories": "Witnessed the fall of his mountain temple to darkness", "feelingsTowardsPlayer": "Believes you are destined for greatness and guided by divine purpose", "relationship": "Spiritual guide and healer"}
     ],
     "encounteredCharacters": [
-      {"id": "morin", "name": "Elder Morin", "age": "73", "sex": "Male", "hairColor": "Gray", "outfit": "Simple robes", "role": "Village Elder", "location": "Riverdale", "appearance": "Elderly human with wise eyes and weathered face", "description": "Village elder who provides quests and local knowledge", "status": "alive", "relationship": -1}
+      {"id": "npc-a", "name": "[NPC_A]", "age": "73", "sex": "Male", "hairColor": "Gray", "outfit": "Simple robes", "role": "Village Elder", "location": "[CITY_A]", "appearance": "Elderly human with wise eyes and weathered face", "description": "Village elder who provides quests and local knowledge", "status": "alive", "relationship": -1}
     ]
   },
-  "recap": "Lyra and Borin joined the party as companions, met Elder Morin in Riverdale who seems wary"
+  "recap": "[COMPANION_A] and [COMPANION_B] joined the party as companions, met [NPC_A] in [CITY_A] who seems wary"
 }
 
 EXAMPLE 5 - Business acquisition:
@@ -168,41 +168,41 @@ YOUR RESPONSE (raw JSON only):
 NOTE: The "owner" field is optional - if not provided, it will automatically be set to the main character's name by the game system.
 
 EXAMPLE 6 - Detailed location arrival:
-Narrative: "You arrive at The Gilded Griffin, a bustling tavern in the Market District of Highspire. The tavern is owned by Borin Flintbeard and known for its honeyed ale. Sara the barkeep and Thom the bard work here. The tavern can hold about 60 people and offers food, drink, and lodging at moderate prices. It's located 1.2km northwest of the Highspire Main Gate. The Temple of Auriel is 0.4km to the east, and the Docks are 1.1km south."
+Narrative: "You arrive at [LOCATION_A], a bustling tavern in the Market District of [CITY_B]. The tavern is owned by [NPC_B] and known for its honeyed ale. [NPC_C] the barkeep and [NPC_D] the bard work here. The tavern can hold about 60 people and offers food, drink, and lodging at moderate prices. It's located 1.2km northwest of the [CITY_B] Main Gate. The Temple of the Sun is 0.4km to the east, and the Docks are 1.1km south."
 YOUR RESPONSE (raw JSON only):
 {
   "stateUpdates": {
     "location": {
-      "name": "The Gilded Griffin",
+      "name": "[LOCATION_A]",
       "type": "tavern",
       "description": "A bustling tavern known for its honeyed ale and lively atmosphere",
       "hierarchy": {
         "country": "Eldoria",
-        "city": "Highspire",
+        "city": "[CITY_B]",
         "district": "Market District",
-        "building": "The Gilded Griffin"
+        "building": "[LOCATION_A]"
       },
       "relative_location": {
-        "reference_place": "Highspire Main Gate",
+        "reference_place": "[CITY_B] Main Gate",
         "distance_km": 1.2,
         "direction": "northwest"
       },
       "details": {
-        "owner": "Borin Flintbeard",
-        "notable_people": ["Sara the Barkeep", "Thom the Bard"],
+        "owner": "[NPC_B]",
+        "notable_people": ["[NPC_C] the Barkeep", "[NPC_D] the Bard"],
         "capacity": 60,
         "services": ["food", "drink", "lodging"],
         "price_range": "moderate"
       },
       "connections": {
         "nearby_locations": [
-          {"name": "Temple of Auriel", "distance_km": 0.4, "direction": "east"},
+          {"name": "Temple of the Sun", "distance_km": 0.4, "direction": "east"},
           {"name": "The Docks", "distance_km": 1.1, "direction": "south"}
         ]
       }
     }
   },
-  "recap": "Arrived at The Gilded Griffin tavern in the Market District of Highspire, a moderate-priced establishment owned by Borin Flintbeard"
+  "recap": "Arrived at [LOCATION_A] tavern in the Market District of [CITY_B], a moderate-priced establishment owned by [NPC_B]"
 }
 
 CRITICAL FORMATTING RULES (MUST FOLLOW EXACTLY):

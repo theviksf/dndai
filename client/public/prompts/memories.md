@@ -44,10 +44,10 @@ Each memory should include AS MANY of these as applicable:
 - [ ] **Their Emotional State**: How they felt in that moment
 - [ ] **A Callback Hook**: A specific detail that can be referenced later
 
-BAD (too shallow): "Elena remembers being rescued from the aggressive dockworker"
-BAD (missing dialogue): "Elena remembers you standing up for her against the dockworker"
-GOOD (with dialogue): "Elena remembers you stepping between her and the dockworker, your voice cutting through the noise: 'Touch her again and you'll answer to me.' The dockworker's sneer faded as you stood your ground."
-GOOD (rich detail + dialogue): "Elena remembers the flash of magic and the crash of splintering wood as you shattered the dockworker's chair beneath him. When he scrambled up sputtering threats, you said coldly, 'The next spell won't miss.' The relief that washed over her knowing someone had finally stood up for her."
+BAD (too shallow): "[NPC_X] remembers being rescued from the aggressive dockworker"
+BAD (missing dialogue): "[NPC_X] remembers you standing up for her against the dockworker"
+GOOD (with dialogue): "[NPC_X] remembers you stepping between her and the dockworker, your voice cutting through the noise: 'Touch her again and you'll answer to me.' The dockworker's sneer faded as you stood your ground."
+GOOD (rich detail + dialogue): "[NPC_X] remembers the flash of magic and the crash of splintering wood as you shattered the dockworker's chair beneath him. When he scrambled up sputtering threats, you said coldly, 'The next spell won't miss.' The relief that washed over her knowing someone had finally stood up for her."
 
 # Special Rule: First Meeting Memories
 For any character listed in newCompanions or newNPCs, you MUST create a "first meeting" memory describing:
@@ -70,9 +70,9 @@ EXACT JSON FORMAT TO RETURN:
   "memories": [
     {
       "characterType": "companion",
-      "characterId": "lyra",
-      "characterName": "Lyra",
-      "text": "Lyra remembers standing shoulder to shoulder with you against the bandits",
+      "characterId": "companion-a",
+      "characterName": "[COMPANION_A]",
+      "text": "[COMPANION_A] remembers standing shoulder to shoulder with you against the bandits",
       "turn": 5
     }
   ]
@@ -88,9 +88,9 @@ REQUIRED FIELDS:
 # Example Scenarios
 
 ## Example 1: Companion forms memory during combat (with dialogue)
-**Narrative**: "Lyra stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. You nod and reply, 'Then let's show them what we're made of.' Together you cut through the outlaws, watching each other's flanks. When one bandit nearly catches you from behind, Lyra's blade intercepts his."
+**Narrative**: "[COMPANION_A] stands beside you as you confront the bandits, her sword drawn and ready. 'I've got your back,' she says with a fierce grin. You nod and reply, 'Then let's show them what we're made of.' Together you cut through the outlaws, watching each other's flanks. When one bandit nearly catches you from behind, [COMPANION_A]'s blade intercepts his."
 
-**Existing Companions**: [{"id": "lyra", "name": "Lyra"}]
+**Existing Companions**: [{"id": "companion-a", "name": "[COMPANION_A]"}]
 **New Companions**: []
 **Turn**: 12
 
@@ -99,18 +99,18 @@ REQUIRED FIELDS:
   "memories": [
     {
       "characterType": "companion",
-      "characterName": "Lyra",
-      "characterId": "lyra",
-      "text": "Lyra remembers telling you 'I've got your back' before the fight, and your confident reply: 'Then let's show them what we're made of.' The clang of steel as her blade caught the bandit's sword inches from your back - fighting as one, each covering the other's blind spots",
+      "characterName": "[COMPANION_A]",
+      "characterId": "companion-a",
+      "text": "[COMPANION_A] remembers telling you 'I've got your back' before the fight, and your confident reply: 'Then let's show them what we're made of.' The clang of steel as her blade caught the bandit's sword inches from your back - fighting as one, each covering the other's blind spots",
       "turn": 12
     }
   ]
 }
 
 ## Example 2: NPC grateful for help (with dialogue)
-**Narrative**: "You carry the unconscious boy through the village gates just as dawn breaks. Elder Morin rushes forward, his walking stick clattering to the ground as he embraces his grandson. Tears stream down the old man's weathered face. 'I can never repay you for this,' he says, voice cracking with emotion. You place a hand on his shoulder and say, 'His life is payment enough. Keep him safe.'"
+**Narrative**: "You carry the unconscious boy through the village gates just as dawn breaks. [NPC_A] rushes forward, his walking stick clattering to the ground as he embraces his grandson. Tears stream down the old man's weathered face. 'I can never repay you for this,' he says, voice cracking with emotion. You place a hand on his shoulder and say, 'His life is payment enough. Keep him safe.'"
 
-**Existing NPCs**: [{"id": "morin", "name": "Elder Morin"}]
+**Existing NPCs**: [{"id": "npc-a", "name": "[NPC_A]"}]
 **New NPCs**: []
 **Turn**: 8
 
@@ -119,19 +119,19 @@ REQUIRED FIELDS:
   "memories": [
     {
       "characterType": "npc",
-      "characterName": "Elder Morin",
-      "characterId": "morin",
-      "text": "Elder Morin remembers sobbing 'I can never repay you for this' as you carried his grandson through the gates at dawn. Your hand on his shoulder, your words: 'His life is payment enough. Keep him safe.' A debt of gratitude he will carry forever.",
+      "characterName": "[NPC_A]",
+      "characterId": "npc-a",
+      "text": "[NPC_A] remembers sobbing 'I can never repay you for this' as you carried his grandson through the gates at dawn. Your hand on his shoulder, your words: 'His life is payment enough. Keep him safe.' A debt of gratitude he will carry forever.",
       "turn": 8
     }
   ]
 }
 
 ## Example 3: New NPC first meeting
-**Narrative**: "You enter the Gilded Griffin tavern, rainwater dripping from your cloak. A stout dwarf with a braided beard looks up from polishing a mug, his eyes narrowing as he takes in your travel-worn gear and the sword at your hip. 'Name's Borin,' he grunts. 'What'll it be, stranger?'"
+**Narrative**: "You enter the tavern, rainwater dripping from your cloak. A stout dwarf with a braided beard looks up from polishing a mug, his eyes narrowing as he takes in your travel-worn gear and the sword at your hip. 'Name's [NPC_B],' he grunts. 'What'll it be, stranger?'"
 
 **Existing NPCs**: []
-**New NPCs**: [{"id": "borin", "name": "Borin"}]
+**New NPCs**: [{"id": "npc-b", "name": "[NPC_B]"}]
 **Turn**: 3
 
 **YOUR RESPONSE** (raw JSON only):
@@ -139,9 +139,9 @@ REQUIRED FIELDS:
   "memories": [
     {
       "characterType": "npc",
-      "characterName": "Borin",
-      "characterId": "borin",
-      "text": "Borin remembers the stranger who walked into his tavern on that rainy night - rainwater dripping from a worn traveling cloak, a sword at the hip, eyes that had seen things. Not the usual drunk looking for trouble.",
+      "characterName": "[NPC_B]",
+      "characterId": "npc-b",
+      "text": "[NPC_B] remembers the stranger who walked into his tavern on that rainy night - rainwater dripping from a worn traveling cloak, a sword at the hip, eyes that had seen things. Not the usual drunk looking for trouble.",
       "turn": 3
     }
   ]
@@ -168,10 +168,10 @@ REQUIRED FIELDS:
 }
 
 ## Example 5: Multiple characters, mixed situations
-**Narrative**: "Lyra claps you on the shoulder after the battle, laughing breathlessly. 'That move with the torch - setting their supplies ablaze while I held the line? Brilliant!' Meanwhile, a young woman in merchant's clothes emerges from behind an overturned cart, trembling. 'I'm Sara. Thank you... they've been terrorizing us for weeks. I thought I was going to die today.'"
+**Narrative**: "[COMPANION_A] claps you on the shoulder after the battle, laughing breathlessly. 'That move with the torch - setting their supplies ablaze while I held the line? Brilliant!' Meanwhile, a young woman in merchant's clothes emerges from behind an overturned cart, trembling. 'I'm [NPC_C]. Thank you... they've been terrorizing us for weeks. I thought I was going to die today.'"
 
-**Existing Companions**: [{"id": "lyra", "name": "Lyra"}]
-**New NPCs**: [{"id": "sara", "name": "Sara"}]
+**Existing Companions**: [{"id": "companion-a", "name": "[COMPANION_A]"}]
+**New NPCs**: [{"id": "npc-c", "name": "[NPC_C]"}]
 **Turn**: 20
 
 **YOUR RESPONSE** (raw JSON only):
@@ -179,16 +179,16 @@ REQUIRED FIELDS:
   "memories": [
     {
       "characterType": "companion",
-      "characterName": "Lyra",
-      "characterId": "lyra",
-      "text": "Lyra remembers the brilliant chaos of the battle - her holding the line while you circled around and set their supplies ablaze with a torch, the bandits scattering as smoke and flame engulfed their camp. She laughed breathlessly at the sheer audacity of it.",
+      "characterName": "[COMPANION_A]",
+      "characterId": "companion-a",
+      "text": "[COMPANION_A] remembers the brilliant chaos of the battle - her holding the line while you circled around and set their supplies ablaze with a torch, the bandits scattering as smoke and flame engulfed their camp. She laughed breathlessly at the sheer audacity of it.",
       "turn": 20
     },
     {
       "characterType": "npc",
-      "characterName": "Sara",
-      "characterId": "sara",
-      "text": "Sara remembers emerging trembling from behind an overturned cart, certain she was going to die - until you and your companion scattered the bandits who had terrorized her village for weeks. The relief of being alive hit her like a wave.",
+      "characterName": "[NPC_C]",
+      "characterId": "npc-c",
+      "text": "[NPC_C] remembers emerging trembling from behind an overturned cart, certain she was going to die - until you and your companion scattered the bandits who had terrorized her village for weeks. The relief of being alive hit her like a wave.",
       "turn": 20
     }
   ]
@@ -268,7 +268,7 @@ REQUIRED FIELDS:
 }
 
 ## Example 9: Player asks NPC for information
-**Narrative**: "You approach the old librarian and ask, 'What can you tell me about the Curse of Thornwood?' She peers at you over her spectacles. 'Ah, curious about the dark history, are we? The curse was cast by Witch Helena over two hundred years ago. She was betrayed by her lover, the Baron, and with her dying breath she swore his bloodline would never know peace.' You press further: 'Is there a way to break it?' She shakes her head slowly. 'Only one who carries the Baron's blood can end it - by sacrificing something they love.'"
+**Narrative**: "You approach the old librarian and ask, 'What can you tell me about the Curse of [LOCATION_D]?' She peers at you over her spectacles. 'Ah, curious about the dark history, are we? The curse was cast by Witch [NPC_D] over two hundred years ago. She was betrayed by her lover, the Baron, and with her dying breath she swore his bloodline would never know peace.' You press further: 'Is there a way to break it?' She shakes her head slowly. 'Only one who carries the Baron's blood can end it - by sacrificing something they love.'"
 
 **Existing NPCs**: [{"id": "librarian-mabel", "name": "Mabel"}]
 **New NPCs**: []
@@ -281,7 +281,7 @@ REQUIRED FIELDS:
       "characterType": "npc",
       "characterName": "Mabel",
       "characterId": "librarian-mabel",
-      "text": "Mabel remembers when you asked her 'What can you tell me about the Curse of Thornwood?' She told you of Witch Helena, betrayed by the Baron two hundred years ago, who cursed his bloodline with her dying breath. When you asked 'Is there a way to break it?' she explained only one who carries the Baron's blood can end it - by sacrificing something they love.",
+      "text": "Mabel remembers when you asked her 'What can you tell me about the Curse of [LOCATION_D]?' She told you of Witch [NPC_D], betrayed by the Baron two hundred years ago, who cursed his bloodline with her dying breath. When you asked 'Is there a way to break it?' she explained only one who carries the Baron's blood can end it - by sacrificing something they love.",
       "turn": 14
     }
   ]
