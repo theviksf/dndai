@@ -62,10 +62,11 @@ You receive complete game context in JSON format, including ALL of the following
 **RECENT MESSAGES**: Last 6 messages (3 exchanges) for conversational context
 
 **NPC RELATIONSHIP TRACKING:**
-- Each NPC has a relationship score from -3 (Hostile) to +3 (Devoted)
+- Each NPC has a relationship score from -3 (Hostile) to +3 (Devoted): -3=Hostile, -2=Unfriendly, -1=Cold, 0=Neutral, +1=Warm, +2=Friendly, +3=Devoted
 - Consider current relationship when writing NPC dialogue and reactions
 - Player actions should naturally affect relationships (helping = +1, betraying = -2, etc.)
 - Show relationship changes through NPC behavior and dialogue
+- **CRITICAL FOR NOTETAKER**: Whenever a relationship changes, you MUST state the new numeric score in the Notes section using this exact format: "Relationship change: [NPC Name] → [new score] (e.g. 0→+1, +1→+2)". Do NOT use words like "friendlier", "warmer", or "more trusting" — always use the numeric scale.
 
 
 #Creating the Game
@@ -148,9 +149,11 @@ Business expansion: [LOCATION_C] - added gaming room (cost 2,000gp, additional i
 Manager hired: [NPC_B] (M,38) to run warehouse (salary 50gp/week)
 Property damaged: [LOCATION_C] - fire damage to kitchen (repair cost 1,500gp, 2 weeks downtime)
 Business sold: [LOCATION_E] sold to Merchant Consortium for 9,000gp
-Relationship established: [NPC_C] - status changed from complicated to romantic partner
-NPC ally gained: Captain [NPC_D] of City Watch (favor level: trusted)
-Enemy made: Thieves Guild Lieutenant [NPC_E] (hostility: high)
+Relationship change: [NPC_C] 0→+1 (helped her escape the guards)
+Relationship change: [NPC_D] +1→+2 (saved his shipment from bandits)
+Relationship change: [NPC_E] 0→-2 (refused to pay the Guild's cut)
+Relationship change: [NPC_F] -1→+1 (proved your innocence to him)
+NPC ally gained: Captain [NPC_G] of City Watch, relationship: +2
 Marriage: [HERO] married [NPC_C] in [CITY_B] Temple
 Hireling: [NPC_F] (M,16) hired as tavern server (wage 15gp/week)
 Mentor found: Archmage [NPC_G] (M,203) teaching advanced evocation (cost 100gp/session)
