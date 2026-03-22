@@ -816,27 +816,75 @@ export default function NarrativePanel({
             updatedTabsSet.add('inventory');
           }
           
-          // Update spells
+          // Update spells - MERGE by id/name so new spells don't wipe existing ones
           if (stateUpdates.spells !== undefined) {
-            updated.spells = stateUpdates.spells;
+            const existingSpells = prev.spells || [];
+            const mergedSpells = [...existingSpells];
+            (stateUpdates.spells as any[]).forEach((newSpell: any) => {
+              const idx = mergedSpells.findIndex(
+                s => s.id === newSpell.id || s.name?.toLowerCase() === newSpell.name?.toLowerCase()
+              );
+              if (idx >= 0) {
+                mergedSpells[idx] = { ...mergedSpells[idx], ...newSpell };
+              } else {
+                mergedSpells.push(newSpell);
+              }
+            });
+            updated.spells = mergedSpells;
             updatedTabsSet.add('spells');
           }
           
-          // Update racial abilities
+          // Update racial abilities - MERGE (racial abilities are permanent, never lost)
           if (stateUpdates.racialAbilities !== undefined) {
-            updated.racialAbilities = stateUpdates.racialAbilities;
+            const existingRA = prev.racialAbilities || [];
+            const mergedRA = [...existingRA];
+            (stateUpdates.racialAbilities as any[]).forEach((newRA: any) => {
+              const idx = mergedRA.findIndex(
+                r => r.id === newRA.id || r.name?.toLowerCase() === newRA.name?.toLowerCase()
+              );
+              if (idx >= 0) {
+                mergedRA[idx] = { ...mergedRA[idx], ...newRA };
+              } else {
+                mergedRA.push(newRA);
+              }
+            });
+            updated.racialAbilities = mergedRA;
             updatedTabsSet.add('spells');
           }
           
-          // Update class features
+          // Update class features - MERGE (class features are permanent, never lost)
           if (stateUpdates.classFeatures !== undefined) {
-            updated.classFeatures = stateUpdates.classFeatures;
+            const existingCF = prev.classFeatures || [];
+            const mergedCF = [...existingCF];
+            (stateUpdates.classFeatures as any[]).forEach((newCF: any) => {
+              const idx = mergedCF.findIndex(
+                f => f.id === newCF.id || f.name?.toLowerCase() === newCF.name?.toLowerCase()
+              );
+              if (idx >= 0) {
+                mergedCF[idx] = { ...mergedCF[idx], ...newCF };
+              } else {
+                mergedCF.push(newCF);
+              }
+            });
+            updated.classFeatures = mergedCF;
             updatedTabsSet.add('spells');
           }
           
-          // Update class powers
+          // Update class powers - MERGE (class powers are permanent, never lost)
           if (stateUpdates.classPowers !== undefined) {
-            updated.classPowers = stateUpdates.classPowers;
+            const existingCP = prev.classPowers || [];
+            const mergedCP = [...existingCP];
+            (stateUpdates.classPowers as any[]).forEach((newCP: any) => {
+              const idx = mergedCP.findIndex(
+                p => p.id === newCP.id || p.name?.toLowerCase() === newCP.name?.toLowerCase()
+              );
+              if (idx >= 0) {
+                mergedCP[idx] = { ...mergedCP[idx], ...newCP };
+              } else {
+                mergedCP.push(newCP);
+              }
+            });
+            updated.classPowers = mergedCP;
             updatedTabsSet.add('spells');
           }
           
