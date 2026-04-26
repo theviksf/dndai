@@ -361,7 +361,8 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
       return res.status(400).json({ error: 'API key required' });
     }
     
-    const fullPrompt = `${systemPrompt}\n\nEntity Type: ${entityType}\n\nEntity Data:\n${JSON.stringify(entity, null, 2)}\n\nBackstory:\n${backstory}\n\nPlease analyze the backstory and return JSON with entity updates that align with the backstory. Remember to return ONLY raw JSON with an "entityUpdates" field.`;
+    const userPrompt = `Entity Type: ${entityType}\n\nEntity Data:\n${JSON.stringify(entity, null, 2)}\n\nBackstory:\n${backstory}\n\nAnalyze the backstory and return ONLY a raw JSON object with an "entityUpdates" field containing fields to update. No explanation, no markdown, no code fences — only the JSON object.`;
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
     
     console.log('[CHECKER] Checking consistency for', entityType, 'using model', model);
     
@@ -374,15 +375,19 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: model || 'deepseek/deepseek-chat-v3.1',
+        model: model || 'deepseek/deepseek-v4-flash',
         messages: [
           {
+            role: 'system',
+            content: 'You are a JSON-only responder. You must return ONLY a valid raw JSON object — no markdown, no code fences, no explanation. Your entire response must be parseable by JSON.parse().'
+          },
+          {
             role: 'user',
-            content: fullPrompt
+            content: userPrompt
           }
         ],
-        max_tokens: 500,
-        temperature: 0.3,
+        max_tokens: 1000,
+        temperature: 0.2,
       })
     });
     
@@ -405,11 +410,14 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
     try {
       parsedData = extractAndParseJSON(rawContent);
     } catch (parseError) {
-      console.error('[CHECKER] Failed to parse JSON:', parseError);
-      return res.status(500).json({
-        error: 'Failed to parse checker JSON from LLM response',
+      console.warn('[CHECKER] Failed to parse JSON, returning empty updates:', parseError);
+      // Don't fail with 500 — return empty updates so backstory is still saved
+      return res.json({
+        entityUpdates: {},
+        usage: data.usage,
+        model: data.model,
         fullPrompt,
-        rawResponse: rawContent
+        rawResponse: rawContent,
       });
     }
     

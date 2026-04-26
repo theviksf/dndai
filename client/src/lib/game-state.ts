@@ -93,13 +93,13 @@ export function createDefaultGameState(): GameStateData {
 
 export function createDefaultConfig(): GameConfig {
   return {
-    primaryLLM: 'deepseek/deepseek-chat-v3.1',
-    parserLLM: 'deepseek/deepseek-chat-v3.1',
-    backstoryLLM: 'deepseek/deepseek-chat-v3.1',
-    revelationsLLM: 'deepseek/deepseek-chat-v3.1',
-    memoriesLLM: 'deepseek/deepseek-chat-v3.1',
-    loreLLM: 'deepseek/deepseek-chat-v3.1',
-    checkerLLM: 'deepseek/deepseek-chat-v3.1',
+    primaryLLM: 'deepseek/deepseek-v4-flash',
+    parserLLM: 'deepseek/deepseek-v4-flash',
+    backstoryLLM: 'deepseek/deepseek-v4-flash',
+    revelationsLLM: 'deepseek/deepseek-v4-flash',
+    memoriesLLM: 'deepseek/deepseek-v4-flash',
+    loreLLM: 'deepseek/deepseek-v4-flash',
+    checkerLLM: 'deepseek/deepseek-v4-flash',
     difficulty: 'normal',
     narrativeStyle: 'balanced',
     autoSave: true,
