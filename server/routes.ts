@@ -66,7 +66,7 @@ router.post('/models', async (req: Request, res: Response) => {
 
 // 2. POST /api/llm/chat - Non-streaming LLM chat completions
 router.post('/llm/chat', async (req: Request, res: Response) => {
-  const { modelId, messages, systemPrompt, maxTokens = 1000 } = req.body;
+  const { modelId, messages, systemPrompt, maxTokens = 5000 } = req.body;
   
   try {
     const key = getApiKey(req);
@@ -113,7 +113,7 @@ router.post('/llm/chat', async (req: Request, res: Response) => {
 
 // 3. POST /api/llm/chat/stream - Streaming LLM chat completions
 router.post('/llm/chat/stream', async (req: Request, res: Response) => {
-  const { modelId, messages, systemPrompt, maxTokens = 1000 } = req.body;
+  const { modelId, messages, systemPrompt, maxTokens = 5000 } = req.body;
   
   try {
     const key = getApiKey(req);
@@ -211,7 +211,7 @@ router.post('/generate-backstory', async (req: Request, res: Response) => {
             content: fullPrompt
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 5000,
         temperature: 0.8,
       })
     });
@@ -386,7 +386,7 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
             content: userPrompt
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 5000,
         temperature: 0.2,
       })
     });
@@ -490,7 +490,7 @@ router.post('/generate-lore', async (req: Request, res: Response) => {
             content: fullPrompt
           }
         ],
-        max_tokens: 4000,
+        max_tokens: 5000,
         temperature: 0.7,
       })
     });
@@ -642,7 +642,7 @@ router.post('/chat/revelations', async (req: Request, res: Response) => {
             content: fullPrompt
           }
         ],
-        max_tokens: 800,
+        max_tokens: 5000,
         temperature: 0.3,
       })
     });
@@ -780,7 +780,7 @@ router.post('/chat/memories', async (req: Request, res: Response) => {
             content: fullPrompt
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 5000,
         temperature: 0.4,
       })
     });
