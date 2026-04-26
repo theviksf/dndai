@@ -402,9 +402,21 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
     }
     
     const data = await response.json();
-    const rawContent = data.choices[0].message.content;
+    const rawContent: string | null = data.choices?.[0]?.message?.content ?? null;
     
-    console.log('[CHECKER] Raw response:', rawContent.substring(0, 200));
+    console.log('[CHECKER] Raw response:', rawContent ? rawContent.substring(0, 200) : '(null/empty)');
+    
+    // If the model returned null/empty content, return empty updates gracefully
+    if (!rawContent) {
+      console.warn('[CHECKER] Null or empty content from model, returning empty updates');
+      return res.json({
+        entityUpdates: {},
+        usage: data.usage,
+        model: data.model,
+        fullPrompt,
+        rawResponse: '',
+      });
+    }
     
     let parsedData;
     try {
