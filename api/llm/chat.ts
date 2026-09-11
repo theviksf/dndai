@@ -5,7 +5,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { modelId, messages, systemPrompt, maxTokens = 1000, apiKey } = req.body;
+  const { modelId, messages, systemPrompt, maxTokens = 5000, apiKey, responseFormat } = req.body;
   
   try {
     const key = apiKey || process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || '';
@@ -31,6 +31,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         max_tokens: maxTokens,
         temperature: 0.7,
         route: 'fallback',
+        ...(responseFormat === 'json_object' ? {
+          response_format: { type: 'json_object' },
+          plugins: [{ id: 'response-healing' }],
+        } : {}),
       })
     });
     
@@ -40,8 +44,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      return res.status(502).json({ error: 'The model returned no final response. Retry or choose a different model.' });
+    }
     res.json({
-      content: data.choices[0].message.content,
+      content,
       usage: data.usage,
       model: data.model
     });

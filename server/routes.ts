@@ -12,6 +12,22 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 const router = Router();
 
+function getOpenRouterContent(data: any, agentName: string): string {
+  const choice = data?.choices?.[0];
+  const content = choice?.message?.content;
+  if (typeof content === 'string' && content.trim()) {
+    return content;
+  }
+
+  const finishReason = choice?.finish_reason || choice?.native_finish_reason || 'unknown';
+  const providerError = choice?.error?.message || data?.error?.message;
+  throw new Error(
+    providerError
+      ? `${agentName} returned an error: ${providerError}`
+      : `${agentName} returned no final response (finish reason: ${finishReason}). Retry or choose a different model.`
+  );
+}
+
 // R2 configuration from environment variables
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
@@ -66,7 +82,7 @@ router.post('/models', async (req: Request, res: Response) => {
 
 // 2. POST /api/llm/chat - Non-streaming LLM chat completions
 router.post('/llm/chat', async (req: Request, res: Response) => {
-  const { modelId, messages, systemPrompt, maxTokens = 5000 } = req.body;
+  const { modelId, messages, systemPrompt, maxTokens = 5000, responseFormat } = req.body;
   
   try {
     const key = getApiKey(req);
@@ -92,6 +108,10 @@ router.post('/llm/chat', async (req: Request, res: Response) => {
         max_tokens: maxTokens,
         temperature: 0.7,
         route: 'fallback',
+        ...(responseFormat === 'json_object' ? {
+          response_format: { type: 'json_object' },
+          plugins: [{ id: 'response-healing' }],
+        } : {}),
       })
     });
     
@@ -102,9 +122,10 @@ router.post('/llm/chat', async (req: Request, res: Response) => {
     
     const data = await response.json();
     res.json({
-      content: data.choices[0].message.content,
+      content: getOpenRouterContent(data, 'LLM'),
       usage: data.usage,
-      model: data.model
+      model: data.model,
+      finishReason: data.choices?.[0]?.finish_reason,
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -140,6 +161,8 @@ router.post('/llm/chat/stream', async (req: Request, res: Response) => {
         temperature: 0.7,
         route: 'fallback',
         stream: true,
+        stream_options: { include_usage: true },
+        reasoning: { exclude: false },
       })
     });
     
@@ -213,6 +236,8 @@ router.post('/generate-backstory', async (req: Request, res: Response) => {
         ],
         max_tokens: 5000,
         temperature: 0.8,
+        response_format: { type: 'json_object' },
+        plugins: [{ id: 'response-healing' }],
       })
     });
     
@@ -227,7 +252,7 @@ router.post('/generate-backstory', async (req: Request, res: Response) => {
     }
     
     const data = await response.json();
-    const rawContent = data.choices[0].message.content;
+    const rawContent = getOpenRouterContent(data, 'Backstory agent');
     
     console.log('[BACKSTORY GEN] Raw response:', rawContent.substring(0, 200));
     
@@ -388,6 +413,8 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
         ],
         max_tokens: 5000,
         temperature: 0.2,
+        response_format: { type: 'json_object' },
+        plugins: [{ id: 'response-healing' }],
       })
     });
     
@@ -402,30 +429,17 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
     }
     
     const data = await response.json();
-    const rawContent: string | null = data.choices?.[0]?.message?.content ?? null;
+    const rawContent = getOpenRouterContent(data, 'Checker agent');
     
-    console.log('[CHECKER] Raw response:', rawContent ? rawContent.substring(0, 200) : '(null/empty)');
-    
-    // If the model returned null/empty content, return empty updates gracefully
-    if (!rawContent) {
-      console.warn('[CHECKER] Null or empty content from model, returning empty updates');
-      return res.json({
-        entityUpdates: {},
-        usage: data.usage,
-        model: data.model,
-        fullPrompt,
-        rawResponse: '',
-      });
-    }
+    console.log('[CHECKER] Raw response:', rawContent.substring(0, 200));
     
     let parsedData;
     try {
       parsedData = extractAndParseJSON(rawContent);
     } catch (parseError) {
-      console.warn('[CHECKER] Failed to parse JSON, returning empty updates:', parseError);
-      // Don't fail with 500 — return empty updates so backstory is still saved
-      return res.json({
-        entityUpdates: {},
+      console.warn('[CHECKER] Failed to parse JSON:', parseError);
+      return res.status(422).json({
+        error: 'Checker returned invalid JSON. Retry or choose a different model.',
         usage: data.usage,
         model: data.model,
         fullPrompt,
@@ -518,7 +532,7 @@ router.post('/generate-lore', async (req: Request, res: Response) => {
     }
     
     const data = await response.json();
-    const rawContent = data.choices[0].message.content;
+    const rawContent = getOpenRouterContent(data, 'Lore agent');
     
     console.log('[LORE GEN] Raw response:', rawContent.substring(0, 200));
     
@@ -656,6 +670,8 @@ router.post('/chat/revelations', async (req: Request, res: Response) => {
         ],
         max_tokens: 5000,
         temperature: 0.3,
+        response_format: { type: 'json_object' },
+        plugins: [{ id: 'response-healing' }],
       })
     });
     
@@ -670,7 +686,7 @@ router.post('/chat/revelations', async (req: Request, res: Response) => {
     }
     
     const data = await response.json();
-    const rawContent = data.choices[0].message.content;
+    const rawContent = getOpenRouterContent(data, 'Revelations agent');
     
     console.log('[REVELATIONS] Raw response:', rawContent.substring(0, 200));
     
@@ -794,6 +810,8 @@ router.post('/chat/memories', async (req: Request, res: Response) => {
         ],
         max_tokens: 5000,
         temperature: 0.4,
+        response_format: { type: 'json_object' },
+        plugins: [{ id: 'response-healing' }],
       })
     });
     
@@ -808,7 +826,7 @@ router.post('/chat/memories', async (req: Request, res: Response) => {
     }
     
     const data = await response.json();
-    const rawContent = data.choices[0].message.content;
+    const rawContent = getOpenRouterContent(data, 'Memories agent');
     
     console.log('[MEMORIES] Raw response:', rawContent.substring(0, 200));
     

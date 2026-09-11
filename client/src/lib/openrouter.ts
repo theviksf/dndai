@@ -13,7 +13,7 @@ export async function callLLM(
   systemPrompt: string,
   maxTokens: number = 1000,
   apiKey?: string,
-  options?: { timeoutMs?: number; signal?: AbortSignal }
+  options?: { timeoutMs?: number; signal?: AbortSignal; responseFormat?: 'json_object' }
 ): Promise<{
   content: string;
   usage: {
@@ -43,6 +43,7 @@ export async function callLLM(
       systemPrompt,
       maxTokens,
       apiKey,
+      responseFormat: options?.responseFormat,
     }, controller.signal);
 
     return await response.json();
@@ -66,7 +67,8 @@ export async function callLLMStream(
   maxTokens: number = 1000,
   apiKey: string | undefined,
   onChunk: (chunk: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onReasoning?: (chunk: string) => void
 ): Promise<{
   content: string;
   usage: {
@@ -131,11 +133,28 @@ export async function callLLMStream(
 
           try {
             const parsed = JSON.parse(data);
+
+            if (parsed.error) {
+              throw new Error(parsed.error.message || 'OpenRouter streaming error');
+            }
             
             if (parsed.choices && parsed.choices[0]?.delta?.content) {
               const content = parsed.choices[0].delta.content;
               fullContent += content;
               onChunk(content);
+            }
+
+            const delta = parsed.choices?.[0]?.delta;
+            const reasoningText =
+              (typeof delta?.reasoning === 'string' ? delta.reasoning : '') ||
+              (Array.isArray(delta?.reasoning_details)
+                ? delta.reasoning_details
+                    .map((detail: any) => detail?.text || detail?.summary || '')
+                    .filter(Boolean)
+                    .join('')
+                : '');
+            if (reasoningText) {
+              onReasoning?.(reasoningText);
             }
 
             if (parsed.usage) {
@@ -145,11 +164,19 @@ export async function callLLMStream(
             if (parsed.model) {
               model = parsed.model;
             }
-          } catch (e) {
-            // Skip invalid JSON lines
+          } catch (e: any) {
+            if (e instanceof SyntaxError) {
+              // Ignore incomplete/non-JSON SSE lines, but never hide API errors.
+              continue;
+            }
+            throw e;
           }
         }
       }
+    }
+
+    if (!fullContent.trim()) {
+      throw new Error('The model completed without a final response. Retry or choose a different model.');
     }
     
     // Process any remaining buffered content

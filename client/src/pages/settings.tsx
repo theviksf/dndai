@@ -886,6 +886,22 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
 
             {/* Game Settings Tab */}
             <TabsContent value="game" className="space-y-4">
+              <div className="bg-accent/10 border border-accent rounded-md p-4 flex items-start justify-between gap-4">
+                <div>
+                  <label htmlFor="test-mode" className="block text-sm font-semibold text-foreground">
+                    Prompt Test Mode
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pause after the DM and parser respond so you can verify or retry them before the turn continues.
+                  </p>
+                </div>
+                <Switch
+                  id="test-mode"
+                  checked={localConfig.testMode}
+                  onCheckedChange={(checked) => setLocalConfig(prev => ({ ...prev, testMode: checked }))}
+                  data-testid="switch-test-mode"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-foreground">Difficulty</label>

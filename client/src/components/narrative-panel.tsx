@@ -53,6 +53,19 @@ interface NarrativePanelProps {
   sessionId: string;
 }
 
+type PromptReview = {
+  agent: 'Primary DM' | 'Parser';
+  response: string;
+  error?: string;
+  model: string;
+  allowSkip: boolean;
+};
+
+type PromptReviewDecision = {
+  action: 'accept' | 'retry' | 'skip';
+  model: string;
+};
+
 // Robust JSON parsing helper
 function sanitizeJSON(jsonString: string): string {
   // Remove BOM
@@ -377,12 +390,30 @@ export default function NarrativePanel({
   const [isParsing, setIsParsing] = useState(false);
   const [parsingStatus, setParsingStatus] = useState('Updating game state...');
   const [streamingContent, setStreamingContent] = useState('');
+  const [reasoningContent, setReasoningContent] = useState('');
   const [parsingElapsed, setParsingElapsed] = useState(0);
   const narrativeRef = useRef<HTMLDivElement>(null);
   const isUserNearBottom = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
   const parsingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reviewResolverRef = useRef<((decision: PromptReviewDecision) => void) | null>(null);
+  const [promptReview, setPromptReview] = useState<PromptReview | null>(null);
   const { toast } = useToast();
+
+  const requestPromptReview = (review: PromptReview): Promise<PromptReviewDecision> => {
+    setPromptReview(review);
+    return new Promise(resolve => {
+      reviewResolverRef.current = resolve;
+    });
+  };
+
+  const resolvePromptReview = (action: PromptReviewDecision['action']) => {
+    if (!promptReview || !reviewResolverRef.current) return;
+    const resolve = reviewResolverRef.current;
+    reviewResolverRef.current = null;
+    resolve({ action, model: promptReview.model });
+    setPromptReview(null);
+  };
 
   useEffect(() => {
     if (isParsing) {
@@ -481,18 +512,64 @@ export default function NarrativePanel({
       // Stream Primary LLM response
       setIsStreaming(true);
       setStreamingContent('');
+      setReasoningContent('');
       
-      const primaryResponse = await callLLMStream(
-        config.primaryLLM,
-        [{ role: 'user', content: JSON.stringify(context) }],
-        config.dmSystemPrompt,
-        1600,
-        config.openRouterApiKey,
-        (chunk) => {
-          setStreamingContent(prev => prev + chunk);
-        },
-        abortControllerRef.current?.signal
-      );
+      let selectedPrimaryModel = config.primaryLLM;
+      let primaryResponse: Awaited<ReturnType<typeof callLLMStream>>;
+      while (true) {
+        try {
+          setStreamingContent('');
+          setReasoningContent('');
+          primaryResponse = await callLLMStream(
+            selectedPrimaryModel,
+            [{ role: 'user', content: JSON.stringify(context) }],
+            config.dmSystemPrompt,
+            5000,
+            config.openRouterApiKey,
+            (chunk) => {
+              setStreamingContent(prev => prev + chunk);
+            },
+            abortControllerRef.current?.signal,
+            (chunk) => {
+              setReasoningContent(prev => (prev + chunk).slice(-4000));
+            }
+          );
+        } catch (primaryError: any) {
+          if (primaryError.name === 'AbortError' || primaryError.message?.includes('cancelled by user')) {
+            throw primaryError;
+          }
+          setIsStreaming(false);
+          const decision = await requestPromptReview({
+            agent: 'Primary DM',
+            response: '',
+            error: primaryError.message || 'The DM prompt failed.',
+            model: selectedPrimaryModel,
+            allowSkip: false,
+          });
+          if (decision.action !== 'retry') {
+            throw new Error('Request cancelled by user');
+          }
+          selectedPrimaryModel = decision.model;
+          setIsStreaming(true);
+          continue;
+        }
+
+        if (config.testMode) {
+          setIsStreaming(false);
+          const decision = await requestPromptReview({
+            agent: 'Primary DM',
+            response: primaryResponse.content,
+            model: selectedPrimaryModel,
+            allowSkip: false,
+          });
+          if (decision.action === 'retry') {
+            selectedPrimaryModel = decision.model;
+            setIsStreaming(true);
+            continue;
+          }
+        }
+        break;
+      }
 
       setIsStreaming(false);
 
@@ -544,7 +621,7 @@ export default function NarrativePanel({
           context: contextForDebugLog
         }, null, 2),
         response: primaryResponse.content,
-        model: config.primaryLLM,
+        model: selectedPrimaryModel,
         tokens: {
           prompt: primaryResponse.usage?.prompt_tokens || 0,
           completion: primaryResponse.usage?.completion_tokens || 0,
@@ -576,7 +653,8 @@ export default function NarrativePanel({
       
       const PARSER_TIMEOUT_MS = 90000;
       const PARSER_MAX_RETRIES = 2;
-      let parserResponse: Awaited<ReturnType<typeof callLLM>>;
+      let parserResponse: Awaited<ReturnType<typeof callLLM>> | undefined;
+      let selectedParserModel = config.parserLLM;
 
       // Parse and validate JSON with robust error handling
       let parsedData: any = null;
@@ -592,7 +670,7 @@ export default function NarrativePanel({
             setParsingStatus(`Updating game state... (retry ${attempt}/${PARSER_MAX_RETRIES})`);
           }
           parserResponse = await callLLM(
-            config.parserLLM,
+            selectedParserModel,
             [{
               role: 'user',
               content: parserPrompt
@@ -600,7 +678,11 @@ export default function NarrativePanel({
             config.parserSystemPrompt,
             4000,
             config.openRouterApiKey,
-            { timeoutMs: PARSER_TIMEOUT_MS, signal: abortControllerRef.current?.signal }
+            {
+              timeoutMs: PARSER_TIMEOUT_MS,
+              signal: abortControllerRef.current?.signal,
+              responseFormat: 'json_object',
+            }
           );
 
           // Log parser LLM call to debug log
@@ -634,7 +716,7 @@ export default function NarrativePanel({
               input: parserInputForDebugLog
             }, null, 2),
             response: parserResponse.content,
-            model: config.parserLLM,
+            model: selectedParserModel,
             tokens: {
               prompt: parserResponse.usage?.prompt_tokens || 0,
               completion: parserResponse.usage?.completion_tokens || 0,
@@ -656,6 +738,26 @@ export default function NarrativePanel({
 
           parsedData = validateAndCoerceParserData(extracted, characterName);
 
+          if (config.testMode) {
+            const decision = await requestPromptReview({
+              agent: 'Parser',
+              response: parserResponse.content,
+              model: selectedParserModel,
+              allowSkip: true,
+            });
+            if (decision.action === 'retry') {
+              selectedParserModel = decision.model;
+              attempt = 0;
+              parsedData = null;
+              continue;
+            }
+            if (decision.action === 'skip') {
+              parsingFailed = true;
+              parsedData = null;
+              break;
+            }
+          }
+
           // Debug: Log what we extracted
           console.log('[OWNER DEBUG] Validated businesses (after validation):', parsedData.stateUpdates?.businesses);
           console.log('Parser extracted:', parsedData.stateUpdates);
@@ -676,12 +778,18 @@ export default function NarrativePanel({
           }
 
           if (isLastAttempt) {
-            // All retries exhausted — continue narrative without state update
-            toast({
-              title: 'Parser Warning',
-              description: 'Could not extract game state updates. Narrative will continue without state changes.',
-              variant: 'default',
+            const decision = await requestPromptReview({
+              agent: 'Parser',
+              response: parserResponse?.content || '',
+              error: retryErr.message || 'Could not extract game state updates.',
+              model: selectedParserModel,
+              allowSkip: true,
             });
+            if (decision.action === 'retry') {
+              selectedParserModel = decision.model;
+              attempt = 0;
+              continue;
+            }
             parsingFailed = true;
           } else {
             await new Promise(r => setTimeout(r, 1000 * attempt));
@@ -1946,6 +2054,14 @@ export default function NarrativePanel({
                       </ReactMarkdown>
                       <span className="inline-block w-1 h-4 ml-1 bg-primary animate-pulse" />
                     </div>
+                    {!streamingContent && reasoningContent && (
+                      <div className="mt-3 border-t border-border/50 pt-3">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Model is reasoning…</div>
+                        <div className="text-xs text-muted-foreground whitespace-pre-wrap max-h-28 overflow-y-auto">
+                          {reasoningContent}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1975,6 +2091,64 @@ export default function NarrativePanel({
           >
             <X className="w-4 h-4" />
           </Button>
+        </div>
+      )}
+
+      {promptReview && (
+        <div className="bg-card border-2 border-primary rounded-lg p-4 space-y-3" data-testid="prompt-review">
+          <div>
+            <h3 className="font-serif font-semibold text-primary">
+              {promptReview.error ? `${promptReview.agent} paused after an error` : `Verify ${promptReview.agent} response`}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              The game is paused until you accept, retry, or skip this response.
+            </p>
+          </div>
+          {promptReview.error && (
+            <div className="bg-destructive/10 border border-destructive/40 rounded p-3 text-sm text-destructive">
+              {promptReview.error}
+            </div>
+          )}
+          {promptReview.response && (
+            <pre className="bg-muted/40 border border-border rounded p-3 text-xs whitespace-pre-wrap max-h-56 overflow-y-auto">
+              {promptReview.response}
+            </pre>
+          )}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Model for retry</label>
+            <select
+              value={promptReview.model}
+              onChange={(event) => setPromptReview(prev => prev ? { ...prev, model: event.target.value } : prev)}
+              className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm font-mono"
+              data-testid="select-review-model"
+            >
+              {!models.some(model => model.id === promptReview.model) && (
+                <option value={promptReview.model}>{promptReview.model}</option>
+              )}
+              {models.map(model => (
+                <option key={model.id} value={model.id}>{model.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            {promptReview.allowSkip ? (
+              <Button variant="outline" onClick={() => resolvePromptReview('skip')} data-testid="button-review-skip">
+                Skip state update
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => resolvePromptReview('skip')} data-testid="button-review-cancel">
+                Cancel turn
+              </Button>
+            )}
+            {!promptReview.error && (
+              <Button variant="outline" onClick={() => resolvePromptReview('accept')} data-testid="button-review-accept">
+                Accept response
+              </Button>
+            )}
+            <Button onClick={() => resolvePromptReview('retry')} data-testid="button-review-retry">
+              Retry prompt
+            </Button>
+          </div>
         </div>
       )}
 

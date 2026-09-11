@@ -5,7 +5,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { modelId, messages, systemPrompt, maxTokens = 1000, apiKey } = req.body;
+  const { modelId, messages, systemPrompt, maxTokens = 5000, apiKey } = req.body;
   
   try {
     const key = apiKey || process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_DEVKEY || '';
@@ -32,6 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         temperature: 0.7,
         route: 'fallback',
         stream: true,
+        stream_options: { include_usage: true },
+        reasoning: { exclude: false },
       })
     });
     

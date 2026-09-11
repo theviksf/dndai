@@ -35,8 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             content: fullPrompt
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 5000,
         temperature: 0.8,
+        response_format: { type: 'json_object' },
+        plugins: [{ id: 'response-healing' }],
       })
     });
     
@@ -51,7 +53,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     const data = await response.json();
-    const rawContent = data.choices[0].message.content;
+    const rawContent = data?.choices?.[0]?.message?.content;
+    if (typeof rawContent !== 'string' || !rawContent.trim()) {
+      return res.status(502).json({ error: 'Backstory agent returned no final response. Retry or choose a different model.' });
+    }
     
     console.log('[BACKSTORY GEN] Raw response:', rawContent.substring(0, 200));
     

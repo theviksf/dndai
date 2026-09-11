@@ -119,6 +119,7 @@ export function createDefaultConfig(): GameConfig {
     autoGenerateRevelations: true,
     autoGenerateMemories: true,
     autoGenerateLore: true,
+    testMode: false,
     uiScale: 'compact',
   };
 }
@@ -160,6 +161,7 @@ export async function migrateConfig(config: any): Promise<GameConfig> {
     autoGenerateMemories: config.autoGenerateMemories ?? defaults.autoGenerateMemories,
     loreSystemPrompt: config.loreSystemPrompt || prompts?.lore || defaults.loreSystemPrompt,
     autoGenerateLore: config.autoGenerateLore ?? defaults.autoGenerateLore,
+    testMode: config.testMode ?? defaults.testMode,
     checkerSystemPrompt: config.checkerSystemPrompt || prompts?.checker || defaults.checkerSystemPrompt,
     dmSystemPrompt: config.dmSystemPrompt || prompts?.primary || defaults.dmSystemPrompt,
     parserSystemPrompt: config.parserSystemPrompt || prompts?.parser || defaults.parserSystemPrompt,

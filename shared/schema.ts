@@ -316,6 +316,7 @@ export type GameConfig = {
   autoGenerateRevelations: boolean;
   autoGenerateMemories: boolean;
   autoGenerateLore: boolean;
+  testMode: boolean;
   uiScale: 'compact' | 'comfortable';
 };
 
