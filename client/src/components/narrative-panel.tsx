@@ -374,6 +374,31 @@ function validateAndCoerceParserData(data: any, characterName: string = 'Unknown
   return result;
 }
 
+function preserveEstablishedCharacterName(existingName: string, incomingName: string): string {
+  const existing = existingName?.trim();
+  const incoming = incomingName?.trim();
+  if (!existing) return incoming;
+  if (!incoming) return existing;
+
+  const incomingLower = incoming.toLowerCase();
+  const incomingIsGeneric = incomingLower === 'unknown' ||
+    incomingLower.includes('mysterious') ||
+    incomingLower.includes('stranger');
+  if (incomingIsGeneric) return existing;
+
+  const existingParts = existing.split(/\s+/);
+  const incomingParts = incoming.split(/\s+/);
+  const looksLikeShortenedName =
+    existingParts.length >= 2 &&
+    incoming.length < existing.length &&
+    (
+      incomingParts.length < existingParts.length ||
+      fuzz.ratio(existing.toLowerCase(), incomingLower) >= 65
+    );
+
+  return looksLikeShortenedName ? existing : incoming;
+}
+
 export default function NarrativePanel({ 
   gameState, 
   setGameState,
@@ -1045,7 +1070,12 @@ export default function NarrativePanel({
               
               if (existingIndex >= 0) {
                 // Update existing companion, preserving fields like imageUrl, backstory, revelations
-                mergedCompanions[existingIndex] = { ...mergedCompanions[existingIndex], ...newComp };
+                const existingCompanion = mergedCompanions[existingIndex];
+                mergedCompanions[existingIndex] = {
+                  ...existingCompanion,
+                  ...newComp,
+                  name: preserveEstablishedCharacterName(existingCompanion.name, newComp.name),
+                };
               } else {
                 // Add new companion (NPC migration is done manually via "Add to Party" button)
                 mergedCompanions.push(newComp);
@@ -1137,13 +1167,15 @@ export default function NarrativePanel({
                 console.log(`[MIGRATION] Skipping NPC "${newNPC.name}" - already a companion`);
               } else if (existingIndex >= 0) {
                 // Update existing NPC, preserving important fields like imageUrl, backstory, revelations
+                const existingNPC = mergedNPCs[existingIndex];
                 mergedNPCs[existingIndex] = { 
-                  ...mergedNPCs[existingIndex], 
+                  ...existingNPC,
                   ...newNPC,
+                  name: preserveEstablishedCharacterName(existingNPC.name, newNPC.name),
                   // Preserve these fields if they exist in the old NPC
-                  imageUrl: newNPC.imageUrl || mergedNPCs[existingIndex].imageUrl,
-                  backstory: newNPC.backstory || mergedNPCs[existingIndex].backstory,
-                  revelations: mergedNPCs[existingIndex].revelations || newNPC.revelations,
+                  imageUrl: newNPC.imageUrl || existingNPC.imageUrl,
+                  backstory: newNPC.backstory || existingNPC.backstory,
+                  revelations: existingNPC.revelations || newNPC.revelations,
                 };
                 console.log(`[NPC UPDATE] Updated existing NPC "${newNPC.name}" (id: ${newNPC.id})`);
               } else {

@@ -404,7 +404,7 @@ router.post('/check-entity-consistency', async (req: Request, res: Response) => 
         messages: [
           {
             role: 'system',
-            content: 'You are a JSON-only responder. You must return ONLY a valid raw JSON object — no markdown, no code fences, no explanation. Your entire response must be parseable by JSON.parse().'
+            content: `You are a JSON-only responder. You must return ONLY a valid raw JSON object — no markdown, no code fences, no explanation. Your entire response must be parseable by JSON.parse().\n\n${systemPrompt || ''}`
           },
           {
             role: 'user',
