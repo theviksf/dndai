@@ -177,7 +177,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
   };
 
   const formatModelOption = (model: OpenRouterModel) =>
-    `${model.name} • ${formatModelDate(model)} • ${isThinkingModel(model) ? 'Thinking' : 'Standard'}`;
+    `${model.name} • ${formatModelDate(model)} • ${isThinkingModel(model) ? 'Thinking' : 'Standard'} • $${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn`;
 
   const handleSave = () => {
     onSave(localConfig);
