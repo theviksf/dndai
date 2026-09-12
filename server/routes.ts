@@ -1067,8 +1067,8 @@ router.post('/generate-image', async (req: Request, res: Response) => {
         if (statusData.status === 'COMPLETED') {
           jobComplete = true;
           
-          if (statusData.output?.image_url) {
-            const runPodImageUrl = statusData.output.image_url;
+          const runPodImageUrl = statusData.output?.image_url || statusData.output?.result;
+          if (runPodImageUrl) {
             console.log('[IMAGE GEN] RunPod image URL:', runPodImageUrl);
             
             try {
@@ -1078,13 +1078,24 @@ router.post('/generate-image', async (req: Request, res: Response) => {
               }
               const imageBuffer = await imageResponse.arrayBuffer();
               const base64Image = Buffer.from(imageBuffer).toString('base64');
-              imageUrl = `data:image/png;base64,${base64Image}`;
+              const imageContentType = imageResponse.headers.get('content-type') || 'image/png';
+              imageUrl = `data:${imageContentType};base64,${base64Image}`;
               console.log('[IMAGE GEN] Successfully fetched and converted image to base64');
             } catch (fetchError: any) {
               console.error('[IMAGE GEN] Failed to fetch RunPod image:', fetchError.message);
+              return res.status(502).json({
+                error: `RunPod image download failed: ${fetchError.message}`,
+                filledPrompt,
+                rawResponse: JSON.stringify(statusData, null, 2)
+              });
             }
           } else {
-            console.error('[IMAGE GEN] No image_url in RunPod output');
+            console.error('[IMAGE GEN] No image URL in RunPod output:', statusData.output);
+            return res.status(502).json({
+              error: 'RunPod completed the job without returning an image URL',
+              filledPrompt,
+              rawResponse: JSON.stringify(statusData, null, 2)
+            });
           }
           model = 'flux-1.1-schnell';
           usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
