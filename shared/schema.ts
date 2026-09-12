@@ -323,6 +323,8 @@ export type GameConfig = {
 export type OpenRouterModel = {
   id: string;
   name: string;
+  created?: number;
+  supported_parameters?: string[];
   pricing: {
     prompt: string;
     completion: string;

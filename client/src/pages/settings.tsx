@@ -54,15 +54,6 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
             loreSystemPrompt: prev.loreSystemPrompt || defaults.lore,
             checkerSystemPrompt: prev.checkerSystemPrompt || defaults.checker,
           }));
-          // Auto-save the updated config
-          onSave({
-            ...config,
-            backstorySystemPrompt: config.backstorySystemPrompt || defaults.backstory,
-            revelationsSystemPrompt: config.revelationsSystemPrompt || defaults.revelations,
-            memoriesSystemPrompt: config.memoriesSystemPrompt || defaults.memories,
-            loreSystemPrompt: config.loreSystemPrompt || defaults.lore,
-            checkerSystemPrompt: config.checkerSystemPrompt || defaults.checker,
-          });
         }
       }
     };
@@ -139,6 +130,54 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
       parserLLM: presetConfig.parser,
     }));
   };
+
+  const modelFields: Array<keyof Pick<
+    GameConfig,
+    'primaryLLM' | 'parserLLM' | 'backstoryLLM' | 'checkerLLM' |
+    'revelationsLLM' | 'loreLLM' | 'memoriesLLM'
+  >> = [
+    'primaryLLM',
+    'parserLLM',
+    'backstoryLLM',
+    'checkerLLM',
+    'revelationsLLM',
+    'loreLLM',
+    'memoriesLLM',
+  ];
+
+  const applyModelToAllAgents = (modelId: string) => {
+    setLocalConfig(prev => ({
+      ...prev,
+      primaryLLM: modelId,
+      parserLLM: modelId,
+      backstoryLLM: modelId,
+      checkerLLM: modelId,
+      revelationsLLM: modelId,
+      loreLLM: modelId,
+      memoriesLLM: modelId,
+    }));
+  };
+
+  const allAgentsModel = modelFields.every(field => localConfig[field] === localConfig.primaryLLM)
+    ? localConfig.primaryLLM
+    : '__mixed__';
+
+  const isThinkingModel = (model: OpenRouterModel) =>
+    model.supported_parameters?.includes('reasoning') === true ||
+    /(?:^|[\/:_-])(r1|reasoning|thinking)(?:$|[\/:_-])/i.test(`${model.id} ${model.name}`);
+
+  const formatModelDate = (model: OpenRouterModel) => {
+    if (!model.created) return 'Release unknown';
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(model.created * 1000));
+  };
+
+  const formatModelOption = (model: OpenRouterModel) =>
+    `${model.name} • ${formatModelDate(model)} • ${isThinkingModel(model) ? 'Thinking' : 'Standard'}`;
 
   const handleSave = () => {
     onSave(localConfig);
@@ -356,6 +395,37 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                     </div>
                   </div>
 
+                  <div className="bg-accent/10 border border-accent rounded-md p-4 space-y-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-foreground">
+                        Apply One Model to All Agents
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Sets the DM, parser, checker, backstory, revelations, memories, and lore agents together. You can still override each one below.
+                      </p>
+                    </div>
+                    <Select value={allAgentsModel} onValueChange={applyModelToAllAgents}>
+                      <SelectTrigger className="w-full bg-input border-border font-mono text-sm" data-testid="select-all-agent-models">
+                        <SelectValue placeholder="Choose one model for every agent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allAgentsModel === '__mixed__' && (
+                          <SelectItem value="__mixed__" disabled>Mixed — agents use individual models</SelectItem>
+                        )}
+                        {[...models]
+                          .filter(model => model.name.toLowerCase().includes(modelSearchQuery.toLowerCase()))
+                          .sort((a, b) => modelSortBy === 'name'
+                            ? a.name.localeCompare(b.name)
+                            : (b.created || 0) - (a.created || 0))
+                          .map(model => (
+                            <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
+                              {formatModelOption(model)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Primary LLM */}
                   <div className="bg-muted/30 border border-border rounded-md p-4 space-y-3">
                     <label className="block text-sm font-semibold text-foreground">
@@ -378,7 +448,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                           }
                           return filteredModels.map(model => (
                             <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                              {formatModelOption(model)}
                             </SelectItem>
                           ));
                         })()}
@@ -408,7 +478,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                           }
                           return filteredModels.map(model => (
                             <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                              {formatModelOption(model)}
                             </SelectItem>
                           ));
                         })()}
@@ -438,7 +508,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                           }
                           return filteredModels.map(model => (
                             <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                              {formatModelOption(model)}
                             </SelectItem>
                           ));
                         })()}
@@ -468,7 +538,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                           }
                           return filteredModels.map(model => (
                             <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                              {formatModelOption(model)}
                             </SelectItem>
                           ));
                         })()}
@@ -498,7 +568,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                           }
                           return filteredModels.map(model => (
                             <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                              {formatModelOption(model)}
                             </SelectItem>
                           ));
                         })()}
@@ -528,7 +598,7 @@ export default function SettingsPage({ config, onSave, models, onRefreshModels }
                           }
                           return filteredModels.map(model => (
                             <SelectItem key={model.id} value={model.id} className="font-mono text-sm">
-                              {model.name} - ${estimateTurnCost(model.pricing, { prompt: '0', completion: '0' }).toFixed(4)}/turn
+                              {formatModelOption(model)}
                             </SelectItem>
                           ));
                         })()}
